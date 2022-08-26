@@ -8,8 +8,8 @@ let token = "";//api鉴权token
 let includeOs = [];//目前没用
 let setting = {
     attrName: "custom-targetid", //挂件将寻找属性名称，请将对应属性值设定为块id
-    widgetWidth: "45em",//挂件的宽
-    widgetHeight: "4em",//挂件的高
+    widgetWidth: "50em",//挂件的宽
+    widgetHeight: "3em",//挂件的高
     refreshInterval: 0,//自动刷新间隔（毫秒），由于请求api，请勿设定的时间过短
     onstart: true, //在文档打开时同步一次进度
     api: false, //使用api统计百分比，编辑时“实时”更新可能导致高频率调用思源API
@@ -23,7 +23,9 @@ let zh_CN = {
     "getKramdownFailed": "获取Kramdown失败",
     "unknownId": "未知的块id",
     "autoMode": "当前：自动模式",
-    "manualMode": "当前：手动模式"
+    "manualMode": "当前：手动模式",
+    "needSetAttr": "找不到对应块id。请再次点击刷新新建块、设置挂件块属性",
+    "saved": "已保存",
 }
 
 let language = zh_CN;
