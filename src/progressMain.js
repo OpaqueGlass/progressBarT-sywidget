@@ -30,6 +30,7 @@ function changeBar(percentage){
     let intPercentage = Math.round(percentage);//四舍五入取整
     document.getElementById("progress").style.width = accuratePercentage + "%";
     document.getElementById("percentage").innerHTML = intPercentage + "%";
+    console.log("进度条进度已刷新", g_thisWidgetId);
 }
 
 /**
@@ -80,6 +81,7 @@ async function getManualSettingFromAttr(){
 
 /**
  * 读取属性中时间，并设定时间
+ * @return true读取成功 false 读取失败
  */
 async function setTimesFromAttr(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
@@ -113,13 +115,16 @@ async function setTimesFromAttr(){
                     break;
                 }
                 default: {
-                    throw new Error(language["parseTimeStrErr"]);
+                    debugPush(Error(language["parseTimeStrErr"]));
                 }
             }
         }
-        console.log("开始时间", g_times[0].toLocaleString());
-        console.log("结束时间", g_times[1].toLocaleString());
+        console.log("get开始时间", g_times[0].toLocaleString());
+        console.log("get结束时间", g_times[1].toLocaleString());
+        return true;
     }
+    console.warn("获取时间属性失败");   
+    return false;
 }
 
 /**
@@ -139,11 +144,12 @@ async function setManualSetting2Attr(){
 
 
 /**
- * 重新计算百分比并更新进度条
+ * 重新计算百分比并更新进度条（自动模式重新计算）
  * 从指定的块id中获取已经完成的任务（仅第一级）所占百分比
  * @param {boolean} noAPI 不使用API，此选项为true则使用dom重新计算，否则以setting.api设置为准
  */
-async function __reCalculate(noAPI = false){
+async function autoModeRecalc(noAPI = false){
+    try{
     //判断目标块
     if (!isValidStr(g_targetBlockId)){
         throw new Error(language["needSetAttr"]);
@@ -157,6 +163,10 @@ async function __reCalculate(noAPI = false){
     }
     //更新进度条
     changeBar(percentage);
+    }catch(err){
+        console.error(err);
+        debugPush(err);
+    }
 }
 
 /**
@@ -184,7 +194,13 @@ function debugPush(msg, timeout = 7000){
 }
 
 function calculateTimeGap(){
-
+    let totalGap = g_times[1] - g_times[0];
+    if (totalGap <= 0){
+        return;
+    }
+    let nowDate = new Date();
+    let passed = nowDate - g_times[0];
+    changeBar(passed / totalGap * 100.0);
 }
 
 /**
@@ -199,6 +215,7 @@ async function __init(){
         window.frameElement.style.height = setting.widgetHeight;
     // }
     __refreshAppreance();
+    //手动模式
     if (g_manualPercentage >= 0){
         changeBar(g_manualPercentage);
         manualModeInit();
@@ -206,17 +223,25 @@ async function __init(){
         $("#refresh").attr("title", language["manualMode"]);
         return;
     }
+    //时间模式
+    if (g_manualPercentage == -2){
+        $("#refresh").addClass("timeMode");
+        if (setting.onstart){
+            await timeModeInit();
+        }
+        return;
+    }
     //以下： 仅自动模式
     $("#refresh").attr("title", language["autoMode"]);
     //刷新目标id
     await setBlockIdFromAttr();
     //自动模式下启动时刷新
-    if (setting.onstart && g_manualPercentage < 0){
-        await __reCalculate();
+    if (setting.onstart && g_manualPercentage == -1){
+        await autoModeRecalc();
     }
     //设定定时刷新
     if (setting.refreshInterval > 0){
-        setInterval(async function(){await __reCalculate()}, setting.refreshInterval);
+        setInterval(async function(){await autoModeRecalc()}, setting.refreshInterval);
     }
     //挂监视，获取dom变化
     if (isValidStr(g_targetBlockId)){
@@ -252,6 +277,11 @@ async function __refresh(){
             await setManualSetting2Attr();
             return;
         }
+
+        if (g_manualPercentage == -2){
+            await timeModeInit();
+            return;
+        }
         //没有块则创建块
         if (!isValidStr(g_targetBlockId)){
             let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
@@ -265,7 +295,7 @@ async function __refresh(){
                 }
             }
         }
-        await __reCalculate();
+        await autoModeRecalc();
     }catch(err){
         console.error(err);
         debugPush(err);
@@ -358,12 +388,36 @@ function manualDestory(){
 }
 
 /**
+ * 时间模式初始化
+ */
+async function timeModeInit(){
+    clearInterval(g_timeRefreshInterval);
+    //有时间才能计算
+    if (await setTimesFromAttr()){
+        if (setting.timeModeRefreshInterval > 0){
+            g_timeRefreshInterval = setInterval(() => {
+                calculateTimeGap();
+            }, setting.timeModeRefreshInterval);
+        }
+        calculateTimeGap();
+    }
+}
+
+/**
+ * 实践模式退出收拾摊子
+ */
+function timeModeDestory(){
+    clearInterval(g_timeRefreshInterval);
+}
+
+
+/**
  * observer调用的函数，防止多次触发
  */
 function observeRefresh(){
     clearTimeout(g_observerTimeout);
     //由于可能高频度触发事件，设定为禁止通过api刷新
-    g_observerTimeout = setTimeout(async function(){await __reCalculate(true);}, 300);
+    g_observerTimeout = setTimeout(async function(){await autoModeRecalc(true);}, 300);
 }
 
 /**
@@ -371,19 +425,22 @@ function observeRefresh(){
  */
 async function dblClickChangeMode(){
     clearTimeout(g_refreshBtnTimeout);
-    if (g_manualPercentage == -1){//如果当前为自动模式，则切换为手动模式
-        g_manualPercentage = 0;//切换为手动模式
-        setManualSetting2Attr();//保存模式设定
+    if (g_manualPercentage == -1){//如果当前为自动模式，则切换为时间模式
+        g_manualPercentage = -2;
+        setManualSetting2Attr();
+        //退出自动模式
         g_observeClass.disconnect();
         g_observeNode.disconnect();
-        manualModeInit();
-        $("#refresh").addClass("manualMode");
-        $("#refresh").attr("title", language["manualMode"]);
-        console.log("已切换为手动模式");
-    }else if (g_manualPercentage >= 0){
+        //进入时间模式
+        timeModeInit();
+        $("#refresh").addClass("timeMode");
+        $("#refresh").attr("title", language["timeMode"]);
+        console.log("已切换为时间模式")
+    }else if (g_manualPercentage >= 0){//如果当前为手动模式，则切换为自动模式
         //设置属性：切换为自动模式，移除事件listener
         g_manualPercentage = "-1";
         setManualSetting2Attr();
+        //退出手动模式
         manualDestory();
         //重新读取目标块id
         await setBlockIdFromAttr();
@@ -391,13 +448,22 @@ async function dblClickChangeMode(){
         __setObserver(g_targetBlockId);
         //自动刷新
         if (setting.onstart){
-            await __reCalculate();
+            await autoModeRecalc();
         }
         $("#refresh").removeClass("manualMode");
         $("#refresh").attr("title", language["autoMode"]);
         console.log("已切换为自动模式");
-    }else{
-
+    }else if (g_manualPercentage <= -2){//如果当前为时间模式，则切换为手动模式
+        g_manualPercentage = 0;//切换为手动模式
+        setManualSetting2Attr();//保存模式设定
+        //退出时间模式
+        timeModeDestory();
+        $("#refresh").removeClass("timeMode");
+        //进入手动模式
+        manualModeInit();
+        $("#refresh").addClass("manualMode");
+        $("#refresh").attr("title", language["manualMode"]);
+        console.log("已切换为手动模式");
     }
 }
 
@@ -420,7 +486,8 @@ let g_savePercentTimeout;//保存手动百分比延时
 let g_progressBarElem = document.getElementById("container");
 let g_observeClass = new MutationObserver(observeRefresh);
 let g_observeNode = new MutationObserver(observeRefresh);
-let g_times = new Array(2);
+let g_times = [null, null];//0开始时间，1结束时间
+let g_timeRefreshInterval;
 
 try{
     //绑定按钮事件
