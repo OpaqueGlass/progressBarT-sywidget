@@ -1,9 +1,24 @@
+:root {
+    /* 进度条未达到部分 */
+    --container-color: rgb(233, 215, 199);
+    /* 进度条未达到部分-黑夜模式 */
+    --container-dark-color: rgb(176, 176, 176);
+    /* 进度条已达到部分 */
+    --progress-color: rgb(255, 123, 0);
+    /* 进度条已达到部分-黑夜模式 */
+    --progress-dark: rgb(175, 72, 27);
+    /* 进度百分比-黑夜模式 */
+    --text-dark: rgb(201, 209, 217);
+    --bar-radius: 5px;
+}
+
 #refresh {
     background-image: url("./icon.png");
 }
 
 button {
-    border: 2px solid cornflowerblue;/*自动模式按钮边框*/
+    border: 2px solid cornflowerblue;
+    /*自动模式按钮边框*/
     font-weight: 300;
     background-size: auto 1.5em;
     background-repeat: no-repeat;
@@ -25,12 +40,15 @@ button {
     /*进度条宽度*/
     height: 10px;
     /*进度条高度*/
-    border-radius: 5px;
+    border-radius: var(--bar-radius);
     /*进度条圆角*/
-    background: rgb(233, 215, 199);
-    /*进度条背景色（未达到的部分）*/
     align-self: center;
     /* float: left; */
+}
+
+.container {
+    /*进度条背景色（未达到的部分）*/
+    background: var(--container-color);
 }
 
 #progress {
@@ -38,26 +56,34 @@ button {
     /*初始值，刷新后由js控制*/
     height: inherit;
     /*请勿修改*/
-    border-radius: 25px 0 0 25px;
-    background: rgb(255, 123, 0);
+    border-radius: var(--bar-radius) 0 0 var(--bar-radius);
     /*进度条已加载部分颜色*/
     align-self: center;
 }
 
+.progress {
+    background: var(--progress-color);
+}
+
 /* 黑夜模式下进度条已完成颜色 */
 .progress_dark {
-    background: rgb(149, 61, 23);
+    background: var(--progress-dark);
 }
 
 /* 黑夜模式下进度条未完成颜色 */
 .container_dark {
-    background: gray;
+    background: var(--container-dark-color);
 }
 
 #percentage {
     text-align: center;
     width: 50px;
     /* flex: right; */
+}
+
+/* 黑夜模式下百分比文字 */
+.text_dark {
+    color: var(--text-dark);
 }
 
 #errorInfo {
