@@ -57,7 +57,7 @@ async function calculatePercentageByAPI(blockid){
  * 从属性custom-targetId重设目标块id
  * 无返回值！
  */
-async function setBlockIdFromAttr(){
+async function readBlockIdFromAttr(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     let response = await getblockAttrAPI(g_thisWidgetId);
     if (setting.attrName in response.data){
@@ -81,34 +81,41 @@ async function getManualSettingFromAttr(){
 
 /**
  * 读取属性中时间，并设定时间
+ * 属性中时间格式要求
+ * yyyy mm dd
+ * yyyy mm dd hh mm
+ * hh mm（自动在执行时补全为当天）
+ * 如果为20xx年，允许yy mm dd
  * @return true读取成功 false 读取失败
  */
-async function setTimesFromAttr(){
+async function readTimesFromAttr(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     let response = await getblockAttrAPI(g_thisWidgetId);
     if (setting.startTimeAttrName in response.data && setting.endTimeAttrName in response.data){
+        //属性原始字符串
         let startimeStr = response.data[setting.startTimeAttrName]
         let endtimeStr = response.data[setting.endTimeAttrName];
-        let startNums = startimeStr.match(/[0-9]+/gm);//拆分连续的数字（string）
+        //拆分连续的数字（string）
+        let startNums = startimeStr.match(/[0-9]+/gm);
         let endNums = endtimeStr.match(/[0-9]+/gm);
         let nums = [startNums, endNums];
         for (let i = 0; i < nums.length; i++){
+            //处理yy mm dd的情况
+            if (nums[i].length != 2){
+                if (nums[i][0].length == 2){
+                    nums[i][0] = "20" + nums[i][0];
+                }
+            }
             switch (nums[i].length){
                 case 3: {//输入格式YYYY MM DD
-                    if (nums[i][0].length == 2){
-                        nums[i][0] = "20" + nums[i][0];
-                    }
                     g_times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2]);
                     break;
                 }
-                case 5: {//输入格式YYYY.MM.DD HH:MM
-                    if (nums[i][0].length == 2){
-                        nums[i][0] = "20" + nums[i][0];
-                    }
+                case 5: {//输入格式YYYY MM DD HH MM
                     g_times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][i][3], nums[i][4]);
                     break;
                 }
-                case 2: {//输入格式HH:MM
+                case 2: {//输入格式HH MM
                     g_times[i] = new Date();
                     g_times[i].setHours(nums[i][0]);
                     g_times[i].setMinutes(nums[i][1]);
@@ -234,7 +241,7 @@ async function __init(){
     //以下： 仅自动模式
     $("#refresh").attr("title", language["autoMode"]);
     //刷新目标id
-    await setBlockIdFromAttr();
+    await readBlockIdFromAttr();
     //自动模式下启动时刷新
     if (setting.onstart && g_manualPercentage == -1){
         await autoModeRecalc();
@@ -266,11 +273,13 @@ function __refreshAppreance(){
 }
 
 /**
- * 手动点击刷新：没有块则创建块！
+ * 手动点击刷新（button按下后事件）
+ * 没有块则创建块！
  */
 async function __refresh(){
     try{
-        await setBlockIdFromAttr();
+        //从挂件中读取id
+        await readBlockIdFromAttr();
         //如果为手动模式，保存百分比
         if (g_manualPercentage >= 0){
             clearTimeout(g_savePercentTimeout);
@@ -380,7 +389,7 @@ function manualModeInit(){
 /**
  * 关闭手动模式后取消事件
  */
-function manualDestory(){
+function manualModeDestory(){
     let progressBar = document.getElementById("container");
     progressBar.removeEventListener("click", manualClick);
     progressBar.removeEventListener("mousedown", manualMousedown);
@@ -393,7 +402,7 @@ function manualDestory(){
 async function timeModeInit(){
     clearInterval(g_timeRefreshInterval);
     //有时间才能计算
-    if (await setTimesFromAttr()){
+    if (await readTimesFromAttr()){
         if (setting.timeModeRefreshInterval > 0){
             g_timeRefreshInterval = setInterval(() => {
                 calculateTimeGap();
@@ -404,7 +413,7 @@ async function timeModeInit(){
 }
 
 /**
- * 实践模式退出收拾摊子
+ * 时间模式退出清理自动项目
  */
 function timeModeDestory(){
     clearInterval(g_timeRefreshInterval);
@@ -441,9 +450,9 @@ async function dblClickChangeMode(){
         g_manualPercentage = "-1";
         setManualSetting2Attr();
         //退出手动模式
-        manualDestory();
+        manualModeDestory();
         //重新读取目标块id
-        await setBlockIdFromAttr();
+        await readBlockIdFromAttr();
         //设置domobserver
         __setObserver(g_targetBlockId);
         //自动刷新
