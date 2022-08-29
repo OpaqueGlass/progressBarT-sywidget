@@ -12,14 +12,14 @@ let setting = {
     widgetHeight: "4em",//挂件的高
     refreshInterval: 0,//自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在文档打开时同步一次进度
-    api: false, //使用api统计百分比，编辑时“实时”更新可能导致高频率调用思源API
+    // api: false, //使用api统计百分比，编辑时“实时”更新可能导致高频率调用思源API
     manualAttrName: "custom-percentage",//挂件将寻找的属性名称，如需手动模式，请创建对应属性，并设定属性值为要显示的百分比（整数0~100）
     startTimeAttrName: "custom-starttime",
     endTimeAttrName: "custom-endtime",
     saveAttrTimeout: 10000, //自动保存百分比延时，单位毫秒
     timeModeRefreshInterval: 1000,//时间模式定时刷新间隔，单位毫秒，为0则禁用
     createBlock: false, //如果块不存在，则创建块
-    
+    defaultMode: -1, //-2时间模式 -1自动模式 >=0手动模式
 };
 
 let zh_CN = {

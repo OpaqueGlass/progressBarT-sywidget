@@ -240,6 +240,7 @@ function calculateTimeGap(){
 async function __init(){
     //读取模式
     g_manualPercentage = await getManualSettingFromAttr();
+    g_manualPercentage = g_manualPercentage ? g_manualPercentage : setting.defaultMode;//防止首次启动读取错误
     //设置挂件宽高
     // if (g_manualPercentage == null){
         window.frameElement.style.width = setting.widgetWidth;
