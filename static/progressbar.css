@@ -59,6 +59,8 @@ button {
     border-radius: var(--bar-radius) 0 0 var(--bar-radius);
     /*进度条已加载部分颜色*/
     align-self: center;
+    transition-property: width;
+    transition-duration: 300ms;
 }
 
 .progress {
@@ -88,6 +90,10 @@ button {
 
 #errorInfo {
     color: red;
+}
+
+#infoInfo {
+    color: cornflowerblue;
 }
 
 /* 手动模式按钮边框 */

@@ -14,6 +14,7 @@ import {language, setting} from './config.js';
  * @param {*} percentage 百分比，整数，传入百分之x
  */
 function changeBar(percentage){
+    let origin = percentage;
     if (percentage >= 100) {
         percentage = 100;
         document.getElementById("progress").style.borderBottomRightRadius = 5 + "px";
@@ -27,30 +28,10 @@ function changeBar(percentage){
         percentage = 0;
     }
     let accuratePercentage = Math.floor(percentage * 100) / 100//下取整（间接保留两位小数）
-    let intPercentage = Math.round(percentage);//四舍五入取整
+    let intPercentage = Math.round(origin);//四舍五入取整
     document.getElementById("progress").style.width = accuratePercentage + "%";
     document.getElementById("percentage").innerHTML = intPercentage + "%";
     console.log("进度条进度已刷新", g_thisWidgetId);
-}
-
-/**
- * 通过任务列表本文计算百分比（通过API）
- * @returns 百分比
- */
-async function calculatePercentageByAPI(blockid){
-    let kramdown = await getKramdown(blockid);
-    if (!isValidStr(kramdown)){
-        debugPush(language["getKramdownFailed"] + blockid);
-        return;
-    }
-    let all = kramdown.match(/^\* {.*}\[.\].*$/gm);
-    let checked = kramdown.match(/^\* {.*}\[X\].*$/gm);
-    if (!all){//找不到（说明块id有误），返回
-        debugPush(language["notTaskList"] + blockid);
-        return;
-    }
-    let count = checked ? checked.length : 0;
-    return count / all.length * 100;
 }
 
 /**
@@ -81,10 +62,7 @@ async function getManualSettingFromAttr(){
 
 /**
  * 读取属性中时间，并设定时间
- * 属性中时间格式要求
- * yyyy mm dd
- * yyyy mm dd hh mm
- * hh mm（自动在执行时补全为当天）
+ * 属性中时间格式要求yyyy mm dd 或 yyyy mm dd hh mm 或hh mm（自动在执行时补全为当天）
  * 如果为20xx年，允许yy mm dd
  * @return true读取成功 false 读取失败
  */
@@ -152,10 +130,11 @@ async function setManualSetting2Attr(){
 
 /**
  * 重新计算百分比并更新进度条（自动模式重新计算）
+ * 将优先尝试dom计算，若dom无法计算且noAPI = false，则尝试API计算
  * 从指定的块id中获取已经完成的任务（仅第一级）所占百分比
  * @param {boolean} noAPI 不使用API，此选项为true则使用dom重新计算，否则以setting.api设置为准
  */
-async function autoModeRecalc(noAPI = false){
+async function autoModeCalculate(noAPI = false){
     try{
     //判断目标块
     if (!isValidStr(g_targetBlockId)){
@@ -163,10 +142,13 @@ async function autoModeRecalc(noAPI = false){
     };
     let percentage;
     //根据设置，从api/dom获得百分比
-    if (setting.api && !noAPI){
+    percentage = calculatePercentageByDom(g_targetBlockId);
+    //使用API重试
+    if (percentage < 0 && !noAPI){
         percentage = await calculatePercentageByAPI(g_targetBlockId);
-    }else{
-        percentage = calculatePercentageByDom(g_targetBlockId);
+    }
+    if (percentage < 0){
+        throw new Error(language["notTaskList"]);
     }
     //更新进度条
     changeBar(percentage);
@@ -186,12 +168,35 @@ function calculatePercentageByDom(blockid){
     let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>[data-marker="*"]`);
     let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>.protyle-task--done[data-marker="*"]`);
     if (allTasks.length == 0){
-        throw new Error(language["notTaskList"]);
+        console.log("DOM找不到对应块，或块类型错误。");
+        return -100;
+        // throw new Error(language["notTaskList"]);
     }
     //已完成任务列表项计数
     let checkedTasksNum = checkedTasks ? checkedTasks.length : 0;
     return checkedTasksNum / allTasks.length * 100;
 }
+
+/**
+ * 通过任务列表本文计算百分比（通过API）
+ * @returns 百分比
+ */
+ async function calculatePercentageByAPI(blockid){
+    let kramdown = await getKramdown(blockid);
+    if (!isValidStr(kramdown)){
+        console.warn("获取kramdown失败", kramdown);
+        debugPush(language["getKramdownFailed"] + blockid);
+        return 0;//不是块id错误，避免触发autoModeCalculate的错误提示
+    }
+    let all = kramdown.match(/^\* {.*}\[.\].*$/gm);
+    let checked = kramdown.match(/^\* {.*}\[X\].*$/gm);
+    if (!all){//找不到（说明块类型有误），返回
+        return -100;
+    }
+    let count = checked ? checked.length : 0;
+    return count / all.length * 100;
+}
+
 
 function debugPush(msg, timeout = 7000){
     // $(`<p>${msg}</p>`).appendTo("#errorInfo");
@@ -200,14 +205,33 @@ function debugPush(msg, timeout = 7000){
     g_debugPushTimeout = setTimeout(()=>{$("#errorInfo").text("");}, timeout)
 }
 
+function infoPush(msg, timeout = 5000){
+    clearTimeout(g_infoPushTimeout);
+    $("#infoInfo").text(msg);
+    g_infoPushTimeout = setTimeout(()=>{$("#infoInfo").text("");}, timeout)
+}
+
+function modePush(msg=""){
+    $("#modeInfo").text(msg);
+}
+
 function calculateTimeGap(){
     let totalGap = g_times[1] - g_times[0];
     if (totalGap <= 0){
+        debugPush(language["timeModeSetError"]);
         return;
     }
     let nowDate = new Date();
     let passed = nowDate - g_times[0];
-    changeBar(passed / totalGap * 100.0);
+    let result = passed / totalGap * 100.0;
+    if (result < 0){
+        debugPush(language["earlyThanStart"], 3000);
+    }else if (result > 100){
+        // result = 100;
+        // infoPush();
+    }
+    changeBar(result);
+    modePush(`${g_times[0].toLocaleString()} ~ ${g_times[1].toLocaleString()}`);
 }
 
 /**
@@ -244,11 +268,11 @@ async function __init(){
     await readBlockIdFromAttr();
     //自动模式下启动时刷新
     if (setting.onstart && g_manualPercentage == -1){
-        await autoModeRecalc();
+        await autoModeCalculate();
     }
     //设定定时刷新
     if (setting.refreshInterval > 0){
-        setInterval(async function(){await autoModeRecalc()}, setting.refreshInterval);
+        setInterval(async function(){await autoModeCalculate()}, setting.refreshInterval);
     }
     //挂监视，获取dom变化
     if (isValidStr(g_targetBlockId)){
@@ -304,7 +328,7 @@ async function __refresh(){
                 }
             }
         }
-        await autoModeRecalc();
+        await autoModeCalculate();
     }catch(err){
         console.error(err);
         debugPush(err);
@@ -322,7 +346,8 @@ function __setObserver(blockid){
         g_observeNode.disconnect();
         let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
         if (target.length <= 0) {
-            debugPush(language["unknownId"] + blockid);
+            infoPush(language["unknownIdAtDom"] + blockid, 2000);
+            console.log("无法在DOM中找到对应块id");
             return;
         }
         console.assert(target.length == 1, "错误：多个匹配的观察节点");
@@ -340,7 +365,7 @@ function __setObserver(blockid){
  * 手动模式点击进度条事件函数
  * @param {*} event 
  */
-function manualClick(event){
+function manualClickBar(event){
     clearTimeout(g_savePercentTimeout);
     //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
     changeBar(event.offsetX / g_progressBarElem.clientWidth * 100.0);
@@ -350,7 +375,7 @@ function manualClick(event){
 /**
  * 手动模式拖动进度条事件函数（按下）
  */
-function manualMousedown(event){
+function manualMousedownBar(event){
     document.onmousemove = function(e){
         clearTimeout(g_savePercentTimeout);
         let event = e || event;
@@ -374,9 +399,11 @@ function manualMousedown(event){
  */
 function manualModeInit(){
     //实现单击进度条任意位置
-    g_progressBarElem.addEventListener("click", manualClick);
+    g_progressBarElem.addEventListener("click", manualClickBar);
     //实现：拖拽参考:（Web-once@CSDN） https://blog.csdn.net/qq_42381297/article/details/82595467
-    g_progressBarElem.addEventListener("mousedown", manualMousedown);
+    g_progressBarElem.addEventListener("mousedown", manualMousedownBar);
+    //手动模式禁用动画
+    $("#progress").css("transition-duration", "0s");
     //完成拖拽
     document.onmouseup = function(){
         clearTimeout(g_savePercentTimeout);
@@ -390,10 +417,15 @@ function manualModeInit(){
  * 关闭手动模式后取消事件
  */
 function manualModeDestory(){
+    //离开手动模式启用动画
+    $("#progress").css("transition-duration", "300ms");
+    //清除绑定的事件，禁用拖拽
     let progressBar = document.getElementById("container");
-    progressBar.removeEventListener("click", manualClick);
-    progressBar.removeEventListener("mousedown", manualMousedown);
+    progressBar.removeEventListener("click", manualClickBar);
+    progressBar.removeEventListener("mousedown", manualMousedownBar);
     document.onmouseup = null;
+    //清除延时保存
+    clearTimeout(g_savePercentTimeout);
 }
 
 /**
@@ -426,7 +458,7 @@ function timeModeDestory(){
 function observeRefresh(){
     clearTimeout(g_observerTimeout);
     //由于可能高频度触发事件，设定为禁止通过api刷新
-    g_observerTimeout = setTimeout(async function(){await autoModeRecalc(true);}, 300);
+    g_observerTimeout = setTimeout(async function(){await autoModeCalculate(true);}, 300);
 }
 
 /**
@@ -434,6 +466,7 @@ function observeRefresh(){
  */
 async function dblClickChangeMode(){
     clearTimeout(g_refreshBtnTimeout);
+    modePush();//清除上个模式的提示信息
     if (g_manualPercentage == -1){//如果当前为自动模式，则切换为时间模式
         g_manualPercentage = -2;
         setManualSetting2Attr();
@@ -444,7 +477,7 @@ async function dblClickChangeMode(){
         timeModeInit();
         $("#refresh").addClass("timeMode");
         $("#refresh").attr("title", language["timeMode"]);
-        console.log("已切换为时间模式")
+        infoPush(language["timeMode"]);
     }else if (g_manualPercentage >= 0){//如果当前为手动模式，则切换为自动模式
         //设置属性：切换为自动模式，移除事件listener
         g_manualPercentage = "-1";
@@ -457,11 +490,11 @@ async function dblClickChangeMode(){
         __setObserver(g_targetBlockId);
         //自动刷新
         if (setting.onstart){
-            await autoModeRecalc();
+            await autoModeCalculate();
         }
         $("#refresh").removeClass("manualMode");
         $("#refresh").attr("title", language["autoMode"]);
-        console.log("已切换为自动模式");
+        infoPush(language["autoMode"]);
     }else if (g_manualPercentage <= -2){//如果当前为时间模式，则切换为手动模式
         g_manualPercentage = 0;//切换为手动模式
         setManualSetting2Attr();//保存模式设定
@@ -472,7 +505,7 @@ async function dblClickChangeMode(){
         manualModeInit();
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"]);
-        console.log("已切换为手动模式");
+        infoPush(language["manualMode"]);
     }
 }
 
@@ -490,6 +523,7 @@ let g_refreshBtnTimeout;//防止多次刷新、区分刷新点击数延时
 let g_thisWidgetId;
 let g_observerTimeout;//防止多次触发observe延时
 let g_debugPushTimeout;//推送消失延时
+let g_infoPushTimeout;//通知推送消失延时
 let g_manualPercentage = null;//手动模式下百分比，注意，负值用于区分为自动模式
 let g_savePercentTimeout;//保存手动百分比延时
 let g_progressBarElem = document.getElementById("container");
