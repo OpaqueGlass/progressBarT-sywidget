@@ -8,7 +8,94 @@ import {
     addblockAttrAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting} from './config.js';
-
+/**模式类 */
+class Mode {
+    modeCode = 100;
+    //计算和显示百分比
+    async calculateApply() {}
+    //初始化模式
+    init() {}
+    //退出模式
+    destory() {}
+    //点击刷新按钮要执行的操作
+    refresh() {}
+    constructor(){
+        g_manualPercentage = this.modeCode;
+    }
+}
+//手动模式
+class ManualMode extends Mode {
+    savePercentTimeout;
+    modeCode = 0;
+    constructor(){
+        super();
+        this.init();
+    }
+    //初始化
+    init(){
+        console.log("手动模式初始化");
+        $("#refresh").addClass("manualMode");
+        $("#refresh").attr("title", language["manualMode"]);
+        g_progressContainerElem = document.getElementById("container");
+        //实现单击进度条任意位置
+        g_progressContainerElem.addEventListener("click", this.eventClickBar);
+        //实现：拖拽参考:（Web-once@CSDN） https://blog.csdn.net/qq_42381297/article/details/82595467
+        g_progressContainerElem.addEventListener("mousedown", this.eventMousedownBar);
+        //手动模式禁用动画
+        $("#progress").css("transition-duration", "0s");
+        //完成拖拽
+        document.onmouseup = function(){
+            clearTimeout(this.savePercentTimeout);
+            document.onmousemove=null;
+            //延时保存百分比
+            if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+        }
+    }
+    
+    destory(){
+        console.log("手动模式删除");
+        //离开手动模式启用动画
+        $("#progress").css("transition-duration", "300ms");
+        //清除绑定的事件，禁用拖拽
+        g_progressContainerElem.removeEventListener("click", this.eventClickBar);
+        g_progressContainerElem.removeEventListener("mousedown", this.eventMousedownBar);
+        document.onmouseup = null;
+        //清除延时保存
+        clearTimeout(this.savePercentTimeout);
+    }
+    //鼠标拖拽点击事件
+    eventMousedownBar(event){
+        let progressBarElem = document.getElementById("container");
+        document.onmousemove = function(e){
+            clearTimeout(this.savePercentTimeout);
+            let event = e || event;
+            // 2.3获取移动的位置
+            // event.clientX - oProgress.offsetLeft
+            let x = event.clientX - progressBarElem.offsetLeft;
+            //拖拽超出边界时重置
+            if(x <= 0){
+                x = 0;
+            }else if (x >= progressBarElem.clientWidth){
+                x = progressBarElem.clientWidth;
+            }
+            changeBar(x / progressBarElem.clientWidth * 100.0);
+            g_manualPercentage = x / progressBarElem.clientWidth * 100.0;
+            return false;
+        }
+    }
+    //鼠标点击
+    eventClickBar(event){
+        //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
+        changeBar(event.offsetX / g_progressContainerElem.clientWidth * 100.0);
+        g_manualPercentage = (event.offsetX / g_progressContainerElem.clientWidth * 100.0);
+        if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+    }
+    //点击刷新按钮：保存进度
+    async refresh(){
+        clearTimeout(this.savePercentTimeout);
+        await setManualSetting2Attr();
+    }
+}
 /**
  * 更改显示的进度条
  * @param {*} percentage 百分比，整数，传入百分之x
@@ -250,9 +337,9 @@ async function __init(){
     //手动模式
     if (g_manualPercentage >= 0){
         changeBar(g_manualPercentage);
-        manualModeInit();
-        $("#refresh").addClass("manualMode");
-        $("#refresh").attr("title", language["manualMode"]);
+        // manualModeInit();
+        //手动模式初始化
+        g_mode = new ManualMode();
         return;
     }
     //时间模式
@@ -273,10 +360,12 @@ async function __init(){
     }
     //设定定时刷新
     if (setting.refreshInterval > 0 && g_manualPercentage == -1){
+        //TODO 非自动模式清除
         setInterval(async function(){await autoModeCalculate()}, setting.refreshInterval);
     }
     //挂监视，获取dom变化
     if (isValidStr(g_targetBlockId)){
+        //TODO 检查非自动模式是否清除
         __setObserver(g_targetBlockId);
     }
 }
@@ -306,8 +395,9 @@ async function __refresh(){
         await readBlockIdFromAttr();
         //如果为手动模式，保存百分比
         if (g_manualPercentage >= 0){
-            clearTimeout(g_savePercentTimeout);
-            await setManualSetting2Attr();
+            // clearTimeout(g_savePercentTimeout);
+            // await setManualSetting2Attr();
+            g_mode.refresh();
             return;
         }
 
@@ -359,73 +449,6 @@ function __setObserver(blockid){
         debugPush(err);
         console.error(err);
     }
-}
-
-/**
- * 手动模式点击进度条事件函数
- * @param {*} event 
- */
-function manualClickBar(event){
-    clearTimeout(g_savePercentTimeout);
-    //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
-    changeBar(event.offsetX / g_progressBarElem.clientWidth * 100.0);
-    g_manualPercentage = (event.offsetX / g_progressBarElem.clientWidth * 100.0);
-    if (setting.saveAttrTimeout > 0) g_savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
-}
-/**
- * 手动模式拖动进度条事件函数（按下）
- */
-function manualMousedownBar(event){
-    document.onmousemove = function(e){
-        clearTimeout(g_savePercentTimeout);
-        let event = e || event;
-        // 2.3获取移动的位置
-        // event.clientX - oProgress.offsetLeft
-        let x = event.clientX - g_progressBarElem.offsetLeft;
-        //拖拽超出边界时重置
-        if(x <= 0){
-            x = 0;
-        }else if (x >= g_progressBarElem.clientWidth){
-            x = g_progressBarElem.clientWidth;
-        }
-        changeBar(x / g_progressBarElem.clientWidth * 100.0);
-        g_manualPercentage = x / g_progressBarElem.clientWidth * 100.0;
-        return false;
-    }
-}
-
-/**
- * 手动模式开启后初始化
- */
-function manualModeInit(){
-    //实现单击进度条任意位置
-    g_progressBarElem.addEventListener("click", manualClickBar);
-    //实现：拖拽参考:（Web-once@CSDN） https://blog.csdn.net/qq_42381297/article/details/82595467
-    g_progressBarElem.addEventListener("mousedown", manualMousedownBar);
-    //手动模式禁用动画
-    $("#progress").css("transition-duration", "0s");
-    //完成拖拽
-    document.onmouseup = function(){
-        clearTimeout(g_savePercentTimeout);
-        document.onmousemove=null;
-        //延时保存百分比
-        if (setting.saveAttrTimeout > 0) g_savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
-    }
-}
-
-/**
- * 关闭手动模式后取消事件
- */
-function manualModeDestory(){
-    //离开手动模式启用动画
-    $("#progress").css("transition-duration", "300ms");
-    //清除绑定的事件，禁用拖拽
-    let progressBar = document.getElementById("container");
-    progressBar.removeEventListener("click", manualClickBar);
-    progressBar.removeEventListener("mousedown", manualMousedownBar);
-    document.onmouseup = null;
-    //清除延时保存
-    clearTimeout(g_savePercentTimeout);
 }
 
 /**
@@ -483,7 +506,8 @@ async function dblClickChangeMode(){
         g_manualPercentage = "-1";
         setManualSetting2Attr();
         //退出手动模式
-        manualModeDestory();
+        // manualModeDestory();
+        g_mode.destory();
         //重新读取目标块id
         await readBlockIdFromAttr();
         //设置domobserver
@@ -502,7 +526,7 @@ async function dblClickChangeMode(){
         timeModeDestory();
         $("#refresh").removeClass("timeMode");
         //进入手动模式
-        manualModeInit();
+        g_mode = new ManualMode();
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"]);
         infoPush(language["manualMode"]);
@@ -525,12 +549,13 @@ let g_observerTimeout;//防止多次触发observe延时
 let g_debugPushTimeout;//推送消失延时
 let g_infoPushTimeout;//通知推送消失延时
 let g_manualPercentage = null;//手动模式下百分比，注意，负值用于区分为自动模式
-let g_savePercentTimeout;//保存手动百分比延时
-let g_progressBarElem = document.getElementById("container");
+let g_progressElem = document.getElementById("progress");
+let g_progressContainerElem = document.getElementById("container");
 let g_observeClass = new MutationObserver(observeRefresh);
 let g_observeNode = new MutationObserver(observeRefresh);
 let g_times = [null, null];//0开始时间，1结束时间
 let g_timeRefreshInterval;
+let g_mode;
 
 try{
     //绑定按钮事件

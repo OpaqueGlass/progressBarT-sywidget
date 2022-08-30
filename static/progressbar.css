@@ -112,6 +112,7 @@ button {
     border-color: darkred;
     border-style: dashed;
 }
+
 /* 时间模式按钮边框 */
 .timeMode {
     border-color: darkgreen;
