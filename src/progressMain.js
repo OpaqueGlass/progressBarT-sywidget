@@ -272,7 +272,7 @@ async function __init(){
         await autoModeCalculate();
     }
     //设定定时刷新
-    if (setting.refreshInterval > 0){
+    if (setting.refreshInterval > 0 && g_manualPercentage == -1){
         setInterval(async function(){await autoModeCalculate()}, setting.refreshInterval);
     }
     //挂监视，获取dom变化
@@ -285,15 +285,14 @@ async function __init(){
  * 刷新挂件颜色
  */
 function __refreshAppreance(){
-    //TODO：设置颜色
     if (window.top.siyuan.config.appearance.mode){
         $("#container").addClass("container_dark");
         $("#progress").addClass("progress_dark");
-        $("#percentage").addClass("text_dark");
+        $("#percentage, #modeInfo").addClass("text_dark");
     }else{
         $("#container").removeClass("container_dark");
         $("#progress").removeClass("progress_dark");
-        $("#percentage").removeClass("text_dark");
+        $("#percentage, #modeInfo").removeClass("text_dark");
     }
 }
 
@@ -371,7 +370,7 @@ function manualClickBar(event){
     //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
     changeBar(event.offsetX / g_progressBarElem.clientWidth * 100.0);
     g_manualPercentage = (event.offsetX / g_progressBarElem.clientWidth * 100.0);
-    g_savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+    if (setting.saveAttrTimeout > 0) g_savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
 }
 /**
  * 手动模式拖动进度条事件函数（按下）
@@ -410,7 +409,7 @@ function manualModeInit(){
         clearTimeout(g_savePercentTimeout);
         document.onmousemove=null;
         //延时保存百分比
-        g_savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+        if (setting.saveAttrTimeout > 0) g_savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
     }
 }
 
