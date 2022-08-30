@@ -34,7 +34,6 @@ class ManualMode extends Mode {
     //初始化
     async init(){
         super.init();
-        console.log("手动模式初始化");
         g_progressContainerElem = document.getElementById("container");
         //获取点击/拖拽进度条事件
         //实现单击进度条任意位置
@@ -58,7 +57,6 @@ class ManualMode extends Mode {
     }
     
     destory(){
-        console.log("手动模式删除");
         //离开手动模式启用动画
         $("#progress").css("transition-duration", "300ms");
         //清除绑定的事件，禁用拖拽、点击
@@ -111,7 +109,6 @@ class AutoMode extends Mode {
     observerTimeout;
     async init(){
         super.init();
-        console.log("自动模式初始化")
         //重新读取目标块id
         await readBlockIdFromAttr();
         //设置domobserver
@@ -153,7 +150,6 @@ class AutoMode extends Mode {
                 $("#refresh").attr("title", language["autoModeAPI"]);
                 percentage = await this.calculatePercentageByAPI(g_targetBlockId);
             }else{
-                modePush(language["autoMode"]);
                 $("#refresh").attr("title", language["autoMode"]);
             }
             if (percentage < 0){
@@ -167,7 +163,6 @@ class AutoMode extends Mode {
             }
     }
     destory(){
-        console.log("退出自动")
         this.observeClass.disconnect();
         this.observeNode.disconnect();
         clearInterval(this.autoRefreshInterval);
@@ -176,9 +171,10 @@ class AutoMode extends Mode {
     /**
     * observer调用的函数，防止多次触发
     */
-    observeRefresh(){
+    observeRefresh(mutationList, observer){
         clearTimeout(this.observerTimeout);
-        //由于可能高频度触发事件，设定为禁止通过api刷新
+        //尽可能的限定只有勾选、节点变动才会触发
+        if (mutationList.length <= 1 && mutationList[0].type != "childList") return;
         this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 300);
     }
     __setObserver(blockid){
@@ -188,12 +184,12 @@ class AutoMode extends Mode {
             let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
             if (target.length <= 0) {
                 errorPush(language["unknownIdAtDom"] + blockid, 2000);
-                console.log("无法在DOM中找到对应块id");
+                console.warn("无法在DOM中找到对应块id");
                 return;
             }
             console.assert(target.length == 1, "错误：多个匹配的观察节点");
             //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
-            this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true});
+            this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class", "updated"], "subtree": true});
             //监听任务项新增和删除
             this.observeNode.observe(target[0], {"childList": true});
         }catch(err){
@@ -211,7 +207,7 @@ class AutoMode extends Mode {
         let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>[data-marker="*"]`);
         let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>.protyle-task--done[data-marker="*"]`);
         if (allTasks.length == 0){
-            console.log("DOM找不到对应块，或块类型错误。");
+            console.warn("DOM找不到对应块，或块类型错误。");
             return -100;
             // throw new Error(language["notTaskList"]);
         }
@@ -362,8 +358,8 @@ class TimeMode extends Mode {
                     }
                 }
             }
-            console.log("get开始时间", this.times[0].toLocaleString());
-            console.log("get结束时间", this.times[1].toLocaleString());
+            console.info("get开始时间", this.times[0].toLocaleString());
+            console.info("get结束时间", this.times[1].toLocaleString());
             return true;
         }
         console.warn("获取时间属性失败", response);   
