@@ -1,13 +1,13 @@
 :root {
     /* 进度条未达到部分 */
-    --container-color: rgb(216, 228, 229);
+    --container-color: rgb(233, 215, 199);
     /* 进度条已达到部分 */
-    --progress-color: rgb(0, 128, 207);
+    --progress-color: rgba(255, 123, 0, 0.848);
 
     /* 进度条未达到部分-黑夜模式 */
-    --container-dark-color: rgb(233, 215, 199);
+    --container-dark-color: rgb(216, 228, 229);
     /* 进度条已达到部分-黑夜模式 */
-    --progress-dark: rgb(255, 123, 0);
+    --progress-dark: rgb(0, 128, 207);
 
     /* 进度百分比文字-黑夜模式 */
     --text-dark: rgb(201, 209, 217);
@@ -28,7 +28,7 @@
 }
 
 button {
-    border: 2px solid cornflowerblue;
+    border-width: 2px;
     /*自动模式按钮边框*/
     font-weight: 300;
     background-size: auto 1.5em;
@@ -107,16 +107,24 @@ button {
     color: cornflowerblue;
 }
 
-/* 手动模式按钮边框 */
+/* 手动模式按钮样式 */
 .manualMode {
     border-color: darkred;
     border-style: dashed;
+    background-color: #d4508c35;/*红212 80 140*/
+}
+/* 自动模式按钮样式 */
+.autoMode{
+    border-color: cornflowerblue;
+    border-style: solid;
+    background-color: #28aadb35;/*蓝40 170 219*/
 }
 
-/* 时间模式按钮边框 */
+/* 时间模式按钮样式 */
 .timeMode {
     border-color: darkgreen;
     border-style: dotted;
+    background-color: #f1e34235;/*黄241 227 42*/
 }
 
 .app {

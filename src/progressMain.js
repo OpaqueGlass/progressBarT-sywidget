@@ -19,7 +19,6 @@ class Mode {
     //初始化模式
     async init() {
         g_manualPercentage = this.modeCode;
-        console.log("父类填写", g_manualPercentage);
     }
     //退出模式
     async destory() {}
@@ -49,13 +48,13 @@ class ManualMode extends Mode {
             //延时保存百分比
             if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
         }
-
+        changeBar(g_manualPercentage);
         //手动模式禁用动画
         $("#progress").css("transition-duration", "0s");
         //提示词设置
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"]);
-        infoPush(language["manualMode"]);
+        modePush(language["manualMode"]);
     }
     
     destory(){
@@ -129,7 +128,8 @@ class AutoMode extends Mode {
         }
         //设定自动模式提示词
         $("#refresh").attr("title", language["autoMode"]);
-        infoPush(language["autoMode"]);
+        $("#refresh").addClass("autoMode");
+        modePush(language["autoMode"]);
     }
     /**
      * 重新计算百分比并更新进度条（自动模式重新计算）
@@ -148,7 +148,13 @@ class AutoMode extends Mode {
             percentage = this.calculatePercentageByDom(g_targetBlockId);
             //使用API重试
             if (percentage < 0 && !noAPI){
+                infoPush(language["usingAPI"]);
+                errorPush(language["unknownIdAtDom"], 2000);
+                $("#refresh").attr("title", language["autoModeAPI"]);
                 percentage = await this.calculatePercentageByAPI(g_targetBlockId);
+            }else{
+                modePush(language["autoMode"]);
+                $("#refresh").attr("title", language["autoMode"]);
             }
             if (percentage < 0){
                 throw new Error(language["notTaskList"]);
@@ -157,7 +163,7 @@ class AutoMode extends Mode {
             changeBar(percentage);
             }catch(err){
                 console.error(err);
-                debugPush(err);
+                errorPush(err);
             }
     }
     destory(){
@@ -165,6 +171,7 @@ class AutoMode extends Mode {
         this.observeClass.disconnect();
         this.observeNode.disconnect();
         clearInterval(this.autoRefreshInterval);
+        $("#refresh").removeClass("autoMode");
     }
     /**
     * observer调用的函数，防止多次触发
@@ -180,7 +187,7 @@ class AutoMode extends Mode {
             this.observeNode.disconnect();
             let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
             if (target.length <= 0) {
-                infoPush(language["unknownIdAtDom"] + blockid, 2000);
+                errorPush(language["unknownIdAtDom"] + blockid, 2000);
                 console.log("无法在DOM中找到对应块id");
                 return;
             }
@@ -190,7 +197,7 @@ class AutoMode extends Mode {
             //监听任务项新增和删除
             this.observeNode.observe(target[0], {"childList": true});
         }catch(err){
-            debugPush(err);
+            errorPush(err);
             console.error(err);
         }
     }
@@ -221,7 +228,7 @@ class AutoMode extends Mode {
         let kramdown = await getKramdown(blockid);
         if (!isValidStr(kramdown)){
             console.warn("获取kramdown失败", kramdown);
-            debugPush(language["getKramdownFailed"] + blockid);
+            errorPush(language["getKramdownFailed"] + blockid);
             return 0;//不是块id错误，避免触发autoModeCalculate的错误提示
         }
         let all = kramdown.match(/^\* {.*}\[.\].*$/gm);
@@ -232,6 +239,139 @@ class AutoMode extends Mode {
         let count = checked ? checked.length : 0;
         return count / all.length * 100;
     }
+    async refresh(){
+        //从挂件中读取id
+        await readBlockIdFromAttr();
+        //没有块则创建块
+        if (!isValidStr(g_targetBlockId)){
+            let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
+            if (isValidStr(tempId)){
+                g_targetBlockId = tempId;
+                let data = {};
+                data[setting.attrName] = g_targetBlockId;
+                let response = await addblockAttrAPI(data, g_thisWidgetId);
+                if (response != 0){
+                    throw Error(language["writeAttrFailed"]);
+                }
+            }
+        }
+        await this.calculateApply();
+    }
+}
+
+class TimeMode extends Mode {
+    modeCode = -2;
+    timeRefreshInterval;
+    times = [null, null];//0开始时间，1结束时间
+    todayMode = false;
+    async init(){
+        clearInterval(this.timeRefreshInterval);
+        if (setting.onstart){
+            await this.calculateApply();
+        }
+        //设定提示词
+        $("#refresh").addClass("timeMode");
+        $("#refresh").attr("title", language["timeMode"]);
+        modePush(language["timeMode"]);
+    }
+    async calculateApply(){
+        clearInterval(this.timeRefreshInterval);
+        //有时间才能计算
+        if (await this.readTimesFromAttr()){
+            if (setting.timeModeRefreshInterval > 0){
+                this.timeRefreshInterval = setInterval(() => {
+                    this.calculateTimeGap();
+                }, setting.timeModeRefreshInterval);
+            }
+            changeBar(this.calculateTimeGap());
+            if (this.todayMode){
+                modePush(`${this.times[0].toLocaleTimeString()} ~ ${this.times[1].toLocaleTimeString()}`);
+            }else{
+                modePush(`${this.times[0].toLocaleString()} ~ ${this.times[1].toLocaleString()}`);
+            }
+        }else{
+            errorPush(language["noTimeAttr"]);
+        }
+    }
+    destory(){
+        clearInterval(this.timeRefreshInterval);
+        $("#refresh").removeClass("timeMode");
+    }
+    //计算时间差
+    calculateTimeGap(){
+        let totalGap = this.times[1] - this.times[0];
+        if (totalGap <= 0){
+            errorPush(language["timeModeSetError"]);
+            return;
+        }
+        let nowDate = new Date();
+        let passed = nowDate - this.times[0];
+        let result = passed / totalGap * 100.0;
+        if (result < 0){
+            errorPush(language["earlyThanStart"], 7000);
+        }else if (result > 100){
+            // result = 100;
+            // infoPush();
+        }
+        return result;
+    }
+    /**
+     * 读取属性中时间，并设定时间
+     * 属性中时间格式要求yyyy mm dd 或 yyyy mm dd hh mm 或hh mm（自动在执行时补全为当天）
+     * 如果为20xx年，允许yy mm dd
+     * @return true读取成功 false 读取失败
+     */
+    async readTimesFromAttr(){
+        g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
+        let response = await getblockAttrAPI(g_thisWidgetId);
+        if (setting.startTimeAttrName in response.data && setting.endTimeAttrName in response.data){
+            //属性原始字符串
+            let startimeStr = response.data[setting.startTimeAttrName]
+            let endtimeStr = response.data[setting.endTimeAttrName];
+            //拆分连续的数字（string）
+            let startNums = startimeStr.match(/[0-9]+/gm);
+            let endNums = endtimeStr.match(/[0-9]+/gm);
+            let nums = [startNums, endNums];
+            this.todayMode = false;
+            for (let i = 0; i < nums.length; i++){
+                //处理yy mm dd的情况
+                if (nums[i].length != 2){
+                    if (nums[i][0].length == 2){
+                        nums[i][0] = "20" + nums[i][0];
+                    }
+                }
+                switch (nums[i].length){
+                    case 3: {//输入格式YYYY MM DD
+                        this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2]);
+                        break;
+                    }
+                    case 5: {//输入格式YYYY MM DD HH MM
+                        this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][i][3], nums[i][4]);
+                        break;
+                    }
+                    case 2: {//输入格式HH MM
+                        this.times[i] = new Date();
+                        this.times[i].setHours(nums[i][0]);
+                        this.times[i].setMinutes(nums[i][1]);
+                        this.times[i].setSeconds(0);
+                        this.todayMode = true;//标记为当天模式
+                        break;
+                    }
+                    default: {
+                        errorPush(Error(language["parseTimeStrErr"]));
+                    }
+                }
+            }
+            console.log("get开始时间", this.times[0].toLocaleString());
+            console.log("get结束时间", this.times[1].toLocaleString());
+            return true;
+        }
+        console.warn("获取时间属性失败", response);   
+        return false;
+    }
+    async refresh(){
+        await this.calculateApply();
+    }
 }
 /****************     方法/函数    ***************************/
 /**
@@ -239,6 +379,7 @@ class AutoMode extends Mode {
  * @param {*} percentage 百分比，整数，传入百分之x
  */
 function changeBar(percentage){
+    clearTimeout(g_barRefreshLogTimeout);
     let origin = percentage;
     if (percentage >= 100) {
         percentage = 100;
@@ -256,7 +397,7 @@ function changeBar(percentage){
     let intPercentage = Math.round(origin);//四舍五入取整
     document.getElementById("progress").style.width = accuratePercentage + "%";
     document.getElementById("percentage").innerHTML = intPercentage + "%";
-    console.log("进度条进度已刷新", g_thisWidgetId);
+    g_barRefreshLogTimeout = setTimeout(()=>{console.log("进度条进度已刷新", g_thisWidgetId)}, 500);
 }
 
 /**
@@ -269,6 +410,8 @@ async function readBlockIdFromAttr(){
     if (setting.attrName in response.data){
         let idAttr = response.data[setting.attrName];
         g_targetBlockId =  isValidStr(idAttr) ? idAttr : g_targetBlockId;
+    }else{
+        g_targetBlockId = null;
     }
 }
 
@@ -286,58 +429,6 @@ async function getManualSettingFromAttr(){
 }
 
 /**
- * 读取属性中时间，并设定时间
- * 属性中时间格式要求yyyy mm dd 或 yyyy mm dd hh mm 或hh mm（自动在执行时补全为当天）
- * 如果为20xx年，允许yy mm dd
- * @return true读取成功 false 读取失败
- */
-async function readTimesFromAttr(){
-    g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
-    let response = await getblockAttrAPI(g_thisWidgetId);
-    if (setting.startTimeAttrName in response.data && setting.endTimeAttrName in response.data){
-        //属性原始字符串
-        let startimeStr = response.data[setting.startTimeAttrName]
-        let endtimeStr = response.data[setting.endTimeAttrName];
-        //拆分连续的数字（string）
-        let startNums = startimeStr.match(/[0-9]+/gm);
-        let endNums = endtimeStr.match(/[0-9]+/gm);
-        let nums = [startNums, endNums];
-        for (let i = 0; i < nums.length; i++){
-            //处理yy mm dd的情况
-            if (nums[i].length != 2){
-                if (nums[i][0].length == 2){
-                    nums[i][0] = "20" + nums[i][0];
-                }
-            }
-            switch (nums[i].length){
-                case 3: {//输入格式YYYY MM DD
-                    g_times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2]);
-                    break;
-                }
-                case 5: {//输入格式YYYY MM DD HH MM
-                    g_times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][i][3], nums[i][4]);
-                    break;
-                }
-                case 2: {//输入格式HH MM
-                    g_times[i] = new Date();
-                    g_times[i].setHours(nums[i][0]);
-                    g_times[i].setMinutes(nums[i][1]);
-                    break;
-                }
-                default: {
-                    debugPush(Error(language["parseTimeStrErr"]));
-                }
-            }
-        }
-        console.log("get开始时间", g_times[0].toLocaleString());
-        console.log("get结束时间", g_times[1].toLocaleString());
-        return true;
-    }
-    console.warn("获取时间属性失败", response);   
-    return false;
-}
-
-/**
  * 将百分比值设置给属性
  */
 async function setManualSetting2Attr(){
@@ -346,47 +437,33 @@ async function setManualSetting2Attr(){
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("已写入属性", data);
-        debugPush(language["saved"], 1500);
+        errorPush(language["saved"], 1500);
     }else{
-        debugPush(language["writeAttrFailed"]);
+        errorPush(language["writeAttrFailed"]);
     }
 }
 
 
-function debugPush(msg, timeout = 7000){
+function errorPush(msg, timeout = 10000){
     // $(`<p>${msg}</p>`).appendTo("#errorInfo");
-    clearTimeout(g_debugPushTimeout);
+    clearTimeout(g_errorPushTimeout);
     $("#errorInfo").text(msg);
-    g_debugPushTimeout = setTimeout(()=>{$("#errorInfo").text("");}, timeout)
+    if (timeout == 0) return;
+    g_errorPushTimeout = setTimeout(()=>{$("#errorInfo").text("");}, timeout);
 }
 
-function infoPush(msg, timeout = 5000){
+function infoPush(msg, timeout = 7000){
     clearTimeout(g_infoPushTimeout);
     $("#infoInfo").text(msg);
-    g_infoPushTimeout = setTimeout(()=>{$("#infoInfo").text("");}, timeout)
+    if (timeout == 0) return;
+    g_infoPushTimeout = setTimeout(()=>{$("#infoInfo").text("");}, timeout);
 }
 
-function modePush(msg=""){
+function modePush(msg = "", timeout = 2000){
+    clearTimeout(g_modePushTimeout);
     $("#modeInfo").text(msg);
-}
-
-function calculateTimeGap(){
-    let totalGap = g_times[1] - g_times[0];
-    if (totalGap <= 0){
-        debugPush(language["timeModeSetError"]);
-        return;
-    }
-    let nowDate = new Date();
-    let passed = nowDate - g_times[0];
-    let result = passed / totalGap * 100.0;
-    if (result < 0){
-        debugPush(language["earlyThanStart"], 3000);
-    }else if (result > 100){
-        // result = 100;
-        // infoPush();
-    }
-    changeBar(result);
-    modePush(`${g_times[0].toLocaleString()} ~ ${g_times[1].toLocaleString()}`);
+    if (timeout == 0) return;
+    g_modePushTimeout = setTimeout(()=>{$("#modeInfo").text("");}, timeout);
 }
 
 /**
@@ -401,47 +478,17 @@ async function __init(){
         window.frameElement.style.width = setting.widgetWidth;
         window.frameElement.style.height = setting.widgetHeight;
     // }
+    //样式更新
     __refreshAppreance();
-    //手动模式
-    if (g_manualPercentage >= 0){
-        changeBar(g_manualPercentage);
-        // manualModeInit();
-        //手动模式初始化
+    
+    if (g_manualPercentage >= 0){//手动模式
         g_mode = new ManualMode();
-        await g_mode.init();
-        return;
-    }
-    //时间模式
-    if (g_manualPercentage == -2){
-        $("#refresh").addClass("timeMode");
-        if (setting.onstart){
-            await timeModeInit();
-        }
-        return;
-    }
-    //以下： 仅自动模式
-    if (g_manualPercentage == -1){
+    }else if (g_manualPercentage == -2){//时间模式
+        g_mode = new TimeMode();
+    }else if (g_manualPercentage == -1){//自动模式
         g_mode = new AutoMode();
-        await g_mode.init();
     }
-    // $("#refresh").attr("title", language["autoMode"]);
-    // //刷新目标id
-    // await readBlockIdFromAttr();
-    // //自动模式下启动时刷新
-    // if (setting.onstart && g_manualPercentage == -1){
-    //     // await autoModeCalculate();
-    //     g_mode.calculateApply();
-    // }
-    // //设定定时刷新
-    // if (setting.refreshInterval > 0 && g_manualPercentage == -1){
-    //     //TODO 非自动模式清除
-    //     setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
-    // }
-    // //挂监视，获取dom变化
-    // if (isValidStr(g_targetBlockId)){
-    //     //TODO 检查非自动模式是否清除
-    //     __setObserver(g_targetBlockId);
-    // }
+    await g_mode.init();
 }
 
 /**
@@ -465,64 +512,12 @@ function __refreshAppreance(){
  */
 async function __refresh(){
     try{
-        //从挂件中读取id
-        await readBlockIdFromAttr();
-        //如果为手动模式，保存百分比
-        if (g_manualPercentage >= 0){
-            // clearTimeout(g_savePercentTimeout);
-            // await setManualSetting2Attr();
-            g_mode.refresh();
-            return;
-        }
-
-        if (g_manualPercentage == -2){
-            await timeModeInit();
-            return;
-        }
-        //没有块则创建块
-        if (!isValidStr(g_targetBlockId)){
-            let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
-            if (isValidStr(tempId)){
-                g_targetBlockId = tempId;
-                let data = {};
-                data[setting.attrName] = g_targetBlockId;
-                let response = await addblockAttrAPI(data, g_thisWidgetId);
-                if (response != 0){
-                    throw Error(language["writeAttrFailed"]);
-                }
-            }
-        }
-        await g_mode.calculateApply();
+        await g_mode.refresh();
     }catch(err){
         console.error(err);
-        debugPush(err);
+        errorPush(err);
     }
 }
-
-/**
- * 时间模式初始化
- */
-async function timeModeInit(){
-    clearInterval(g_timeRefreshInterval);
-    //有时间才能计算
-    if (await readTimesFromAttr()){
-        if (setting.timeModeRefreshInterval > 0){
-            g_timeRefreshInterval = setInterval(() => {
-                calculateTimeGap();
-            }, setting.timeModeRefreshInterval);
-        }
-        calculateTimeGap();
-    }
-}
-
-/**
- * 时间模式退出清理自动项目
- */
-function timeModeDestory(){
-    clearInterval(g_timeRefreshInterval);
-    $("#refresh").removeClass("timeMode");
-}
-
 
 /**
  * 双击刷新按钮切换模式
@@ -530,35 +525,19 @@ function timeModeDestory(){
 async function dblClickChangeMode(){
     clearTimeout(g_refreshBtnTimeout);
     modePush();//清除上个模式的提示信息
+    g_mode.destory();//退出上一模式
     if (g_manualPercentage == -1){//如果当前为自动模式，则切换为时间模式
         g_manualPercentage = -2;
-        setManualSetting2Attr();
-        //退出自动模式
-        g_mode.destory();
-        //进入时间模式
-        timeModeInit();
-        $("#refresh").addClass("timeMode");
-        $("#refresh").attr("title", language["timeMode"]);
-        infoPush(language["timeMode"]);
+        g_mode = new TimeMode();
     }else if (g_manualPercentage >= 0){//如果当前为手动模式，则切换为自动模式
-        //设置属性：切换为自动模式，移除事件listener
         g_manualPercentage = -1;
-        setManualSetting2Attr();
-        //退出手动模式
-        // manualModeDestory();
-        g_mode.destory();
         g_mode = new AutoMode();
-        await g_mode.init();
-        
     }else if (g_manualPercentage <= -2){//如果当前为时间模式，则切换为手动模式
         g_manualPercentage = 0;//切换为手动模式
-        setManualSetting2Attr();//保存模式设定
-        //退出时间模式
-        timeModeDestory();
-        //进入手动模式
         g_mode = new ManualMode();
-        await g_mode.init();
     }
+    await setManualSetting2Attr();//保存模式设置
+    await g_mode.init();//进入下一模式
 }
 
 /**
@@ -573,14 +552,14 @@ async function clickManualRefresh(){
 let g_targetBlockId;//目标任务列表块id
 let g_refreshBtnTimeout;//防止多次刷新、区分刷新点击数延时
 let g_thisWidgetId;
-let g_debugPushTimeout;//推送消失延时
+let g_errorPushTimeout;//推送消失延时
 let g_infoPushTimeout;//通知推送消失延时
-let g_manualPercentage = null;//手动模式下百分比，注意，负值用于区分为自动模式
+let g_modePushTimeout;//模式提示消失延时
+let g_manualPercentage = null;//手动模式下百分比，注意，负值用于区分为其他模式
 let g_progressElem = document.getElementById("progress");
 let g_progressContainerElem = document.getElementById("container");
-let g_times = [null, null];//0开始时间，1结束时间
-let g_timeRefreshInterval;
 let g_mode;
+let g_barRefreshLogTimeout;
 
 try{
     //绑定按钮事件
@@ -590,6 +569,6 @@ try{
     document.getElementById("refresh").ondblclick = dblClickChangeMode;
     await __init();
 }catch (err){
-    debugPush(err);
+    errorPush(err);
     console.error(err);
 }
