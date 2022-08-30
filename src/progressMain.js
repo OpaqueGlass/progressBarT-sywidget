@@ -10,39 +10,38 @@ import {
 import {language, setting} from './config.js';
 /**模式类 */
 class Mode {
-    modeCode = 100;
+    modeCode = 100;//模式对应的默认百分比值
+    // get modeCode(){
+    //     return this._modeCode;
+    // }
     //计算和显示百分比
     async calculateApply() {}
     //初始化模式
-    init() {}
+    async init() {
+        g_manualPercentage = this.modeCode;
+        console.log("父类填写", g_manualPercentage);
+    }
     //退出模式
-    destory() {}
+    async destory() {}
     //点击刷新按钮要执行的操作
     refresh() {}
     constructor(){
-        g_manualPercentage = this.modeCode;
     }
 }
 //手动模式
 class ManualMode extends Mode {
     savePercentTimeout;
     modeCode = 0;
-    constructor(){
-        super();
-        this.init();
-    }
     //初始化
-    init(){
+    async init(){
+        super.init();
         console.log("手动模式初始化");
-        $("#refresh").addClass("manualMode");
-        $("#refresh").attr("title", language["manualMode"]);
         g_progressContainerElem = document.getElementById("container");
+        //获取点击/拖拽进度条事件
         //实现单击进度条任意位置
         g_progressContainerElem.addEventListener("click", this.eventClickBar);
         //实现：拖拽参考:（Web-once@CSDN） https://blog.csdn.net/qq_42381297/article/details/82595467
         g_progressContainerElem.addEventListener("mousedown", this.eventMousedownBar);
-        //手动模式禁用动画
-        $("#progress").css("transition-duration", "0s");
         //完成拖拽
         document.onmouseup = function(){
             clearTimeout(this.savePercentTimeout);
@@ -50,18 +49,26 @@ class ManualMode extends Mode {
             //延时保存百分比
             if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
         }
+
+        //手动模式禁用动画
+        $("#progress").css("transition-duration", "0s");
+        //提示词设置
+        $("#refresh").addClass("manualMode");
+        $("#refresh").attr("title", language["manualMode"]);
+        infoPush(language["manualMode"]);
     }
     
     destory(){
         console.log("手动模式删除");
         //离开手动模式启用动画
         $("#progress").css("transition-duration", "300ms");
-        //清除绑定的事件，禁用拖拽
+        //清除绑定的事件，禁用拖拽、点击
         g_progressContainerElem.removeEventListener("click", this.eventClickBar);
         g_progressContainerElem.removeEventListener("mousedown", this.eventMousedownBar);
         document.onmouseup = null;
         //清除延时保存
         clearTimeout(this.savePercentTimeout);
+        $("#refresh").removeClass("manualMode");
     }
     //鼠标拖拽点击事件
     eventMousedownBar(event){
@@ -96,6 +103,137 @@ class ManualMode extends Mode {
         await setManualSetting2Attr();
     }
 }
+
+class AutoMode extends Mode {
+    modeCode = -1;
+    autoRefreshInterval;
+    observeClass = new MutationObserver(this.observeRefresh);
+    observeNode = new MutationObserver(this.observeRefresh);
+    observerTimeout;
+    async init(){
+        super.init();
+        console.log("自动模式初始化")
+        //重新读取目标块id
+        await readBlockIdFromAttr();
+        //设置domobserver
+        if (isValidStr(g_targetBlockId)){
+            this.__setObserver(g_targetBlockId);
+        }
+        //启动时自动刷新
+        if (setting.onstart){
+            await g_mode.calculateApply();
+        }
+        //设定间隔定时刷新
+        if (setting.refreshInterval > 0){
+            this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
+        }
+        //设定自动模式提示词
+        $("#refresh").attr("title", language["autoMode"]);
+        infoPush(language["autoMode"]);
+    }
+    /**
+     * 重新计算百分比并更新进度条（自动模式重新计算）
+     * 将优先尝试dom计算，若dom无法计算且noAPI = false，则尝试API计算
+     * 从指定的块id中获取已经完成的任务（仅第一级）所占百分比
+     * @param {boolean} noAPI 不使用API，此选项为true则使用dom重新计算，否则以setting.api设置为准
+     */
+    async calculateApply(noAPI = false){
+        try{
+            //判断目标块
+            if (!isValidStr(g_targetBlockId)){
+                throw new Error(language["needSetAttr"]);
+            };
+            let percentage;
+            //根据设置，从api/dom获得百分比
+            percentage = this.calculatePercentageByDom(g_targetBlockId);
+            //使用API重试
+            if (percentage < 0 && !noAPI){
+                percentage = await this.calculatePercentageByAPI(g_targetBlockId);
+            }
+            if (percentage < 0){
+                throw new Error(language["notTaskList"]);
+            }
+            //更新进度条
+            changeBar(percentage);
+            }catch(err){
+                console.error(err);
+                debugPush(err);
+            }
+    }
+    destory(){
+        console.log("退出自动")
+        this.observeClass.disconnect();
+        this.observeNode.disconnect();
+        clearInterval(this.autoRefreshInterval);
+    }
+    /**
+    * observer调用的函数，防止多次触发
+    */
+    observeRefresh(){
+        clearTimeout(this.observerTimeout);
+        //由于可能高频度触发事件，设定为禁止通过api刷新
+        this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 300);
+    }
+    __setObserver(blockid){
+        try{
+            this.observeClass.disconnect();
+            this.observeNode.disconnect();
+            let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
+            if (target.length <= 0) {
+                infoPush(language["unknownIdAtDom"] + blockid, 2000);
+                console.log("无法在DOM中找到对应块id");
+                return;
+            }
+            console.assert(target.length == 1, "错误：多个匹配的观察节点");
+            //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
+            this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true});
+            //监听任务项新增和删除
+            this.observeNode.observe(target[0], {"childList": true});
+        }catch(err){
+            debugPush(err);
+            console.error(err);
+        }
+    }
+    /**
+     * 通过dom计算
+     * @param {*} blockid 
+     * @return 已选事项的百分比
+     */
+    calculatePercentageByDom(blockid){
+        //寻找指定块下的任务项
+        let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>[data-marker="*"]`);
+        let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>.protyle-task--done[data-marker="*"]`);
+        if (allTasks.length == 0){
+            console.log("DOM找不到对应块，或块类型错误。");
+            return -100;
+            // throw new Error(language["notTaskList"]);
+        }
+        //已完成任务列表项计数
+        let checkedTasksNum = checkedTasks ? checkedTasks.length : 0;
+        return checkedTasksNum / allTasks.length * 100;
+    }
+
+    /**
+     * 通过任务列表本文计算百分比（通过API）
+     * @returns 百分比
+     */
+    async calculatePercentageByAPI(blockid){
+        let kramdown = await getKramdown(blockid);
+        if (!isValidStr(kramdown)){
+            console.warn("获取kramdown失败", kramdown);
+            debugPush(language["getKramdownFailed"] + blockid);
+            return 0;//不是块id错误，避免触发autoModeCalculate的错误提示
+        }
+        let all = kramdown.match(/^\* {.*}\[.\].*$/gm);
+        let checked = kramdown.match(/^\* {.*}\[X\].*$/gm);
+        if (!all){//找不到（说明块类型有误），返回
+            return -100;
+        }
+        let count = checked ? checked.length : 0;
+        return count / all.length * 100;
+    }
+}
+/****************     方法/函数    ***************************/
 /**
  * 更改显示的进度条
  * @param {*} percentage 百分比，整数，传入百分之x
@@ -195,7 +333,7 @@ async function readTimesFromAttr(){
         console.log("get结束时间", g_times[1].toLocaleString());
         return true;
     }
-    console.warn("获取时间属性失败");   
+    console.warn("获取时间属性失败", response);   
     return false;
 }
 
@@ -212,76 +350,6 @@ async function setManualSetting2Attr(){
     }else{
         debugPush(language["writeAttrFailed"]);
     }
-}
-
-
-/**
- * 重新计算百分比并更新进度条（自动模式重新计算）
- * 将优先尝试dom计算，若dom无法计算且noAPI = false，则尝试API计算
- * 从指定的块id中获取已经完成的任务（仅第一级）所占百分比
- * @param {boolean} noAPI 不使用API，此选项为true则使用dom重新计算，否则以setting.api设置为准
- */
-async function autoModeCalculate(noAPI = false){
-    try{
-    //判断目标块
-    if (!isValidStr(g_targetBlockId)){
-        throw new Error(language["needSetAttr"]);
-    };
-    let percentage;
-    //根据设置，从api/dom获得百分比
-    percentage = calculatePercentageByDom(g_targetBlockId);
-    //使用API重试
-    if (percentage < 0 && !noAPI){
-        percentage = await calculatePercentageByAPI(g_targetBlockId);
-    }
-    if (percentage < 0){
-        throw new Error(language["notTaskList"]);
-    }
-    //更新进度条
-    changeBar(percentage);
-    }catch(err){
-        console.error(err);
-        debugPush(err);
-    }
-}
-
-/**
- * 通过dom计算
- * @param {*} blockid 
- * @return 已选事项的百分比
- */
-function calculatePercentageByDom(blockid){
-    //寻找指定块下的任务项
-    let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>[data-marker="*"]`);
-    let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>.protyle-task--done[data-marker="*"]`);
-    if (allTasks.length == 0){
-        console.log("DOM找不到对应块，或块类型错误。");
-        return -100;
-        // throw new Error(language["notTaskList"]);
-    }
-    //已完成任务列表项计数
-    let checkedTasksNum = checkedTasks ? checkedTasks.length : 0;
-    return checkedTasksNum / allTasks.length * 100;
-}
-
-/**
- * 通过任务列表本文计算百分比（通过API）
- * @returns 百分比
- */
- async function calculatePercentageByAPI(blockid){
-    let kramdown = await getKramdown(blockid);
-    if (!isValidStr(kramdown)){
-        console.warn("获取kramdown失败", kramdown);
-        debugPush(language["getKramdownFailed"] + blockid);
-        return 0;//不是块id错误，避免触发autoModeCalculate的错误提示
-    }
-    let all = kramdown.match(/^\* {.*}\[.\].*$/gm);
-    let checked = kramdown.match(/^\* {.*}\[X\].*$/gm);
-    if (!all){//找不到（说明块类型有误），返回
-        return -100;
-    }
-    let count = checked ? checked.length : 0;
-    return count / all.length * 100;
 }
 
 
@@ -340,6 +408,7 @@ async function __init(){
         // manualModeInit();
         //手动模式初始化
         g_mode = new ManualMode();
+        await g_mode.init();
         return;
     }
     //时间模式
@@ -351,23 +420,28 @@ async function __init(){
         return;
     }
     //以下： 仅自动模式
-    $("#refresh").attr("title", language["autoMode"]);
-    //刷新目标id
-    await readBlockIdFromAttr();
-    //自动模式下启动时刷新
-    if (setting.onstart && g_manualPercentage == -1){
-        await autoModeCalculate();
+    if (g_manualPercentage == -1){
+        g_mode = new AutoMode();
+        await g_mode.init();
     }
-    //设定定时刷新
-    if (setting.refreshInterval > 0 && g_manualPercentage == -1){
-        //TODO 非自动模式清除
-        setInterval(async function(){await autoModeCalculate()}, setting.refreshInterval);
-    }
-    //挂监视，获取dom变化
-    if (isValidStr(g_targetBlockId)){
-        //TODO 检查非自动模式是否清除
-        __setObserver(g_targetBlockId);
-    }
+    // $("#refresh").attr("title", language["autoMode"]);
+    // //刷新目标id
+    // await readBlockIdFromAttr();
+    // //自动模式下启动时刷新
+    // if (setting.onstart && g_manualPercentage == -1){
+    //     // await autoModeCalculate();
+    //     g_mode.calculateApply();
+    // }
+    // //设定定时刷新
+    // if (setting.refreshInterval > 0 && g_manualPercentage == -1){
+    //     //TODO 非自动模式清除
+    //     setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
+    // }
+    // //挂监视，获取dom变化
+    // if (isValidStr(g_targetBlockId)){
+    //     //TODO 检查非自动模式是否清除
+    //     __setObserver(g_targetBlockId);
+    // }
 }
 
 /**
@@ -418,36 +492,10 @@ async function __refresh(){
                 }
             }
         }
-        await autoModeCalculate();
+        await g_mode.calculateApply();
     }catch(err){
         console.error(err);
         debugPush(err);
-    }
-}
-
-
-/**
- * (设置监视)监视待办事件列表块dom变化
- * @param {*} blockid 
- */
-function __setObserver(blockid){
-    try{
-        g_observeClass.disconnect();
-        g_observeNode.disconnect();
-        let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
-        if (target.length <= 0) {
-            infoPush(language["unknownIdAtDom"] + blockid, 2000);
-            console.log("无法在DOM中找到对应块id");
-            return;
-        }
-        console.assert(target.length == 1, "错误：多个匹配的观察节点");
-        //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
-        g_observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true});
-        //监听任务项新增和删除
-        g_observeNode.observe(target[0], {"childList": true});
-    }catch(err){
-        debugPush(err);
-        console.error(err);
     }
 }
 
@@ -472,17 +520,9 @@ async function timeModeInit(){
  */
 function timeModeDestory(){
     clearInterval(g_timeRefreshInterval);
+    $("#refresh").removeClass("timeMode");
 }
 
-
-/**
- * observer调用的函数，防止多次触发
- */
-function observeRefresh(){
-    clearTimeout(g_observerTimeout);
-    //由于可能高频度触发事件，设定为禁止通过api刷新
-    g_observerTimeout = setTimeout(async function(){await autoModeCalculate(true);}, 300);
-}
 
 /**
  * 双击刷新按钮切换模式
@@ -494,8 +534,7 @@ async function dblClickChangeMode(){
         g_manualPercentage = -2;
         setManualSetting2Attr();
         //退出自动模式
-        g_observeClass.disconnect();
-        g_observeNode.disconnect();
+        g_mode.destory();
         //进入时间模式
         timeModeInit();
         $("#refresh").addClass("timeMode");
@@ -503,33 +542,22 @@ async function dblClickChangeMode(){
         infoPush(language["timeMode"]);
     }else if (g_manualPercentage >= 0){//如果当前为手动模式，则切换为自动模式
         //设置属性：切换为自动模式，移除事件listener
-        g_manualPercentage = "-1";
+        g_manualPercentage = -1;
         setManualSetting2Attr();
         //退出手动模式
         // manualModeDestory();
         g_mode.destory();
-        //重新读取目标块id
-        await readBlockIdFromAttr();
-        //设置domobserver
-        __setObserver(g_targetBlockId);
-        //自动刷新
-        if (setting.onstart){
-            await autoModeCalculate();
-        }
-        $("#refresh").removeClass("manualMode");
-        $("#refresh").attr("title", language["autoMode"]);
-        infoPush(language["autoMode"]);
+        g_mode = new AutoMode();
+        await g_mode.init();
+        
     }else if (g_manualPercentage <= -2){//如果当前为时间模式，则切换为手动模式
         g_manualPercentage = 0;//切换为手动模式
         setManualSetting2Attr();//保存模式设定
         //退出时间模式
         timeModeDestory();
-        $("#refresh").removeClass("timeMode");
         //进入手动模式
         g_mode = new ManualMode();
-        $("#refresh").addClass("manualMode");
-        $("#refresh").attr("title", language["manualMode"]);
-        infoPush(language["manualMode"]);
+        await g_mode.init();
     }
 }
 
@@ -545,14 +573,11 @@ async function clickManualRefresh(){
 let g_targetBlockId;//目标任务列表块id
 let g_refreshBtnTimeout;//防止多次刷新、区分刷新点击数延时
 let g_thisWidgetId;
-let g_observerTimeout;//防止多次触发observe延时
 let g_debugPushTimeout;//推送消失延时
 let g_infoPushTimeout;//通知推送消失延时
 let g_manualPercentage = null;//手动模式下百分比，注意，负值用于区分为自动模式
 let g_progressElem = document.getElementById("progress");
 let g_progressContainerElem = document.getElementById("container");
-let g_observeClass = new MutationObserver(observeRefresh);
-let g_observeNode = new MutationObserver(observeRefresh);
 let g_times = [null, null];//0开始时间，1结束时间
 let g_timeRefreshInterval;
 let g_mode;
