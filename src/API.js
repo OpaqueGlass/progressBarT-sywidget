@@ -131,11 +131,12 @@ export async function insertBlockAPI(text, blockid, textType = "markdown"){
 
 /**
  * 判断字符串是否为空
+ * 警告"null"也会被视为空
  * @param {*} s 
  * @returns 非空字符串true，空字符串false
  */
 export function isValidStr(s){
-    if (s == undefined || s == null || s === '') {
+    if (s == undefined || s == null || s === '' || s === "null") {
 		return false;
 	}
 	return true;
