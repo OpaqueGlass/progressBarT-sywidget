@@ -149,7 +149,10 @@ class AutoMode extends Mode {
                 $("#refresh").attr("title", language["autoModeAPI"]);
                 percentage = this.modeCode;
                 percentage = await this.calculatePercentageByAPI(g_targetBlockId);
-                if (percentage >= 0)infoPush(language["usingAPI"]);
+                if (percentage >= 0) {
+                    infoPush(language["usingAPI"]);
+                    errorPush("");
+                }
             }else{
                 $("#refresh").attr("title", language["autoMode"]);
             }
@@ -185,7 +188,7 @@ class AutoMode extends Mode {
             let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
             if (target.length <= 0) {
                 errorPush(language["cantObserve"] + blockid, 2000);
-                console.warn("无法在DOM中找到对应块id");
+                console.warn("无法在DOM中找到对应块id，未设定observer");
                 return;
             }
             console.assert(target.length == 1, "错误：多个匹配的观察节点");
@@ -208,7 +211,7 @@ class AutoMode extends Mode {
         let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>[data-marker="*"]`);
         let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>.protyle-task--done[data-marker="*"]`);
         if (allTasks.length == 0){
-            console.warn("DOM找不到对应块，或块类型错误。");
+            console.warn("DOM计算进度失败：找不到对应块，或块类型错误。", blockid);
             return -100;
             // throw new Error(language["notTaskList"]);
         }
@@ -242,21 +245,24 @@ class AutoMode extends Mode {
         await readBlockIdFromAttr();
         console.log("手动点击刷新，读取到属性中id", g_targetBlockId);
         //没有块则创建块
-        if (!isValidStr(g_targetBlockId)){
+        if (!isValidStr(g_targetBlockId) && setting.createBlock){
+            console.info("无效id，将创建新块");
             let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
             if (isValidStr(tempId)){
                 g_targetBlockId = tempId;
                 let data = {};
-                data[setting.attrName] = g_targetBlockId;
+                data[setting.autoTargetAttrName] = g_targetBlockId;
                 let response = await addblockAttrAPI(data, g_thisWidgetId);
                 if (response != 0){
                     throw Error(language["writeAttrFailed"]);
                 }
             }
         }
+        //重设事件监视
         this.observeClass.disconnect();
         this.observeNode.disconnect();
         this.__setObserver(g_targetBlockId);
+        //计算进度
         await this.calculateApply();
     }
 }
@@ -427,8 +433,8 @@ function changeBar(percentage){
 async function readBlockIdFromAttr(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     let response = await getblockAttrAPI(g_thisWidgetId);
-    if (setting.attrName in response.data){
-        let idAttr = response.data[setting.attrName];
+    if (setting.autoTargetAttrName in response.data){
+        let idAttr = response.data[setting.autoTargetAttrName];
         g_targetBlockId =  isValidStr(idAttr) ? idAttr : g_targetBlockId;
     }else{
         g_targetBlockId = null;
@@ -457,7 +463,7 @@ async function setManualSetting2Attr(){
     data[setting.manualAttrName] = g_manualPercentage.toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
-        console.log("已写入属性", data);
+        console.log("已写入百分比属性", data[setting.manualAttrName]);
         infoPush(language["saved"], 1500);
     }else{
         errorPush(language["writeAttrFailed"]);
@@ -466,14 +472,13 @@ async function setManualSetting2Attr(){
 
 async function setDefaultSetting2Attr(){
     let data = {};
-    console.log(setting["manualAttrName"], "hello");
     data[setting["manualAttrName"]] = setting.defaultMode.toString();
     data[setting["startTimeAttrName"]] = "null";
     data[setting["endTimeAttrName"]] = "null";
     data[setting["attrName"]] = "null";
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
-        console.log("已写入属性", data);
+        console.log("初始化时写入属性", data);
         infoPush(language["saved"], 1500);
     }else{
         errorPush(language["writeAttrFailed"]);
@@ -512,7 +517,7 @@ async function __init(){
     console.log("启动时模式", g_manualPercentage);
     //没有响应属性
     if (g_manualPercentage == null){
-        //创建他们
+        //创建他们（延时创建，防止无法写入）
         setTimeout(async function(){await setDefaultSetting2Attr();}, 1000);
         g_manualPercentage = setting.defaultMode;
     }
