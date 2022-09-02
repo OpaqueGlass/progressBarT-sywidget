@@ -11,12 +11,14 @@ let setting = {
     widgetHeight: "4em",//挂件的高
     refreshInterval: 0,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
-    manualAttrName: "1progress",//挂件将寻找的属性名称，如需手动模式，请创建对应属性，并设定属性值为要显示的百分比（整数0~100）（后面会补充custom-这里不用写）
-    autoTargetAttrName: "2targetid", //挂件将寻找属性名称（属性名称仅支持英文和数字），请将对应属性值设定为任务列表的块id（后面会补充custom-这里不用写）
-    startTimeAttrName: "3start",//挂件将寻找的属性名称，如需时间模式，请创建对应属性，并设定属性值为开始时间（后面会补充custom-这里不用写）
-    endTimeAttrName: "4end",//挂件将寻找的属性名称，如需时间模式，请创建对应属性，并设定属性值为结束时间（后面会补充custom-这里不用写）
-    saveAttrTimeout: 0, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
-    timeModeRefreshInterval: 1000 * 60 * 10,//时间模式定时刷新间隔，单位毫秒，为0则禁用
+    manualAttrName: "1progress",//百分比/模式对应的属性名称（只接受英文、数字，仅小写英文，后面会补充custom-这里不用写，下同）
+    autoTargetAttrName: "2targetid", //任务列表块id对应的属性名称
+    startTimeAttrName: "3start",//开始时间对应的属性名称
+    endTimeAttrName: "4end",//结束时间对应的属性名称
+    frontColorAttrName: "5frontcolor",//进度条前景色对应的属性名称
+    backColorAttrName: "6backcolor",//进度条背景色对应的属性名称（后面会补充custom-这里不用写，同上）
+    saveAttrTimeout: 1000 * 2, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
+    timeModeRefreshInterval: 1000 * 60 * 10,//时间模式定时刷新间隔，单位毫秒，请勿设定的时间过短；为0则禁用
     createBlock: false, //如果块不存在，则创建块
     defaultMode: 0, //挂件被创建时默认的模式。-2时间模式 -1自动模式 >=0手动模式
 };
@@ -33,7 +35,7 @@ let zh_CN = {
     "timeMode": "当前：时间模式",
     "timeModeSetError": "时间设定错误，开始时间晚于或等于结束时间",
     "timeSetIllegal": "时间设定错误，时间格式请参考说明文档README.md",
-    "timeNotSet": `请在挂件块属性“${setting.startTimeAttrName}”、“${setting.endTimeAttrName}”中创建/设定开始、结束时间`,
+    "timeNotSet": `请在挂件块属性“${setting.startTimeAttrName}”、“${setting.endTimeAttrName}”中设定开始、结束时间`,
     "earlyThanStart": "当前时间早于开始时间",
     "startTime": "",
     "endTime": "",
@@ -45,4 +47,6 @@ setting["autoTargetAttrName"] = "custom-" + setting["autoTargetAttrName"];
 setting["manualAttrName"] = "custom-" + setting["manualAttrName"];
 setting["startTimeAttrName"] = "custom-" + setting["startTimeAttrName"];
 setting["endTimeAttrName"] = "custom-" + setting["endTimeAttrName"];
+setting["frontColorAttrName"] = "custom-" + setting["frontColorAttrName"];
+setting["backColorAttrName"] = "custom-" + setting["backColorAttrName"];
 let language = zh_CN;

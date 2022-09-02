@@ -19,6 +19,7 @@ class Mode {
     //初始化模式(子类实现时请先调用)
     async init() {
         g_manualPercentage = this.modeCode;
+        errorPush("");
     }
     //退出模式
     async destory() {}
@@ -48,8 +49,8 @@ class ManualMode extends Mode {
         document.onmouseup = function(){
             clearTimeout(this.savePercentTimeout);
             document.onmousemove=null;
-            //延时保存百分比
-            if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+            //延时保存百分比//导致切换时仍触发保存
+            // if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
         }
         changeBar(g_manualPercentage);
         //手动模式禁用动画
@@ -57,14 +58,14 @@ class ManualMode extends Mode {
     }
     
     destory(){
+        //清除延时保存
+        clearTimeout(this.savePercentTimeout);
         //离开手动模式启用动画
         $("#progress").css("transition-duration", "300ms");
         //清除绑定的事件，禁用拖拽、点击
         g_progressContainerElem.removeEventListener("click", this.eventClickBar);
         g_progressContainerElem.removeEventListener("mousedown", this.eventMousedownBar);
         document.onmouseup = null;
-        //清除延时保存
-        clearTimeout(this.savePercentTimeout);
         $("#refresh").removeClass("manualMode");
     }
     //鼠标拖拽点击事件
@@ -89,6 +90,7 @@ class ManualMode extends Mode {
     }
     //鼠标点击
     eventClickBar(event){
+        clearTimeout(this.savePercentTimeout);
         //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
         changeBar(event.offsetX / g_progressContainerElem.clientWidth * 100.0);
         g_manualPercentage = (event.offsetX / g_progressContainerElem.clientWidth * 100.0);
@@ -443,15 +445,37 @@ async function readBlockIdFromAttr(){
 
 /**
  * 从属性中获取当前工作模式
+ * 由于目前仅初始化调用，这里加上了应用颜色设置
  * @returns 手动，当前要显示的百分比，null自动
  */
 async function getManualSettingFromAttr(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     let response = await getblockAttrAPI(g_thisWidgetId);
+    if (response.data == null) return null;
+    //
+    applyProgressColor(response);
     if (setting.manualAttrName in response.data){
         return parseInt(response.data[setting.manualAttrName]);
     }
     return null;
+}
+
+/**
+ * 应用属性中关于颜色的设置
+ * @param {*} response 
+ */
+function applyProgressColor(response){
+    if (response == null) return;
+    //一并进行进度条颜色样式读取和设置
+    if (setting.frontColorAttrName in response.data && setting.backColorAttrName in response.data){
+        //判断为null?
+        if (isValidStr(response.data[setting.frontColorAttrName])){
+            $("#progress").css("background", response.data[setting.frontColorAttrName]);
+        }
+        if (isValidStr(response.data[setting.backColorAttrName])){
+            $("#container").css("background", response.data[setting.backColorAttrName]);
+        }
+    }
 }
 
 /**
@@ -475,7 +499,9 @@ async function setDefaultSetting2Attr(){
     data[setting["manualAttrName"]] = setting.defaultMode.toString();
     data[setting["startTimeAttrName"]] = "null";
     data[setting["endTimeAttrName"]] = "null";
-    data[setting["attrName"]] = "null";
+    data[setting["autoTargetAttrName"]] = "null";
+    data[setting["frontColorAttrName"]] = "null";
+    data[setting["backColorAttrName"]] = "null";
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);
@@ -484,6 +510,7 @@ async function setDefaultSetting2Attr(){
         errorPush(language["writeAttrFailed"]);
     }
 }
+
 
 
 function errorPush(msg, timeout = 10000){
@@ -562,6 +589,8 @@ function __refreshAppreance(){
 async function __refresh(){
     try{
         await g_mode.refresh();
+        __refreshAppreance();//深色模式重设
+        applyProgressColor(await getblockAttrAPI(g_thisWidgetId));//进度条颜色重设
     }catch(err){
         console.error(err);
         errorPush(err);
@@ -594,7 +623,7 @@ async function dblClickChangeMode(){
  */
 async function clickManualRefresh(){
     clearTimeout(g_refreshBtnTimeout);
-    g_refreshBtnTimeout = setTimeout(__refresh, 300);
+    g_refreshBtnTimeout = setTimeout(__refresh, 400);
 };
 /******************     非函数部分       ************************ */
 
