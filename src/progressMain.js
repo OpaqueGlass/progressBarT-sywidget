@@ -69,6 +69,11 @@ class ManualMode extends Mode {
         document.onmouseup = null;
         $("#refresh").removeClass("manualMode");
     }
+    //点击刷新按钮：保存进度
+    async refresh(){
+        clearTimeout(this.savePercentTimeout);
+        await setManualSetting2Attr();
+    }
     //鼠标拖拽点击事件
     eventMousedownBar(event){
         let progressBarElem = document.getElementById("container");
@@ -97,11 +102,6 @@ class ManualMode extends Mode {
         g_manualPercentage = (event.offsetX / g_progressContainerElem.clientWidth * 100.0);
         if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
     }
-    //点击刷新按钮：保存进度
-    async refresh(){
-        clearTimeout(this.savePercentTimeout);
-        await setManualSetting2Attr();
-    }
 }
 
 class AutoMode extends Mode {
@@ -111,6 +111,7 @@ class AutoMode extends Mode {
     observeNode = new MutationObserver(this.observeRefresh);
     calculateAllTasks = false;
     observerTimeout;
+    clickFnBtnTimeout;
     async init(){
         super.init();
         this.calculateAllTasks = setting.taskCalculateAll;
@@ -119,7 +120,7 @@ class AutoMode extends Mode {
         $("#refresh").addClass("autoMode");
         modePush(language["autoMode"]);
         //重新读取目标块id
-        await readBlockIdFromAttr();
+        await this.readBlockIdFromAttr();
         //设置domobserver
         if (isValidStr(g_targetBlockId)){
             this.__setObserver(g_targetBlockId);
@@ -132,9 +133,46 @@ class AutoMode extends Mode {
         if (setting.refreshInterval > 0){
             this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
         }
+        //设定自动模式功能键
+        if (setting.taskFunction){
+            $(`<button id="cancelAll">Fn</button>`).appendTo("#infos");
+            // $("#cancelAll").click(this.fnclick);
+            $("#cancelAll").dblclick(this.uncheckAll);
+            $("#cancelAll").attr("title", language["autoModeFnBtn"]);
+        }
         
-        $(`<button id="cancelAll">Fn</button>`).appendTo("#infos");
-        $("#cancelAll").click(this.uncheckAll);
+    }
+    destory(){
+        this.observeClass.disconnect();
+        this.observeNode.disconnect();
+        clearInterval(this.autoRefreshInterval);
+        $("#refresh").removeClass("autoMode");
+        $("#cancelAll").remove();
+    }
+    async refresh(){
+        //从挂件中读取id
+        await this.readBlockIdFromAttr();
+        console.log("手动点击刷新，读取到属性中id", g_targetBlockId);
+        //没有块则创建块
+        if (!isValidStr(g_targetBlockId) && setting.createBlock){
+            console.info("无效id，将创建新块");
+            let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
+            if (isValidStr(tempId)){
+                g_targetBlockId = tempId;
+                let data = {};
+                data[setting.autoTargetAttrName] = g_targetBlockId;
+                let response = await addblockAttrAPI(data, g_thisWidgetId);
+                if (response != 0){
+                    throw Error(language["writeAttrFailed"]);
+                }
+            }
+        }
+        //重设事件监视
+        this.observeClass.disconnect();
+        this.observeNode.disconnect();
+        this.__setObserver(g_targetBlockId);
+        //计算进度
+        await this.calculateApply();
     }
     /**
      * 重新计算百分比并更新进度条（自动模式重新计算）
@@ -142,7 +180,7 @@ class AutoMode extends Mode {
      * 从指定的块id中获取已经完成的任务（仅第一级）所占百分比
      * @param {boolean} noAPI 不使用API，此选项为true则使用dom重新计算，否则以setting.api设置为准
      */
-    async calculateApply(noAPI = false){
+     async calculateApply(noAPI = false){
         try{
             //判断目标块
             if (!isValidStr(g_targetBlockId)){
@@ -173,13 +211,6 @@ class AutoMode extends Mode {
                 console.error(err);
                 errorPush(err);
             }
-    }
-    destory(){
-        this.observeClass.disconnect();
-        this.observeNode.disconnect();
-        clearInterval(this.autoRefreshInterval);
-        $("#refresh").removeClass("autoMode");
-        $("#cancelAll").remove();
     }
     /**
     * observer调用的函数，防止多次触发
@@ -259,32 +290,6 @@ class AutoMode extends Mode {
         let count = checked ? checked.length : 0;
         return count / all.length * 100;
     }
-    async refresh(){
-        //从挂件中读取id
-        await readBlockIdFromAttr();
-        console.log("手动点击刷新，读取到属性中id", g_targetBlockId);
-        //没有块则创建块
-        if (!isValidStr(g_targetBlockId) && setting.createBlock){
-            console.info("无效id，将创建新块");
-            let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
-            if (isValidStr(tempId)){
-                g_targetBlockId = tempId;
-                let data = {};
-                data[setting.autoTargetAttrName] = g_targetBlockId;
-                let response = await addblockAttrAPI(data, g_thisWidgetId);
-                if (response != 0){
-                    throw Error(language["writeAttrFailed"]);
-                }
-            }
-        }
-        //重设事件监视
-        this.observeClass.disconnect();
-        this.observeNode.disconnect();
-        this.__setObserver(g_targetBlockId);
-        //计算进度
-        await this.calculateApply();
-        // this.uncheckAll();
-    }
     //清空勾选（全部，包括子任务列表）
     async uncheckAll(){
         let checkedTasks = $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"].protyle-task--done`);
@@ -295,7 +300,28 @@ class AutoMode extends Mode {
         }
         
     }
-    
+    fnclick(){
+        clearTimeout(this.clickFnBtnTimeout);
+    }
+    /**
+     * 从属性custom-targetId重设目标块id
+     * 无返回值！
+     */
+    async readBlockIdFromAttr(){
+        g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
+        let response = await getblockAttrAPI(g_thisWidgetId);
+        if (setting.autoTargetAttrName in response.data){
+            let idAttr = response.data[setting.autoTargetAttrName];
+            g_targetBlockId =  isValidStr(idAttr) ? idAttr : g_targetBlockId;
+        }else{
+            g_targetBlockId = null;
+        }
+        if (setting.taskCalculateModeAttrName in response.data){
+            this.calculateAllTasks = response.data[setting.taskCalculateModeAttrName] == "true" ? true:false;
+        }else{
+            this.calculateAllTasks = setting.defaultTaskCalculateMode;
+        }
+    }
 }
 
 class TimeMode extends Mode {
@@ -458,20 +484,6 @@ function changeBar(percentage){
     g_barRefreshLogTimeout = setTimeout(()=>{console.log("进度条进度已刷新", g_thisWidgetId)}, 500);
 }
 
-/**
- * 从属性custom-targetId重设目标块id
- * 无返回值！
- */
-async function readBlockIdFromAttr(){
-    g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
-    let response = await getblockAttrAPI(g_thisWidgetId);
-    if (setting.autoTargetAttrName in response.data){
-        let idAttr = response.data[setting.autoTargetAttrName];
-        g_targetBlockId =  isValidStr(idAttr) ? idAttr : g_targetBlockId;
-    }else{
-        g_targetBlockId = null;
-    }
-}
 
 /**
  * 从属性中获取当前工作模式
@@ -530,8 +542,9 @@ async function setDefaultSetting2Attr(){
     data[setting["startTimeAttrName"]] = "null";
     data[setting["endTimeAttrName"]] = "null";
     data[setting["autoTargetAttrName"]] = "null";
-    data[setting["frontColorAttrName"]] = "null";
-    data[setting["backColorAttrName"]] = "null";
+    data[setting["frontColorAttrName"]] = setting.defaultFrontColor;
+    data[setting["backColorAttrName"]] = setting.defaultBackColor;
+    data[setting["taskCalculateModeAttrName"]] = setting["defaultTaskCalculateMode"].toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);

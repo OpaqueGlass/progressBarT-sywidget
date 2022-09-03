@@ -26,7 +26,27 @@
     background-image: url("./icon.png");
 }
 
-button {
+.infos button {
+    border-width: 2px;
+    /*自动模式按钮边框*/
+    font-weight: 300;
+    background-size: auto 1.5em;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 3em;
+    height: 1.3em;
+    vertical-align: middle;
+    border-radius: 0.3em;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 1em;
+    text-decoration: none;
+    /* display: inline-block; */
+    font-size: 16px;
+    background-color: #f0f0f022;
+}
+
+.app button {
     border-width: 2px;
     /*自动模式按钮边框*/
     font-weight: 300;
@@ -59,6 +79,10 @@ button {
 .container {
     /*进度条背景色（未达到的部分）*/
     background: var(--container-color);
+}
+
+.infos > * {
+    margin-left: 3px;
 }
 
 #progress {
