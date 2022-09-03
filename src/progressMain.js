@@ -16,7 +16,7 @@ class Mode {
     // }
     //计算和显示百分比
     async calculateApply() {}
-    //初始化模式(子类实现时请先调用)
+    //初始化模式(子类实现时请先调用，手动模式除外)
     async init() {
         g_manualPercentage = this.modeCode;
         errorPush("");
@@ -34,7 +34,8 @@ class ManualMode extends Mode {
     modeCode = 0;
     //初始化
     async init(){
-        super.init();
+        // super.init();
+        errorPush("");
         //提示词设置
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"]);
@@ -411,19 +412,20 @@ function changeBar(percentage){
     let origin = percentage;
     if (percentage >= 100) {
         percentage = 100;
-        document.getElementById("progress").style.borderBottomRightRadius = 5 + "px";
-        document.getElementById("progress").style.borderTopRightRadius = 5 + "px";
+        
+    }
+    if (percentage <= 0) {
+        percentage = 0;
+        document.getElementById("progress").style.borderBottomLeftRadius = 5 + "px";
+        document.getElementById("progress").style.borderTopLeftRadius = 5 + "px";
     }else{
         //设定圆角
-        document.getElementById("progress").style.borderBottomRightRadius = 0;
-        document.getElementById("progress").style.borderTopRightRadius = 0;
-    }
-    if (percentage < 0) {
-        percentage = 0;
+        document.getElementById("progress").style.borderBottomLeftRadius = 0;
+        document.getElementById("progress").style.borderTopLeftRadius = 0;
     }
     let accuratePercentage = Math.floor(percentage * 100) / 100//下取整（间接保留两位小数）
     let intPercentage = Math.round(origin);//四舍五入取整
-    document.getElementById("progress").style.width = accuratePercentage + "%";
+    document.getElementById("progress").style.width = (100 - accuratePercentage) + "%";
     document.getElementById("percentage").innerHTML = intPercentage + "%";
     g_barRefreshLogTimeout = setTimeout(()=>{console.log("进度条进度已刷新", g_thisWidgetId)}, 500);
 }

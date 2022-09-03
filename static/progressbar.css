@@ -1,13 +1,13 @@
 :root {
-    /* 进度条背景色（未达到部分 */
-    --container-color: rgb(233, 215, 199);
-    /* 进度条前景色（已达到部分 */
-    --progress-color: rgba(255, 123, 0, 0.848);
+    /* 进度条背景色(已达到部分)*/
+    --container-color: rgba(255, 123, 0, 0.848);
+    /* 进度条前景色(未达到部分) */
+    --progress-color: rgb(233, 215, 199);
 
     /* 进度条背景色（未达到部分-黑夜模式 */
-    --container-dark-color: rgba(216, 228, 229, 0.737);
+    --container-dark-color: rgb(0, 128, 207);
     /* 进度条前景色（已达到部分-黑夜模式 */
-    --progress-dark: rgb(0, 128, 207);
+    --progress-dark: rgba(216, 228, 229, 0.737);
 
     /* 进度百分比文字-黑夜模式 */
     --text-dark: rgb(201, 209, 217);
@@ -53,7 +53,7 @@ button {
     border-radius: var(--bar-radius);
     /*进度条圆角*/
     align-self: center;
-    /* float: left; */
+    /* float: right; */
 }
 
 .container {
@@ -66,9 +66,9 @@ button {
     /*初始值，刷新后由js控制*/
     height: inherit;
     /*请勿修改*/
-    border-radius: var(--bar-radius) 0 0 var(--bar-radius);
+    border-radius: 0 var(--bar-radius) var(--bar-radius) 0;
     /*进度条已加载部分颜色*/
-    align-self: center;
+    float: right;
     transition-property: width;
     transition-duration: 300ms;
 }
