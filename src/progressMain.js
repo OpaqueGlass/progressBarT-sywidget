@@ -132,6 +132,9 @@ class AutoMode extends Mode {
         if (setting.refreshInterval > 0){
             this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
         }
+        
+        $(`<button id="cancelAll">Fn</button>`).appendTo("#infos");
+        $("#cancelAll").click(this.uncheckAll);
     }
     /**
      * 重新计算百分比并更新进度条（自动模式重新计算）
@@ -176,6 +179,7 @@ class AutoMode extends Mode {
         this.observeNode.disconnect();
         clearInterval(this.autoRefreshInterval);
         $("#refresh").removeClass("autoMode");
+        $("#cancelAll").remove();
     }
     /**
     * observer调用的函数，防止多次触发
@@ -279,13 +283,17 @@ class AutoMode extends Mode {
         this.__setObserver(g_targetBlockId);
         //计算进度
         await this.calculateApply();
-        // this.uncheckAll(g_targetBlockId);
+        // this.uncheckAll();
     }
     //清空勾选（全部，包括子任务列表）
-    async uncheckAll(blockid){
-        let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}] [data-marker="*"].protyle-task--done`);
-        console.log("已选择的",checkedTasks);
-        $(window.parent.document).find(`div[data-node-id=${blockid}] [data-marker="*"].protyle-task--done > .protyle-action--task`).each(function(){console.log("派发点击");$(this).click();});
+    async uncheckAll(){
+        let checkedTasks = $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"].protyle-task--done`);
+        if (checkedTasks.length > 0){
+            $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"].protyle-task--done > .protyle-action--task`).each(function(){console.log("派发点击");$(this).click();});
+        }else{
+            $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"] > .protyle-action--task`).each(function(){console.log("派发点击");$(this).click();});
+        }
+        
     }
     
 }

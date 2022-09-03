@@ -1,13 +1,13 @@
 :root {
     /* 进度条背景色(已达到部分)*/
-    --container-color: rgba(255, 123, 0, 0.848);
+    --container-color: rgba(255, 123, 0);
     /* 进度条前景色(未达到部分) */
     --progress-color: rgb(233, 215, 199);
 
     /* 进度条背景色（未达到部分-黑夜模式 */
     --container-dark-color: rgb(0, 128, 207);
     /* 进度条前景色（已达到部分-黑夜模式 */
-    --progress-dark: rgba(216, 228, 229, 0.737);
+    --progress-dark: rgba(216, 228, 229);
 
     /* 进度百分比文字-黑夜模式 */
     --text-dark: rgb(201, 209, 217);
