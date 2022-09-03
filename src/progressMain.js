@@ -10,7 +10,7 @@ import {
 import {language, setting} from './config.js';
 /**模式类 */
 class Mode {
-    modeCode = 100;//模式对应的默认百分比值
+    modeCode = 0;//模式对应的默认百分比值
     // get modeCode(){
     //     return this._modeCode;
     // }
@@ -109,9 +109,11 @@ class AutoMode extends Mode {
     autoRefreshInterval;
     observeClass = new MutationObserver(this.observeRefresh);
     observeNode = new MutationObserver(this.observeRefresh);
+    calculateAllTasks = false;
     observerTimeout;
     async init(){
         super.init();
+        this.calculateAllTasks = setting.taskCalculateAll;
         //设定自动模式提示词
         $("#refresh").attr("title", language["autoMode"]);
         $("#refresh").addClass("autoMode");
@@ -210,9 +212,13 @@ class AutoMode extends Mode {
      * @return 已选事项的百分比
      */
     calculatePercentageByDom(blockid){
+        let directSymbol = ">";//>直接子元素
+        if (this.calculateAllTasks){
+            directSymbol = " ";//要统计所有元素，就不限定为直接子元素了
+        }
         //寻找指定块下的任务项
-        let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>[data-marker="*"]`);
-        let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]>.protyle-task--done[data-marker="*"]`);
+        let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}[data-marker="*"]`);
+        let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}.protyle-task--done[data-marker="*"]`);
         if (allTasks.length == 0){
             console.warn("DOM计算进度失败：找不到对应块，或块类型错误。", blockid);
             return -100;
@@ -235,8 +241,14 @@ class AutoMode extends Mode {
             throw new Error(language["getKramdownFailed"] + blockid);
             return 0;//不是块id错误，避免触发autoModeCalculate的错误提示
         }
-        let all = kramdown.match(/^\* {.*}\[.\].*$/gm);
-        let checked = kramdown.match(/^\* {.*}\[X\].*$/gm);
+        let allRegex = /^\* {.*}\[.\].*$/gm;
+        let checkedRegex = /^\* {.*}\[X\].*$/gm;
+        if (this.calculateAllTasks){//统计全部时
+            allRegex = /^ *\* {.*}\[.\].*$/gm;
+            checkedRegex = /^ *\* {.*}\[X\].*$/gm;
+        }
+        let all = kramdown.match(allRegex);
+        let checked = kramdown.match(checkedRegex);
         if (!all){//找不到（说明块类型有误），返回
             return -100;
         }
@@ -267,7 +279,15 @@ class AutoMode extends Mode {
         this.__setObserver(g_targetBlockId);
         //计算进度
         await this.calculateApply();
+        // this.uncheckAll(g_targetBlockId);
     }
+    //清空勾选（全部，包括子任务列表）
+    async uncheckAll(blockid){
+        let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}] [data-marker="*"].protyle-task--done`);
+        console.log("已选择的",checkedTasks);
+        $(window.parent.document).find(`div[data-node-id=${blockid}] [data-marker="*"].protyle-task--done > .protyle-action--task`).each(function(){console.log("派发点击");$(this).click();});
+    }
+    
 }
 
 class TimeMode extends Mode {

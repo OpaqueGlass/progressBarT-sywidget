@@ -62,7 +62,7 @@ button {
 }
 
 #progress {
-    width: 0%;
+    width: 100%;
     /*初始值，刷新后由js控制*/
     height: inherit;
     /*请勿修改*/
