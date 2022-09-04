@@ -112,7 +112,15 @@ class ManualMode extends Mode {
 class AutoMode extends Mode {
     modeCode = -1;
     autoRefreshInterval;
-    observeClass = new MutationObserver(this.observeRefresh);
+    observerTriggerTimeout;
+    //防止划选多次触发元素属性变更
+    observeClass = new MutationObserver((mutationList)=>{
+        clearTimeout(g_mode.observerTriggerTimeout)
+        g_mode.observerTriggerTimeout = setTimeout(()=>{
+            g_mode.observeRefresh(mutationList);
+        }, 300);
+    });
+    //注意：由于增删节点触发次数较多, 这里不适用timeout
     observeNode = new MutationObserver(this.observeRefresh);
     calculateAllTasks = false;
     observerTimeout;
@@ -220,11 +228,62 @@ class AutoMode extends Mode {
     /**
     * observer调用的函数，防止多次触发
     */
-    observeRefresh(mutationList, observer){
-        clearTimeout(this.observerTimeout);
-        //尽可能的限定只有勾选、节点变动才会触发
+    observeRefresh(mutationList){
+        try{
+        //由属性变更触发时，防止由于悬停导致的刷新
         if (mutationList.length <= 1 && mutationList[0].type != "childList") return;
-        this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 300);
+
+        //测试中，对子节点变更做限定
+        //触发条件：为全部统计、config.js中设置允许beta触发方式，当前是增删触发的
+        if (setting.updateForSubNode && g_mode.calculateAllTasks
+            && mutationList[0].type == "childList"){
+            do{
+            //玄学时间：判定节点增删一般输入文字是3个以下节点变动
+            // if (mutationList.length < 5 && mutationList[0].type == "childList") return;
+            // 大规模节点变动，大概率有任务更新，节约时间，直接放行
+            if (mutationList.length >= 13) break;
+            //检查变动是否涉及list、li
+            let isNodeModify = false;
+            for (let mutation of mutationList){ 
+                if ($(mutation.target).hasClass("li") || $(mutation.target).hasClass("list")){
+                    isNodeModify = true;
+                    break;
+                }
+            }
+            if (!isNodeModify && mutationList[0].type == "childList") {
+                return;
+            }
+            //旧判定方案
+            //文字更改不作为刷新判定
+            // if (mutationList[0].type == "childList" && mutationList[0].addedNodes.length > 0 && mutationList[0].addedNodes[0]!=null){
+            //     if (Object.getPrototypeOf(mutationList[0].addedNodes[0]).constructor.name != "HTMLElement") return;
+            // }else if (mutationList[0].type == "childList" && mutationList[0].removedNodes.length > 0 && mutationList[0].addedNodes[0]!=null){
+            //     if (Object.getPrototypeOf(mutationList[0].removedNodes[0]).constructor.name != "HTMLElement") return;
+            // }
+            //判断是否是文字/前序是否是文字，和文字相关的节点更改不作为刷新判定
+            // if (mutationList[0].type == "childList"
+            //     && (mutationList[0].nextSibling != null || mutationList[0].previousSibling != null)) return;
+            }while(0);
+        }
+
+        //防止鼠标多选块触发
+        if (mutationList[0].type == "attributes"){
+            let isCheck = [false, false];
+            for (let mutation of mutationList){
+                if (mutation.attributeName == "updated") {
+                    isCheck[1] = true;
+                }else if (mutation.attributeName == "class"){
+                    isCheck[0] = true;
+                }
+            }
+            if (isCheck[0] && isCheck[1]){}else{return;}
+        }
+        clearTimeout(this.observerTimeout);//如果中间有判定不执行，cleartimeout应该在设置前执行
+        this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 200);
+        }catch(error){
+            console.error(err);
+            errorPush("修改无序列表触发更新失败");
+        }
     }
     __setObserver(blockid){
         try{
@@ -240,7 +299,13 @@ class AutoMode extends Mode {
             //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
             this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class", "updated"], "subtree": true});
             //监听任务项新增和删除
-            this.observeNode.observe(target[0], {"childList": true});
+            //请注意：使用全部统计，键入编辑时，将被多次触发。建议subtree: false
+            if (setting.updateForSubNode && this.calculateAllTasks){
+                this.observeNode.observe(target[0], {"childList": true, "subtree": true, "characterData": false});
+            }else{
+                this.observeNode.observe(target[0], {"childList": true});
+            }
+            
         }catch(err){
             errorPush(err);
             console.error(err);
@@ -491,18 +556,17 @@ function changeBar(percentage){
 
 
 /**
- * 从属性中获取当前工作模式
- * 由于目前仅初始化调用，这里加上了应用颜色设置
+ * 初始化时从属性中获取当前工作模式、应用颜色设置
  * @returns 手动，当前要显示的百分比，null自动
  */
-async function getManualSettingFromAttr(){
+async function getSettingAtStartUp(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     let response = await getblockAttrAPI(g_thisWidgetId);
+    console.log("getAttr", response);
     if (response.data == null) return null;
-    //
     applyProgressColor(response);
     if (setting.manualAttrName in response.data){
-        return parseInt(response.data[setting.manualAttrName]);
+        return response.data[setting.manualAttrName];
     }
     return null;
 }
@@ -541,6 +605,9 @@ async function setManualSetting2Attr(){
     }
 }
 
+/**
+ * 首次创建时写入默认属性
+ */
 async function setDefaultSetting2Attr(){
     let data = {};
     data[setting["manualAttrName"]] = setting.defaultMode.toString();
@@ -588,14 +655,15 @@ function modePush(msg = "", timeout = 2000){
  */
 async function __init(){
     //读取模式
-    g_manualPercentage = parseFloat(await getManualSettingFromAttr());
+    g_manualPercentage = await getSettingAtStartUp();
     console.log("启动时模式", g_manualPercentage);
     //没有响应属性
-    if (g_manualPercentage == null){
-        //创建他们（延时创建，防止无法写入）
+    if (g_manualPercentage == null || g_manualPercentage == NaN){
+        //创建属性（延时创建，防止无法写入）
         setTimeout(async function(){await setDefaultSetting2Attr();}, 1000);
         g_manualPercentage = setting.defaultMode;
     }
+    g_manualPercentage = parseFloat(g_manualPercentage);
     //防止首次启动读取错误
     //设置挂件宽高
     // if (g_manualPercentage == null){
@@ -604,7 +672,6 @@ async function __init(){
     // }
     //样式更新
     __refreshAppreance();
-    
     if (g_manualPercentage >= 0){//手动模式
         g_mode = new ManualMode();
     }else if (g_manualPercentage == -2){//时间模式
