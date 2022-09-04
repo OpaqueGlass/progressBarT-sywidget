@@ -94,7 +94,7 @@
     /*进度条已加载部分颜色*/
     float: right;
     transition-property: width;
-    transition-duration: 300ms;
+    transition-duration: 200ms;
 }
 
 .progress {

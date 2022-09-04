@@ -112,7 +112,7 @@ class ManualMode extends Mode {
 class AutoMode extends Mode {
     modeCode = -1;
     autoRefreshInterval;
-    observerTriggerTimeout;
+    observerTriggerTimeout;//触发延迟
     //防止划选多次触发元素属性变更
     observeClass = new MutationObserver((mutationList)=>{
         clearTimeout(g_mode.observerTriggerTimeout)
@@ -122,8 +122,8 @@ class AutoMode extends Mode {
     });
     //注意：由于增删节点触发次数较多, 这里不适用timeout
     observeNode = new MutationObserver(this.observeRefresh);
-    calculateAllTasks = false;
-    observerTimeout;
+    calculateAllTasks = false;//模式：统计所有任务（含子任务）进度
+    observerTimeout;//内保存延迟
     clickFnBtnTimeout;
     async init(){
         super.init();
@@ -148,7 +148,7 @@ class AutoMode extends Mode {
         }
         //设定自动模式功能键
         if (setting.taskFunction){
-            $(`<button id="cancelAll">Fn</button>`).appendTo("#infos");
+            $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
             // $("#cancelAll").click(this.fnclick);
             $("#cancelAll").dblclick(this.uncheckAll);
             $("#cancelAll").attr("title", language["autoModeFnBtn"]);
@@ -278,11 +278,12 @@ class AutoMode extends Mode {
             }
             if (isCheck[0] && isCheck[1]){}else{return;}
         }
-        clearTimeout(this.observerTimeout);//如果中间有判定不执行，cleartimeout应该在设置前执行
-        this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 200);
+        // clearTimeout(this.observerTimeout);//如果中间有判定不执行，cleartimeout应该在设置前执行
+        // this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 200);
+        g_mode.calculateApply(true);
         }catch(error){
             console.error(err);
-            errorPush("修改无序列表触发更新失败");
+            errorPush("错误：无法获取任务列表变化" + err);
         }
     }
     __setObserver(blockid){
