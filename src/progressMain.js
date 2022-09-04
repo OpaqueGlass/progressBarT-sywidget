@@ -44,21 +44,14 @@ class ManualMode extends Mode {
         //获取点击/拖拽进度条事件
         //实现单击进度条任意位置
         g_progressContainerElem.addEventListener("click", this.eventClickBar);
-        //实现：拖拽参考:（Web-once@CSDN） https://blog.csdn.net/qq_42381297/article/details/82595467
         g_progressContainerElem.addEventListener("mousedown", this.eventMousedownBar);
-        //完成拖拽
-        document.onmouseup = function(){
-            clearTimeout(this.savePercentTimeout);
-            document.onmousemove=null;
-            //延时保存百分比//导致切换时仍触发保存
-            // if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
-        }
         changeBar(g_manualPercentage);
         //手动模式禁用动画
         $("#progress").css("transition-duration", "0s");
     }
     
     destory(){
+        document.onmouseup = null;
         //清除延时保存
         clearTimeout(this.savePercentTimeout);
         //离开手动模式启用动画
@@ -66,7 +59,6 @@ class ManualMode extends Mode {
         //清除绑定的事件，禁用拖拽、点击
         g_progressContainerElem.removeEventListener("click", this.eventClickBar);
         g_progressContainerElem.removeEventListener("mousedown", this.eventMousedownBar);
-        document.onmouseup = null;
         $("#refresh").removeClass("manualMode");
     }
     //点击刷新按钮：保存进度
@@ -75,13 +67,22 @@ class ManualMode extends Mode {
         await setManualSetting2Attr();
     }
     //鼠标拖拽点击事件
+    //拖拽参考：https://blog.csdn.net/m0_47214030/article/details/117911609（CC 4.0 BY-SA）
     eventMousedownBar(event){
         let progressBarElem = document.getElementById("container");
-        document.onmousemove = function(e){
+        //完成拖拽
+        document.onmouseup = function(){
+            document.onmousemove = null;
+            //延时保存百分比
             clearTimeout(this.savePercentTimeout);
+            if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+            //清除mouseup，使得只有点击进度条才会触发保存
+            document.onmouseup = null;
+        }
+        //拖拽期间计算
+        document.onmousemove = function(e){
             let event = e || event;
-            // 2.3获取移动的位置
-            // event.clientX - oProgress.offsetLeft
+            //获取移动位置
             let x = event.clientX - progressBarElem.offsetLeft;
             //拖拽超出边界时重置
             if(x <= 0){
@@ -97,7 +98,6 @@ class ManualMode extends Mode {
     //鼠标点击
     //TODO 点击时有bug
     eventClickBar(event){
-        clearTimeout(this.savePercentTimeout);
         //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
         let percentage = (event.clientX - g_progressContainerElem.offsetLeft) / g_progressContainerElem.clientWidth * 100.0;
         console.assert((event.clientX - g_progressContainerElem.offsetLeft) >= 0, `点击定位进度实现逻辑有缺陷 ${percentage}`+
@@ -106,7 +106,6 @@ class ManualMode extends Mode {
         if (percentage <= 0.5) percentage = 0.0;
         changeBar(percentage);
         g_manualPercentage = percentage;
-        if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
     }
 }
 
