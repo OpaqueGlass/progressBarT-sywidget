@@ -95,11 +95,17 @@ class ManualMode extends Mode {
         }
     }
     //鼠标点击
+    //TODO 点击时有bug
     eventClickBar(event){
         clearTimeout(this.savePercentTimeout);
         //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
-        changeBar(event.offsetX / g_progressContainerElem.clientWidth * 100.0);
-        g_manualPercentage = (event.offsetX / g_progressContainerElem.clientWidth * 100.0);
+        let percentage = (event.clientX - g_progressContainerElem.offsetLeft) / g_progressContainerElem.clientWidth * 100.0;
+        console.assert((event.clientX - g_progressContainerElem.offsetLeft) >= 0, `点击定位进度实现逻辑有缺陷 ${percentage}`+
+          `点击位置clientX${event.clientX}， 进度条左定位offsetLeft${g_progressContainerElem.offsetLeft}`);
+        if (percentage >= 99.4) percentage = 100.0;
+        if (percentage <= 0.5) percentage = 0.0;
+        changeBar(percentage);
+        g_manualPercentage = percentage;
         if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
     }
 }
@@ -583,7 +589,7 @@ function modePush(msg = "", timeout = 2000){
  */
 async function __init(){
     //读取模式
-    g_manualPercentage = await getManualSettingFromAttr();
+    g_manualPercentage = parseFloat(await getManualSettingFromAttr());
     console.log("启动时模式", g_manualPercentage);
     //没有响应属性
     if (g_manualPercentage == null){
