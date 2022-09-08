@@ -27,7 +27,7 @@
 }
 
 .infos button {
-    border-width: 2px;
+    border: gray 2px solid;
     /*自动模式按钮边框*/
     font-weight: 300;
     background-size: auto 1.5em;

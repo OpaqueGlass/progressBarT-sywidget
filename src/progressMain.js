@@ -127,7 +127,6 @@ class AutoMode extends Mode {
     clickFnBtnTimeout;
     async init(){
         super.init();
-        this.calculateAllTasks = setting.taskCalculateAll;
         //设定自动模式提示词
         $("#refresh").attr("title", language["autoMode"]);
         $("#refresh").addClass("autoMode");
@@ -230,8 +229,8 @@ class AutoMode extends Mode {
     */
     observeRefresh(mutationList){
         try{
-        //由属性变更触发时，防止由于悬停导致的刷新
-        if (mutationList.length <= 1 && mutationList[0].type != "childList") return;
+        //由属性变更触发时，防止由于悬停导致的刷新（旧方法：由于监视updated变化会返回出发）
+        // if (mutationList.length <= 1 && mutationList[0].type != "childList") return;
 
         //测试中，对子节点变更做限定
         //触发条件：为全部统计、config.js中设置允许beta触发方式，当前是增删触发的
@@ -267,17 +266,27 @@ class AutoMode extends Mode {
         }
 
         //防止鼠标多选块触发
+        //方法2：确定变动的块出现--done class变化再触发计算
         if (mutationList[0].type == "attributes"){
-            let isCheck = [false, false];
-            for (let mutation of mutationList){
-                if (mutation.attributeName == "updated") {
-                    isCheck[1] = true;
-                }else if (mutation.attributeName == "class"){
-                    isCheck[0] = true;
-                }
+            let oldChecked = mutationList[0].oldValue.indexOf("protyle-task--done") == -1 ? false : true;
+            let nowChecked = $(mutationList[0].target).hasClass("protyle-task--done");
+            if (oldChecked == nowChecked){
+                return;
             }
-            if (isCheck[0] && isCheck[1]){}else{return;}
         }
+        //方法1：updated和class共同监视（由于updated编辑时反复触发，现已停用）
+        // if (mutationList[0].type == "attributes"){
+        //     let isCheck = [false, false];
+        //     for (let mutation of mutationList){
+        //         if (mutation.attributeName == "updated") {
+        //             isCheck[1] = true;
+        //         }else if (mutation.attributeName == "class"){
+        //             isCheck[0] = true;
+        //         }
+        //     }
+        //     if (isCheck[0] && isCheck[1]){}else{return;}
+        // }
+
         // clearTimeout(this.observerTimeout);//如果中间有判定不执行，cleartimeout应该在设置前执行
         // this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 200);
         g_mode.calculateApply(true);
@@ -298,18 +307,19 @@ class AutoMode extends Mode {
             }
             console.assert(target.length == 1, "错误：多个匹配的观察节点");
             //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
-            this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class", "updated"], "subtree": true});
+            this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true, "attributeOldValue": true});
             //监听任务项新增和删除
             //请注意：使用全部统计，键入编辑时，将被多次触发。建议subtree: false
             if (setting.updateForSubNode && this.calculateAllTasks){
-                this.observeNode.observe(target[0], {"childList": true, "subtree": true, "characterData": false});
+                this.observeNode.observe(target[0], {"childList": true, "subtree": true});
             }else{
                 this.observeNode.observe(target[0], {"childList": true});
             }
             
         }catch(err){
-            errorPush(err);
+            errorPush(language["setObserveErr"] + err, 2000);
             console.error(err);
+            console.error("observer设置失败，无法获取任务列表变化");
         }
     }
     /**
