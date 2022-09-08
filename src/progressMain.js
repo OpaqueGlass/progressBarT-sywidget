@@ -112,15 +112,7 @@ class ManualMode extends Mode {
 class AutoMode extends Mode {
     modeCode = -1;
     autoRefreshInterval;
-    observerTriggerTimeout;//触发延迟
-    //防止划选多次触发元素属性变更
-    observeClass = new MutationObserver((mutationList)=>{
-        clearTimeout(g_mode.observerTriggerTimeout)
-        g_mode.observerTriggerTimeout = setTimeout(()=>{
-            g_mode.observeRefresh(mutationList);
-        }, 300);
-    });
-    //注意：由于增删节点触发次数较多, 这里不适用timeout
+    observeClass = new MutationObserver(this.observeRefresh);
     observeNode = new MutationObserver(this.observeRefresh);
     calculateAllTasks = false;//模式：统计所有任务（含子任务）进度
     observerTimeout;//内保存延迟
@@ -228,10 +220,9 @@ class AutoMode extends Mode {
     * observer调用的函数，防止多次触发
     */
     observeRefresh(mutationList){
+        console.log("触发了", mutationList)
         try{
-        //由属性变更触发时，防止由于悬停导致的刷新（旧方法：由于监视updated变化会返回出发）
-        // if (mutationList.length <= 1 && mutationList[0].type != "childList") return;
-
+        let resetFlag = false;
         //测试中，对子节点变更做限定
         //触发条件：为全部统计、config.js中设置允许beta触发方式，当前是增删触发的
         if (setting.updateForSubNode && g_mode.calculateAllTasks
@@ -246,22 +237,16 @@ class AutoMode extends Mode {
             for (let mutation of mutationList){ 
                 if ($(mutation.target).hasClass("li") || $(mutation.target).hasClass("list")){
                     isNodeModify = true;
+                    if ($(mutation.target).hasClass("list") && mutation.removedNodes.length >= 1){
+                        resetFlag = true;
+                    }
                     break;
                 }
             }
             if (!isNodeModify && mutationList[0].type == "childList") {
                 return;
             }
-            //旧判定方案
-            //文字更改不作为刷新判定
-            // if (mutationList[0].type == "childList" && mutationList[0].addedNodes.length > 0 && mutationList[0].addedNodes[0]!=null){
-            //     if (Object.getPrototypeOf(mutationList[0].addedNodes[0]).constructor.name != "HTMLElement") return;
-            // }else if (mutationList[0].type == "childList" && mutationList[0].removedNodes.length > 0 && mutationList[0].addedNodes[0]!=null){
-            //     if (Object.getPrototypeOf(mutationList[0].removedNodes[0]).constructor.name != "HTMLElement") return;
-            // }
-            //判断是否是文字/前序是否是文字，和文字相关的节点更改不作为刷新判定
-            // if (mutationList[0].type == "childList"
-            //     && (mutationList[0].nextSibling != null || mutationList[0].previousSibling != null)) return;
+            
             }while(0);
         }
 
@@ -274,22 +259,10 @@ class AutoMode extends Mode {
                 return;
             }
         }
-        //方法1：updated和class共同监视（由于updated编辑时反复触发，现已停用）
-        // if (mutationList[0].type == "attributes"){
-        //     let isCheck = [false, false];
-        //     for (let mutation of mutationList){
-        //         if (mutation.attributeName == "updated") {
-        //             isCheck[1] = true;
-        //         }else if (mutation.attributeName == "class"){
-        //             isCheck[0] = true;
-        //         }
-        //     }
-        //     if (isCheck[0] && isCheck[1]){}else{return;}
-        // }
-
-        // clearTimeout(this.observerTimeout);//如果中间有判定不执行，cleartimeout应该在设置前执行
-        // this.observerTimeout = setTimeout(async function(){await g_mode.calculateApply(true);}, 200);
         g_mode.calculateApply(true);
+        if (resetFlag){
+            g_mode.__setObserver(g_targetBlockId);
+        }
         }catch(error){
             console.error(err);
             errorPush("错误：无法获取任务列表变化" + err);
@@ -309,11 +282,13 @@ class AutoMode extends Mode {
             //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
             this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true, "attributeOldValue": true});
             //监听任务项新增和删除
-            //请注意：使用全部统计，键入编辑时，将被多次触发。建议subtree: false
+            this.observeNode.observe(target[0], {"childList": true});//监听第一层级任务新增/删除
+            //监听全部任务项，//请注意：使用全部统计，键入编辑时，将被多次触发。建议subtree: false
             if (setting.updateForSubNode && this.calculateAllTasks){
-                this.observeNode.observe(target[0], {"childList": true, "subtree": true});
-            }else{
-                this.observeNode.observe(target[0], {"childList": true});
+                let subTaskLists = $(window.parent.document).find(`div[data-node-id=${blockid}] .list[data-subtype="t"]`)
+                for (let i = 0; i < subTaskLists.length; i++){
+                    this.observeNode.observe(subTaskLists[i], {"childList": true});
+                }
             }
             
         }catch(err){
