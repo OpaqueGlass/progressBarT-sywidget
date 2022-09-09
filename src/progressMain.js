@@ -3,7 +3,6 @@ import {
     getCurrentWidgetId,
     getblockAttrAPI,
     isValidStr,
-    pushMsgAPI,
     insertBlockAPI,
     addblockAttrAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
@@ -96,7 +95,6 @@ class ManualMode extends Mode {
         }
     }
     //鼠标点击
-    //TODO 点击时有bug
     eventClickBar(event){
         //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
         let percentage = (event.clientX - g_progressContainerElem.offsetLeft) / g_progressContainerElem.clientWidth * 100.0;
@@ -222,14 +220,12 @@ class AutoMode extends Mode {
     observeRefresh(mutationList){
         console.log("触发了", mutationList)
         try{
-        let resetFlag = false;
+        let resetFlag = false;//重设条件
         //测试中，对子节点变更做限定
         //触发条件：为全部统计、config.js中设置允许beta触发方式，当前是增删触发的
         if (setting.updateForSubNode && g_mode.calculateAllTasks
             && mutationList[0].type == "childList"){
             do{
-            //玄学时间：判定节点增删一般输入文字是3个以下节点变动
-            // if (mutationList.length < 5 && mutationList[0].type == "childList") return;
             // 大规模节点变动，大概率有任务更新，节约时间，直接放行
             if (mutationList.length >= 13) break;
             //检查变动是否涉及list、li
@@ -237,6 +233,7 @@ class AutoMode extends Mode {
             for (let mutation of mutationList){ 
                 if ($(mutation.target).hasClass("li") || $(mutation.target).hasClass("list")){
                     isNodeModify = true;
+                    //节点删除时重设监视节点，为能及时监视新增的列表
                     if ($(mutation.target).hasClass("list") && mutation.removedNodes.length >= 1){
                         resetFlag = true;
                     }
@@ -478,7 +475,7 @@ class TimeMode extends Mode {
                         break;
                     }
                     case 5: {//输入格式YYYY MM DD HH MM
-                        this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][i][3], nums[i][4]);
+                        this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][3], nums[i][4]);
                         break;
                     }
                     case 2: {//输入格式HH MM
@@ -522,20 +519,16 @@ function changeBar(percentage){
     let origin = percentage;
     if (percentage >= 100) {
         percentage = 100;
-        
-    }
-    if (percentage <= 0) {
-        percentage = 0;
-        document.getElementById("progress").style.borderBottomLeftRadius = 5 + "px";
-        document.getElementById("progress").style.borderTopLeftRadius = 5 + "px";
+        document.getElementById("progress").style.borderBottomRightRadius = 5 + "px";
+        document.getElementById("progress").style.borderTopRightRadius = 5 + "px";
     }else{
         //设定圆角
-        document.getElementById("progress").style.borderBottomLeftRadius = 0;
-        document.getElementById("progress").style.borderTopLeftRadius = 0;
+        document.getElementById("progress").style.borderBottomRightRadius = 0;
+        document.getElementById("progress").style.borderTopRightRadius = 0;
     }
     let accuratePercentage = Math.floor(percentage * 100) / 100//下取整（间接保留两位小数）
     let intPercentage = Math.round(origin);//四舍五入取整
-    document.getElementById("progress").style.width = (100 - accuratePercentage) + "%";
+    document.getElementById("progress").style.width = accuratePercentage + "%";
     document.getElementById("percentage").innerHTML = intPercentage + "%";
     g_barRefreshLogTimeout = setTimeout(()=>{console.log("进度条进度已刷新", g_thisWidgetId)}, 500);
 }
@@ -568,9 +561,13 @@ function applyProgressColor(response){
         //判断为null?
         if (isValidStr(response.data[setting.frontColorAttrName])){
             $("#progress").css("background", response.data[setting.frontColorAttrName]);
+        }else{
+            $("#progress").css("background", "");
         }
         if (isValidStr(response.data[setting.backColorAttrName])){
             $("#container").css("background", response.data[setting.backColorAttrName]);
+        }else{
+            $("#container").css("background", "");
         }
     }
 }
@@ -704,7 +701,6 @@ async function __refresh(){
 async function dblClickChangeMode(){
     clearTimeout(g_refreshBtnTimeout);
     g_mode.destory();//退出上一模式
-    // console.log()
     if (g_manualPercentage == -1){//如果当前为自动模式，则切换为时间模式
         g_manualPercentage = -2;
         g_mode = new TimeMode();
