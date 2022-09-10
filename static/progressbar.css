@@ -1,34 +1,26 @@
 :root {
     /* 进度条背景色(未达到部分)*/
-    --container-color: rgb(216, 228, 229, 0.7);
+    --container-color: rgba(175, 184, 193, 0.2);
     /* 进度条前景色(已达到部分)*/
-    --progress-color: rgba(255, 123, 0);
+    --progress-color: rgb(45, 164, 78);
 
     /* 进度条背景色（已达到部分-黑夜模式*/
-    --container-dark-color: rgba(216, 228, 229,0.5);
+    --container-dark-color: rgba(175, 184, 193, 0.2);
     /* 进度条前景色（未达到部分-黑夜模式  */
-    --progress-dark: rgb(0, 128, 207);
+    --progress-dark: rgb(45, 164, 78);
 
     /* 进度百分比文字-黑夜模式 */
     --text-dark: rgb(201, 209, 217);
     --bar-radius: 5px;
-    /*
-    已完成          未达到
-    暗橙175, 72, 27 底色176, 176, 176
-    淡绿22,170,157 底色197, 229, 234
-    亮橙255, 123, 0 底色233, 215, 199
-    洋红 203, 64, 108 底色216, 228, 229
-    蓝 0, 128, 207 底色
-    */
 }
 
 #refresh {
     background-image: url("./icon.png");
 }
 
+/* fn按钮 */
 .infos button {
     border: gray 2px solid;
-    /*自动模式按钮边框*/
     font-weight: 300;
     background-size: auto 1.5em;
     background-repeat: no-repeat;
@@ -82,7 +74,7 @@
     background: var(--container-color);
 }
 
-.infos > * {
+.infos>* {
     margin-left: 3px;
 }
 
@@ -134,20 +126,24 @@
 .manualMode {
     border-color: darkred;
     border-style: dashed;
-    background-color: #d4508c35;/*红212 80 140*/
+    /* background-color: #d4508c35; */
+    /*红212 80 140*/
 }
+
 /* 自动模式按钮样式 */
-.autoMode{
+.autoMode {
     border-color: cornflowerblue;
     border-style: solid;
-    background-color: #28aadb35;/*蓝40 170 219*/
+    /* background-color: #28aadb35; */
+    /*蓝40 170 219*/
 }
 
 /* 时间模式按钮样式 */
 .timeMode {
     border-color: darkgreen;
     border-style: dotted;
-    background-color: #f1e34235;/*黄241 227 42*/
+    /* background-color: #f1e34235; */
+    /*黄241 227 42*/
 }
 
 .app {

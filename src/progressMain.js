@@ -40,10 +40,11 @@ class ManualMode extends Mode {
         $("#refresh").attr("title", language["manualMode"]);
         modePush(language["manualMode"]);
         g_progressContainerElem = document.getElementById("container");
-        //获取点击/拖拽进度条事件
+        //获取点击/拖拽/触摸拖拽进度条事件
         //实现单击进度条任意位置
         g_progressContainerElem.addEventListener("click", this.eventClickBar);
         g_progressContainerElem.addEventListener("mousedown", this.eventMousedownBar);
+        g_progressContainerElem.addEventListener("touchstart", this.eventTouchstartBar);
         changeBar(g_manualPercentage);
         //手动模式禁用动画
         $("#progress").css("transition-duration", "0s");
@@ -55,9 +56,10 @@ class ManualMode extends Mode {
         clearTimeout(this.savePercentTimeout);
         //离开手动模式启用动画
         $("#progress").css("transition-duration", "300ms");
-        //清除绑定的事件，禁用拖拽、点击
+        //清除绑定的事件，禁用拖拽、点击、触摸拖拽
         g_progressContainerElem.removeEventListener("click", this.eventClickBar);
         g_progressContainerElem.removeEventListener("mousedown", this.eventMousedownBar);
+        g_progressContainerElem.removeEventListener("touchstart", this.eventTouchstartBar);
         $("#refresh").removeClass("manualMode");
     }
     //点击刷新按钮：保存进度
@@ -68,7 +70,6 @@ class ManualMode extends Mode {
     //鼠标拖拽点击事件
     //拖拽参考：https://blog.csdn.net/m0_47214030/article/details/117911609（CC 4.0 BY-SA）
     eventMousedownBar(event){
-        let progressBarElem = document.getElementById("container");
         //完成拖拽
         document.onmouseup = function(){
             document.onmousemove = null;
@@ -82,17 +83,18 @@ class ManualMode extends Mode {
         document.onmousemove = function(e){
             let event = e || event;
             //获取移动位置
-            let x = event.clientX - progressBarElem.offsetLeft;
+            let x = event.clientX - g_progressContainerElem.offsetLeft;
             //拖拽超出边界时重置
             if(x <= 0){
                 x = 0;
-            }else if (x >= progressBarElem.clientWidth){
-                x = progressBarElem.clientWidth;
+            }else if (x >= g_progressContainerElem.clientWidth){
+                x = g_progressContainerElem.clientWidth;
             }
-            changeBar(x / progressBarElem.clientWidth * 100.0);
-            g_manualPercentage = x / progressBarElem.clientWidth * 100.0;
+            changeBar(x / g_progressContainerElem.clientWidth * 100.0);
+            g_manualPercentage = x / g_progressContainerElem.clientWidth * 100.0;
             return false;
         }
+
     }
     //鼠标点击
     eventClickBar(event){
@@ -104,6 +106,28 @@ class ManualMode extends Mode {
         if (percentage <= 0.5) percentage = 0.0;
         changeBar(percentage);
         g_manualPercentage = percentage;
+    }
+    //移动端触摸拖拽
+    eventTouchstartBar(event){
+        document.ontouchend = function(){
+            document.ontouchmove = null;
+            //延时保存百分比
+            clearTimeout(this.savePercentTimeout);
+            if (setting.saveAttrTimeout > 0) this.savePercentTimeout = setTimeout(setManualSetting2Attr, setting.saveAttrTimeout);
+            document.ontouchend = null;
+        }
+        document.ontouchmove = function(event){
+            let touchEvent = event.targetTouches[0];
+            let x = touchEvent.clientX - g_progressContainerElem.offsetLeft;
+            if (x < 0){
+                x = 0;
+            }else if (x > g_progressContainerElem.clientWidth){
+                x = g_progressContainerElem.clientWidth;
+            }
+            changeBar(x / g_progressContainerElem.clientWidth * 100.0);
+            g_manualPercentage = x / g_progressContainerElem.clientWidth * 100.0;
+            return false;
+        }
     }
 }
 
@@ -218,7 +242,6 @@ class AutoMode extends Mode {
     * observer调用的函数，防止多次触发
     */
     observeRefresh(mutationList){
-        console.log("触发了", mutationList)
         try{
         let resetFlag = false;//重设条件
         //测试中，对子节点变更做限定
@@ -256,7 +279,7 @@ class AutoMode extends Mode {
                 return;
             }
         }
-        g_mode.calculateApply(true);
+        g_mode.calculateApply(true);//可能反复触发，这里统计不应该使用API
         if (resetFlag){
             g_mode.__setObserver(g_targetBlockId);
         }
@@ -266,6 +289,7 @@ class AutoMode extends Mode {
         }
     }
     __setObserver(blockid){
+        console.log("设定/重设observer");
         try{
             this.observeClass.disconnect();
             this.observeNode.disconnect();
@@ -347,9 +371,9 @@ class AutoMode extends Mode {
     async uncheckAll(){
         let checkedTasks = $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"].protyle-task--done`);
         if (checkedTasks.length > 0){
-            $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"].protyle-task--done > .protyle-action--task`).each(function(){console.log("派发点击");$(this).click();});
+            $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"].protyle-task--done > .protyle-action--task`).each(function(){$(this).click();});
         }else{
-            $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"] > .protyle-action--task`).each(function(){console.log("派发点击");$(this).click();});
+            $(window.parent.document).find(`div[data-node-id=${g_targetBlockId}] [data-marker="*"] > .protyle-action--task`).each(function(){$(this).click();});
         }
         
     }
@@ -661,6 +685,10 @@ async function __init(){
         g_mode = new TimeMode();
     }else if (g_manualPercentage == -1){//自动模式
         g_mode = new AutoMode();
+    }else{
+        g_mode = new ManualMode();
+        console.warn("初始化时模式设定不正确，将被重设", g_manualPercentage);
+        g_manualPercentage = 0;
     }
     await g_mode.init();
 }

@@ -18,7 +18,7 @@ let setting = {
     frontColorAttrName: "5frontcolor",//进度条前景色对应的属性名称
     backColorAttrName: "6backcolor",//进度条背景色对应的属性名称
     taskCalculateModeAttrName: "7alltask",//自动模式统计任务范围对应的属性名称（后面会补充custom-这里不用写，同上）//devwarn新建属性，下面要补全custom-
-    saveAttrTimeout: 1000 * 2, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
+    saveAttrTimeout: 1000 * 1.5, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
     timeModeRefreshInterval: 1000 * 60 * 10,//时间模式定时刷新间隔，单位毫秒，请勿设定的时间过短；为0则禁用
     createBlock: false, //如果块不存在，则创建块
     defaultMode: 0, //挂件被创建时默认的模式。-2时间模式 -1自动模式 >=0手动模式
