@@ -24,7 +24,7 @@ let setting = {
     defaultMode: 0, //挂件被创建时默认的模式。-2时间模式 -1自动模式 >=0手动模式
     defaultFrontColor: "null",//进度条前景色对应的属性默认值（关于默认进度条颜色background，也可修改css，但这里一旦设定优先级更高）
     defaultBackColor: "null",//进度条背景色对应的属性默认值
-    defaultTaskCalculateMode: false, //认为所有任务（包括子任务）的权重相同，统计所有任务完成的进度，而不只是第一层级
+    defaultTaskCalculateMode: false, //计算子任务进度默认值。认为所有任务（包括子任务）的权重相同，统计所有任务完成的进度，而不只是第一层级
     updateForSubNode: true,//在子任务增删时更新进度(beta)，此选项开启后，可能出现性能问题，建议关闭
     taskFunction: true,//显示任务列表全选/全不选功能按钮
 };
