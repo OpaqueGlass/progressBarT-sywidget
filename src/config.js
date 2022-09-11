@@ -50,6 +50,7 @@ let zh_CN = {
     "autoModeAPI": `当前：自动模式(API)`,//
     "usingAPI": `当前正在使用API自动计算。若未设置间隔刷新，则必须手动点击刷新。`,
     "autoModeFnBtn": "取消全部/完成全部",
+    "autoDetectId": "已自动定位临近的任务列表",
 }
 setting["autoTargetAttrName"] = "custom-" + setting["autoTargetAttrName"];
 setting["manualAttrName"] = "custom-" + setting["manualAttrName"];

@@ -166,7 +166,6 @@ class AutoMode extends Mode {
             $("#cancelAll").dblclick(this.uncheckAll);
             $("#cancelAll").attr("title", language["autoModeFnBtn"]);
         }
-        
     }
     destory(){
         this.observeClass.disconnect();
@@ -176,6 +175,8 @@ class AutoMode extends Mode {
         $("#cancelAll").remove();
     }
     async refresh(){
+        errorPush("");//清空提示词
+        infoPush("");
         //从挂件中读取id
         await this.readBlockIdFromAttr();
         console.log("手动点击刷新，读取到属性中id", g_targetBlockId);
@@ -304,7 +305,7 @@ class AutoMode extends Mode {
             this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true, "attributeOldValue": true});
             //监听任务项新增和删除
             this.observeNode.observe(target[0], {"childList": true});//监听第一层级任务新增/删除
-            //监听全部任务项，//请注意：使用全部统计，键入编辑时，将被多次触发。建议subtree: false
+            //监听全部任务项，//请注意：若设定为subtree: true，键入编辑时，将被多次触发。建议subtree: false
             if (setting.updateForSubNode && this.calculateAllTasks){
                 let subTaskLists = $(window.parent.document).find(`div[data-node-id=${blockid}] .list[data-subtype="t"]`)
                 for (let i = 0; i < subTaskLists.length; i++){
@@ -388,8 +389,7 @@ class AutoMode extends Mode {
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
         let response = await getblockAttrAPI(g_thisWidgetId);
         if (setting.autoTargetAttrName in response.data){
-            let idAttr = response.data[setting.autoTargetAttrName];
-            g_targetBlockId =  isValidStr(idAttr) ? idAttr : g_targetBlockId;
+            g_targetBlockId =  response.data[setting.autoTargetAttrName];
         }else{
             g_targetBlockId = null;
         }
@@ -397,6 +397,18 @@ class AutoMode extends Mode {
             this.calculateAllTasks = response.data[setting.taskCalculateModeAttrName] == "true" ? true:false;
         }else{
             this.calculateAllTasks = setting.defaultTaskCalculateMode;
+        }
+        //如果没有设定，则自动获取上下文id
+        if (!isValidStr(g_targetBlockId)){
+            let thisWidgetBlockElem = window.frameElement.parentElement.parentElement;
+            if ($(thisWidgetBlockElem.nextElementSibling).attr("data-subtype") === "t"){
+                g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
+                infoPush(language["autoDetectId"]);
+            }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-subtype") === "t"){
+                //下一个目标块不存在，获取上一个目标块
+                g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
+                infoPush(language["autoDetectId"]);
+            }
         }
     }
 }
