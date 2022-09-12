@@ -44,7 +44,22 @@ class ManualMode extends Mode {
         //实现单击进度条任意位置
         g_progressContainerElem.addEventListener("click", this.eventClickBar);
         g_progressContainerElem.addEventListener("mousedown", this.eventMousedownBar);
-        g_progressContainerElem.addEventListener("touchstart", this.eventTouchstartBar);
+        //触摸进度条事件
+        /* 检测浏览器是否支持passive event listener */
+        let passiveIfSupported = false;
+        try {
+        window.addEventListener("test", null,
+            Object.defineProperty(
+            {},
+            "passive",
+            {
+                get() { passiveIfSupported = { passive: true }; }
+            }
+            )
+        );
+        } catch (err) {}
+        g_progressContainerElem.addEventListener("touchstart", this.eventTouchstartBar, passiveIfSupported );
+        
         changeBar(g_manualPercentage);
         //手动模式禁用动画
         $("#progress").css("transition-duration", "0s");
@@ -404,11 +419,11 @@ class AutoMode extends Mode {
             let thisWidgetBlockElem = window.frameElement.parentElement.parentElement;
             if ($(thisWidgetBlockElem.nextElementSibling).attr("data-subtype") === "t"){
                 g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"] + "↓");
+                infoPush(language["autoDetectId"] + "↓", 2500);
             }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-subtype") === "t"){
                 //下一个目标块不存在，获取上一个目标块
                 g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"] + "↑");
+                infoPush(language["autoDetectId"] + "↑", 2500);
             }
         }
         }catch(err){
