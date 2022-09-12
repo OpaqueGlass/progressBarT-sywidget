@@ -399,16 +399,20 @@ class AutoMode extends Mode {
             this.calculateAllTasks = setting.defaultTaskCalculateMode;
         }
         //如果没有设定，则自动获取上下文id
+        try{
         if (!isValidStr(g_targetBlockId)){
             let thisWidgetBlockElem = window.frameElement.parentElement.parentElement;
             if ($(thisWidgetBlockElem.nextElementSibling).attr("data-subtype") === "t"){
                 g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"]);
+                infoPush(language["autoDetectId"] + "↓");
             }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-subtype") === "t"){
                 //下一个目标块不存在，获取上一个目标块
                 g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"]);
+                infoPush(language["autoDetectId"] + "↑");
             }
+        }
+        }catch(err){
+            console.error("获取邻近块时出错", err);
         }
     }
 }
