@@ -8,7 +8,7 @@ let token = "";//api鉴权token
 let includeOs = [];//目前没用
 let setting = {
     widgetWidth: "50em",//挂件的宽
-    widgetHeight: "4.5em",//挂件的高
+    widgetHeight: "4.3em",//挂件的高
     refreshInterval: 0,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
     manualAttrName: "1progress",//百分比/模式对应的属性名称（只接受英文（最好是小写）、数字，后面会补充custom-这里不用写，下同）
@@ -50,7 +50,7 @@ let zh_CN = {
     "autoModeAPI": `当前：自动模式(API)`,//
     "usingAPI": `当前正在使用API自动计算。若未设置间隔刷新，则必须手动点击刷新。`,
     "autoModeFnBtn": "取消全部/完成全部",
-    "autoDetectId": "已自动定位临近的任务列表",
+    "autoDetectId": "",//"已自动定位临近的任务列表",
 }
 setting["autoTargetAttrName"] = "custom-" + setting["autoTargetAttrName"];
 setting["manualAttrName"] = "custom-" + setting["manualAttrName"];
