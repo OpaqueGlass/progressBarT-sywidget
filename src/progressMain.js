@@ -174,6 +174,11 @@ class AutoMode extends Mode {
         if (setting.refreshInterval > 0){
             this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
         }
+        //自动模式下隐藏提示信息
+        if (setting.hideInfo){
+            window.frameElement.style.height = setting.widgetBarOnlyHeight;
+            $("#infos").css("display", "none");
+        }
         //设定自动模式功能键
         if (setting.taskFunction){
             $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
@@ -188,6 +193,11 @@ class AutoMode extends Mode {
         clearInterval(this.autoRefreshInterval);
         $("#refresh").removeClass("autoMode");
         $("#cancelAll").remove();
+        //退出自动模式恢复提示信息
+        if (setting.hideInfo){
+            window.frameElement.style.height = setting.widgetHeight;
+            $("#infos").css("display", "");
+        }
     }
     async refresh(){
         errorPush("");//清空提示词
@@ -312,7 +322,7 @@ class AutoMode extends Mode {
             let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
             if (target.length <= 0) {
                 errorPush(language["cantObserve"] + blockid, 2000);
-                console.warn("无法在DOM中找到对应块id，未设定observer");
+                console.warn("无法在DOM中找到对应块id，未设定observer", blockid);
                 return;
             }
             console.assert(target.length == 1, "错误：多个匹配的观察节点");
@@ -476,6 +486,7 @@ class TimeMode extends Mode {
         let totalGap = this.times[1] - this.times[0];
         if (totalGap <= 0){
             errorPush(language["timeModeSetError"]);
+            console.warn(language["timeModeSetError"]);
             return;
         }
         let nowDate = new Date();
@@ -483,6 +494,7 @@ class TimeMode extends Mode {
         let result = passed / totalGap * 100.0;
         if (result < 0){
             errorPush(language["earlyThanStart"], 7000);
+            console.warn(language["earlyThanStart"]);
         }else if (result > 100){
             // result = 100;
             // infoPush();
@@ -640,6 +652,7 @@ async function setManualSetting2Attr(){
         infoPush(language["saved"], 1500);
     }else{
         errorPush(language["writeAttrFailed"]);
+        console.error("属性获取失败", response);
     }
 }
 
@@ -661,24 +674,47 @@ async function setDefaultSetting2Attr(){
         infoPush(language["saved"], 1500);
     }else{
         errorPush(language["writeAttrFailed"]);
+        console.error("属性获取失败", response);
     }
 }
 
 
 
-function errorPush(msg, timeout = 10000){
+function errorPush(msg, timeout = 7000){
     // $(`<p>${msg}</p>`).appendTo("#errorInfo");
     clearTimeout(g_errorPushTimeout);
     $("#errorInfo").text(msg);
     if (timeout == 0) return;
-    g_errorPushTimeout = setTimeout(()=>{$("#errorInfo").text("");}, timeout);
+    if (setting.hideInfo){
+        window.frameElement.style.height = setting.widgetHeight;
+        $("#infos").css("display", "");
+        if (msg == ""){
+            window.frameElement.style.height = setting.widgetBarOnlyHeight;
+            $("#infos").css("display", "none");
+            return;
+        }
+        g_errorPushTimeout = setTimeout(()=>{
+            $("#errorInfo").text("");
+            window.frameElement.style.height = setting.widgetBarOnlyHeight;
+            $("#infos").css("display", "none");
+        }, timeout);
+    }else{
+        if (msg == "") return;
+        g_errorPushTimeout = setTimeout(()=>{$("#errorInfo").text("");}, timeout);
+    }
 }
 
 function infoPush(msg, timeout = 7000){
     clearTimeout(g_infoPushTimeout);
     $("#infoInfo").text(msg);
+    if (msg === language["saved"]) {//已保存时下划线注明
+        $("#percentage").css("text-decoration", "underline");
+    }
     if (timeout == 0) return;
-    g_infoPushTimeout = setTimeout(()=>{$("#infoInfo").text("");}, timeout);
+    g_infoPushTimeout = setTimeout(()=>{
+        $("#infoInfo").text("");
+        $("#percentage").css("text-decoration", "");
+    }, timeout);
 }
 
 function modePush(msg = "", timeout = 2000){

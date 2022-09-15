@@ -9,6 +9,7 @@ let includeOs = [];//目前没用
 let setting = {
     widgetWidth: "50em",//挂件的宽
     widgetHeight: "4.3em",//挂件的高
+    widgetBarOnlyHeight: "3em",//只显示进度条和刷新按钮时，挂件的高
     refreshInterval: 0,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
     manualAttrName: "1progress",//百分比/模式对应的属性名称（只接受英文（最好是小写）、数字，后面会补充custom-这里不用写，下同）
@@ -26,7 +27,8 @@ let setting = {
     defaultBackColor: "null",//进度条背景色对应的属性默认值
     defaultTaskCalculateMode: false, //计算子任务进度默认值。认为所有任务（包括子任务）的权重相同，统计所有任务完成的进度，而不只是第一层级
     updateForSubNode: true,//在子任务增删时更新进度(beta)，此选项开启后，可能出现性能问题，建议关闭
-    taskFunction: true,//显示任务列表全选/全不选功能按钮
+    taskFunction: true,//显示任务列表全选/全不选功能按钮（需要先允许自动模式显示提示信息）
+    hideInfo: false, //自动模式不显示提示信息（错误信息仍然显示），只留下进度条和刷新按钮
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。",
