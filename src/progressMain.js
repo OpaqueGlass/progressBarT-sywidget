@@ -6,7 +6,7 @@ import {
     insertBlockAPI,
     addblockAttrAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
-import {language, setting} from './config.js';
+import {language, setting, defaultAttr} from './config.js';
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -63,6 +63,11 @@ class ManualMode extends Mode {
         changeBar(g_manualPercentage);
         //手动模式禁用动画
         $("#progress").css("transition-duration", "0s");
+        //隐藏提示信息
+        if (g_hideInfo){
+            window.frameElement.style.height = setting.widgetBarOnlyHeight;
+            $("#infos").css("display", "none");
+        }
     }
     
     destory(){
@@ -175,17 +180,15 @@ class AutoMode extends Mode {
             this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
         }
         //自动模式下隐藏提示信息
-        if (setting.hideInfo){
+        if (g_hideInfo){
             window.frameElement.style.height = setting.widgetBarOnlyHeight;
             $("#infos").css("display", "none");
         }
         //设定自动模式功能键
-        if (setting.taskFunction){
-            $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
-            // $("#cancelAll").click(this.fnclick);
-            $("#cancelAll").dblclick(this.uncheckAll);
-            $("#cancelAll").attr("title", language["autoModeFnBtn"]);
-        }
+        $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
+        // $("#cancelAll").click(this.fnclick);
+        $("#cancelAll").dblclick(this.uncheckAll);
+        $("#cancelAll").attr("title", language["autoModeFnBtn"]);
     }
     destory(){
         this.observeClass.disconnect();
@@ -193,11 +196,6 @@ class AutoMode extends Mode {
         clearInterval(this.autoRefreshInterval);
         $("#refresh").removeClass("autoMode");
         $("#cancelAll").remove();
-        //退出自动模式恢复提示信息
-        if (setting.hideInfo){
-            window.frameElement.style.height = setting.widgetHeight;
-            $("#infos").css("display", "");
-        }
     }
     async refresh(){
         errorPush("");//清空提示词
@@ -421,7 +419,7 @@ class AutoMode extends Mode {
         if (setting.taskCalculateModeAttrName in response.data){
             this.calculateAllTasks = response.data[setting.taskCalculateModeAttrName] == "true" ? true:false;
         }else{
-            this.calculateAllTasks = setting.defaultTaskCalculateMode;
+            this.calculateAllTasks = defaultAttr["alltask"];
         }
         //如果没有设定，则自动获取上下文id
         try{
@@ -456,6 +454,11 @@ class TimeMode extends Mode {
         clearInterval(this.timeRefreshInterval);
         if (setting.onstart){
             await this.calculateApply();
+        }
+        //进入时间模式恢复提示信息
+        if (g_hideInfo){
+            window.frameElement.style.height = setting.widgetHeight;
+            $("#infos").css("display", "");
         }
     }
     async calculateApply(){
@@ -611,7 +614,10 @@ async function getSettingAtStartUp(){
     console.log("getAttr", response);
     if (response.data == null) return null;
     applyProgressColor(response);
-    if (setting.manualAttrName in response.data){
+    if (setting.hideInfoAttrName in response.data){//获取hideInfo设定
+        g_hideInfo = response.data[setting.hideInfoAttrName] == "true"?true:false;
+    }
+    if (setting.manualAttrName in response.data){//获取进度设定
         return response.data[setting.manualAttrName];
     }
     return null;
@@ -661,13 +667,14 @@ async function setManualSetting2Attr(){
  */
 async function setDefaultSetting2Attr(){
     let data = {};
-    data[setting["manualAttrName"]] = setting.defaultMode.toString();
-    data[setting["startTimeAttrName"]] = "null";
-    data[setting["endTimeAttrName"]] = "null";
-    data[setting["autoTargetAttrName"]] = "null";
-    data[setting["frontColorAttrName"]] = setting.defaultFrontColor;
-    data[setting["backColorAttrName"]] = setting.defaultBackColor;
-    data[setting["taskCalculateModeAttrName"]] = setting["defaultTaskCalculateMode"].toString();
+    data[setting["manualAttrName"]] = defaultAttr["percentage"].toString();
+    data[setting["startTimeAttrName"]] = defaultAttr["start"];
+    data[setting["endTimeAttrName"]] = defaultAttr["end"];
+    data[setting["autoTargetAttrName"]] = defaultAttr["targetid"];
+    data[setting["frontColorAttrName"]] = defaultAttr["frontColor"];
+    data[setting["backColorAttrName"]] = defaultAttr["backColor"];
+    data[setting["taskCalculateModeAttrName"]] = defaultAttr["alltask"].toString();
+    data[setting["hideInfoAttrName"]] = defaultAttr["hideInfo"].toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);
@@ -685,7 +692,7 @@ function errorPush(msg, timeout = 7000){
     clearTimeout(g_errorPushTimeout);
     $("#errorInfo").text(msg);
     if (timeout == 0) return;
-    if (setting.hideInfo){
+    if (g_hideInfo){
         window.frameElement.style.height = setting.widgetHeight;
         $("#infos").css("display", "");
         if (msg == ""){
@@ -735,7 +742,7 @@ async function __init(){
     if (g_manualPercentage == null || g_manualPercentage == NaN){
         //创建属性（延时创建，防止无法写入）
         setTimeout(async function(){await setDefaultSetting2Attr();}, 1000);
-        g_manualPercentage = setting.defaultMode;
+        g_manualPercentage = defaultAttr["percentage"];
     }
     g_manualPercentage = parseFloat(g_manualPercentage);
     //防止首次启动读取错误
@@ -830,6 +837,7 @@ let g_progressElem = document.getElementById("progress");
 let g_progressContainerElem = document.getElementById("container");
 let g_mode;
 let g_barRefreshLogTimeout;
+let g_hideInfo = false;
 
 try{
     //绑定按钮事件
