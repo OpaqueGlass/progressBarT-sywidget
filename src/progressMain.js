@@ -6,7 +6,7 @@ import {
     insertBlockAPI,
     addblockAttrAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
-import {language, setting, defaultAttr} from './config.js';
+import {language, setting, defaultAttr, attrName} from './config.js';
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -64,9 +64,8 @@ class ManualMode extends Mode {
         //手动模式禁用动画
         $("#progress").css("transition-duration", "0s");
         //隐藏提示信息
-        if (g_hideInfo){
+        if (!g_displaySetting){
             window.frameElement.style.height = setting.widgetBarOnlyHeight;
-            $("#infos").css("display", "none");
         }
     }
     
@@ -180,12 +179,12 @@ class AutoMode extends Mode {
             this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
         }
         //自动模式下隐藏提示信息
-        if (g_hideInfo){
+        if (!g_displaySetting){
             window.frameElement.style.height = setting.widgetBarOnlyHeight;
-            $("#infos").css("display", "none");
         }
+        $("#outerInfos").css("display", "none");
         //设定自动模式功能键
-        $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
+        $(`<button id="cancelAll">Fn</button><br/>`).prependTo("#settings");
         // $("#cancelAll").click(this.fnclick);
         $("#cancelAll").dblclick(this.uncheckAll);
         $("#cancelAll").attr("title", language["autoModeFnBtn"]);
@@ -210,7 +209,7 @@ class AutoMode extends Mode {
             if (isValidStr(tempId)){
                 g_targetBlockId = tempId;
                 let data = {};
-                data[setting.autoTargetAttrName] = g_targetBlockId;
+                data[attrName.autoTarget] = g_targetBlockId;
                 let response = await addblockAttrAPI(data, g_thisWidgetId);
                 if (response != 0){
                     throw Error(language["writeAttrFailed"]);
@@ -411,16 +410,18 @@ class AutoMode extends Mode {
     async readBlockIdFromAttr(){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
         let response = await getblockAttrAPI(g_thisWidgetId);
-        if (setting.autoTargetAttrName in response.data){
-            g_targetBlockId =  response.data[setting.autoTargetAttrName];
+        if (attrName.autoTarget in response.data){
+            g_targetBlockId = response.data[attrName.autoTarget];
         }else{
-            g_targetBlockId = null;
+            g_targetBlockId = "null";
         }
-        if (setting.taskCalculateModeAttrName in response.data){
-            this.calculateAllTasks = response.data[setting.taskCalculateModeAttrName] == "true" ? true:false;
+        if (attrName.taskCalculateMode in response.data){
+            this.calculateAllTasks = response.data[attrName.taskCalculateMode] == "true" ? true:false;
         }else{
             this.calculateAllTasks = defaultAttr["alltask"];
         }
+        //向挂件设置项写入id
+        $("#blockId").val(isValidStr(g_targetBlockId)?g_targetBlockId:"");
         //如果没有设定，则自动获取上下文id
         try{
         if (!isValidStr(g_targetBlockId)){
@@ -456,10 +457,10 @@ class TimeMode extends Mode {
             await this.calculateApply();
         }
         //进入时间模式恢复提示信息
-        if (g_hideInfo){
+        if (!g_displaySetting){
             window.frameElement.style.height = setting.widgetHeight;
-            $("#infos").css("display", "");
         }
+        $("#outerInfos").css("display", "");     
     }
     async calculateApply(){
         clearInterval(this.timeRefreshInterval);
@@ -513,15 +514,18 @@ class TimeMode extends Mode {
     async readTimesFromAttr(){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
         let response = await getblockAttrAPI(g_thisWidgetId);
-        if (setting.startTimeAttrName in response.data && setting.endTimeAttrName in response.data){
+        if (attrName.startTime in response.data && attrName.endTime in response.data){
             //属性原始字符串
-            let startimeStr = response.data[setting.startTimeAttrName]
-            let endtimeStr = response.data[setting.endTimeAttrName];
+            let startimeStr = response.data[attrName.startTime]
+            let endtimeStr = response.data[attrName.endTime];
             if (startimeStr == "null" || endtimeStr == "null") {
                 errorPush(language["timeNotSet"]);
                 console.warn("时间未设定", response.data);
                 return false;
             }
+            //将获取到的时间字符串写入挂件设置部分
+            $("#startTime").val(startimeStr);
+            $("#endTime").val(endtimeStr);
             //拆分连续的数字（string）
             let startNums = startimeStr.match(/[0-9]+/gm);
             let endNums = endtimeStr.match(/[0-9]+/gm);
@@ -589,8 +593,9 @@ function changeBar(percentage){
     let origin = percentage;
     if (percentage >= 100) {
         percentage = 100;
-        document.getElementById("progress").style.borderBottomRightRadius = g_apperance.barWidth / 2 + "px";
-        document.getElementById("progress").style.borderTopRightRadius = g_apperance.barWidth / 2 + "px";
+        let width = $("#progress").height();
+        $("#progress, #container").css("border-bottom-right-radius", width / 2 + "px");
+        $("#progress, #container").css("border-top-right-radius", width / 2 + "px");
     }else{
         //设定圆角
         document.getElementById("progress").style.borderBottomRightRadius = 0;
@@ -614,18 +619,20 @@ async function getSettingAtStartUp(){
     console.log("getAttr", response);
     if (response.data == null) return null;
     applyProgressColor(response);
-    if (setting.hideInfoAttrName in response.data){//获取hideInfo设定
-        g_hideInfo = response.data[setting.hideInfoAttrName] == "true"?true:false;
-    }
     //获取外观属性
-    g_apperance.frontColor = response.data[setting.frontColorAttrName] ? 
-        response.data[setting.frontColorAttrName] : $("#progress").css("background");
-    g_apperance.backColor = response.data[setting.backColorAttrName] ? 
-        response.data[setting.backColorAttrName] : $("#container").css("background");
-    g_apperance.barWidth = response.data[setting.barWidthAttrName] ? 
-        response.data[setting.barWidthAttrName] : $("#progress").css("height");
-    if (setting.manualAttrName in response.data){//获取进度设定
-        return response.data[setting.manualAttrName];
+    g_apperance.frontColor = isValidStr(response.data[attrName.frontColor])? 
+        response.data[attrName.frontColor] : $("#progress").css("background-color");
+    g_apperance.backColor = isValidStr(response.data[attrName.backColor]) ? 
+        response.data[attrName.backColor] : $("#container").css("background-color");
+    try{
+        g_apperance.barWidth = isValidStr(response.data[attrName.barWidth]) ? 
+            response.data[attrName.barWidth] : parseInt($("#progress").css("height").replace("px", ""));
+    }catch(err){
+        console.warn("获取barheight失败", err);
+        g_apperance.barWidth = defaultAttr.barWidth;
+    }
+    if (attrName.manual in response.data){//获取进度设定
+        return response.data[attrName.manual];
     }
     return null;
 }
@@ -637,25 +644,23 @@ async function getSettingAtStartUp(){
 function applyProgressColor(response){
     if (response == null) return;
     //一并进行进度条颜色样式读取和设置
-    if (setting.frontColorAttrName in response.data && setting.backColorAttrName in response.data){
-        //判断为null?
-        if (isValidStr(response.data[setting.frontColorAttrName])){//前景色
-            $("#progress").css("background", response.data[setting.frontColorAttrName]);
-        }else{
-            $("#progress").css("background", "");
-        }
-        if (isValidStr(response.data[setting.backColorAttrName])){//背景色
-            $("#container").css("background", response.data[setting.backColorAttrName]);
-        }else{
-            $("#container").css("background", "");
-        }
-        //宽度和圆角
-        let width = isValidStr(response.data[setting.barWidthAttrName]) ?
-            response.data[setting.barWidthAttrName] : defaultAttr.barWidth;
-        $("#progress, #container").css("height", width + "px");
-        $("#progress, #container").css("border-bottom-left-radius", width/2 + "px");
-        $("#progress, #container").css("border-top-left-radius", width/2 + "px"); 
+    //判断为null?
+    if (isValidStr(response.data[attrName.frontColor])){//前景色
+        $("#progress").css("background", response.data[attrName.frontColor]);
+    }else{
+        $("#progress").css("background", defaultAttr.frontColor);
     }
+    if (isValidStr(response.data[attrName.backColor])){//背景色
+        $("#container").css("background", response.data[attrName.backColor]);
+    }else{
+        $("#container").css("background", defaultAttr.backColor);
+    }
+    //宽度和圆角
+    let width = isValidStr(response.data[attrName.barWidth]) ?
+        response.data[attrName.barWidth] : defaultAttr.barWidth;
+    $("#progress, #container").css("height", width + "px");
+    $("#progress, #container").css("border-bottom-left-radius", width/2 + "px");
+    $("#progress, #container").css("border-top-left-radius", width/2 + "px"); 
 }
 
 /**
@@ -664,10 +669,10 @@ function applyProgressColor(response){
 async function setManualSetting2Attr(){
     let data = {};
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
-    data[setting.manualAttrName] = g_manualPercentage.toString();
+    data[attrName.manual] = g_manualPercentage.toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
-        console.log("已写入百分比属性", data[setting.manualAttrName]);
+        console.log("已写入百分比属性", data[attrName.manual]);
         infoPush(language["saved"], 1500);
     }else{
         errorPush(language["writeAttrFailed"]);
@@ -680,15 +685,14 @@ async function setManualSetting2Attr(){
  */
 async function setDefaultSetting2Attr(){
     let data = {};
-    data[setting["manualAttrName"]] = defaultAttr["percentage"].toString();
-    data[setting["startTimeAttrName"]] = defaultAttr["start"];
-    data[setting["endTimeAttrName"]] = defaultAttr["end"];
-    data[setting["autoTargetAttrName"]] = defaultAttr["targetid"];
-    data[setting["frontColorAttrName"]] = defaultAttr["frontColor"];
-    data[setting["backColorAttrName"]] = defaultAttr["backColor"];
-    data[setting["taskCalculateModeAttrName"]] = defaultAttr["alltask"].toString();
-    data[setting["hideInfoAttrName"]] = defaultAttr["hideInfo"].toString();
-    data[setting["barWidthAttrName"]] = defaultAttr["barWidth"].toString();
+    data[attrName["manual"]] = defaultAttr["percentage"].toString();
+    data[attrName["startTime"]] = defaultAttr["start"];
+    data[attrName["endTime"]] = defaultAttr["end"];
+    data[attrName["autoTarget"]] = defaultAttr["targetid"];
+    data[attrName["frontColor"]] = defaultAttr["frontColor"];
+    data[attrName["backColor"]] = defaultAttr["backColor"];
+    data[attrName["taskCalculateMode"]] = defaultAttr["alltask"].toString();
+    data[attrName["barWidth"]] = defaultAttr["barWidth"].toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);
@@ -699,30 +703,20 @@ async function setDefaultSetting2Attr(){
     }
 }
 
-
-
 function errorPush(msg, timeout = 7000){
     // $(`<p>${msg}</p>`).appendTo("#errorInfo");
     clearTimeout(g_errorPushTimeout);
     $("#errorInfo").text(msg);
     if (timeout == 0) return;
-    if (g_hideInfo){
-        window.frameElement.style.height = setting.widgetHeight;
-        $("#infos").css("display", "");
-        if (msg == ""){
-            window.frameElement.style.height = setting.widgetBarOnlyHeight;
-            $("#infos").css("display", "none");
-            return;
+    if (msg != ""){
+        if (!g_displaySetting){
+            displaySetting();
         }
-        g_errorPushTimeout = setTimeout(()=>{
-            $("#errorInfo").text("");
-            window.frameElement.style.height = setting.widgetBarOnlyHeight;
-            $("#infos").css("display", "none");
-        }, timeout);
-    }else{
-        if (msg == "") return;
-        g_errorPushTimeout = setTimeout(()=>{$("#errorInfo").text("");}, timeout);
+        return;
     }
+    g_errorPushTimeout = setTimeout(()=>{
+        $("#errorInfo").text("");
+    }, timeout);
 }
 
 function infoPush(msg, timeout = 7000){
@@ -759,17 +753,24 @@ async function __init(){
         g_manualPercentage = defaultAttr["percentage"];
     }
     g_manualPercentage = parseFloat(g_manualPercentage);
-    //初始化外观设置项input
+    //初始化外观设置项input;
+    console.log("外观", g_apperance)
     defaultAttr.frontColorSelector.value = g_apperance.frontColor;
     $("#frontColor").attr("data-jscolor", JSON.stringify(defaultAttr.frontColorSelector));
     defaultAttr.backColorSelector.value = g_apperance.backColor;
     $("#backColor").attr("data-jscolor", JSON.stringify(defaultAttr.backColorSelector));
     jscolor.install();//注入jscolor
     $("#barWidth").val(g_apperance.barWidth);
+    //呃，写入提示文字
     $("#saveAppearBtn").text(language["saveBtnText"]);
+    $("#saveSettingBtn").text(language["saveSettingText"]);
     $("#frontText").text(language["frontColorText"]);
     $("#backText").text(language["backColorText"]);
     $("#barWidthText").text(language["barWidthText"]);
+    $("#blockIdText").text(language["blockIdText"]);
+    $("#startTimeText").text(language["startTimeText"]);
+    $("#endTimeText").text(language["endTimeText"]);
+    $("#allTaskText").text(language["allTaskText"]);
     //样式更新
     __refreshAppreance();
     //模式更改
@@ -795,11 +796,11 @@ function __refreshAppreance(){
     if (window.top.siyuan.config.appearance.mode){
         $("#container").addClass("container_dark");
         $("#progress").addClass("progress_dark");
-        $("#percentage, #modeInfo").addClass("text_dark");
+        $("#percentage, #modeInfo, .settings span").addClass("text_dark");
     }else{
         $("#container").removeClass("container_dark");
         $("#progress").removeClass("progress_dark");
-        $("#percentage, #modeInfo").removeClass("text_dark");
+        $("#percentage, #modeInfo, .settings span").removeClass("text_dark");
     }
 }
 
@@ -847,20 +848,24 @@ async function clickManualRefresh(){
 };
 
 /**
- * 控制是否显示设置项目
+ * 显示/隐藏设置项目
  */
 function displaySetting(){
     if (g_displaySetting == false){
         g_displaySetting = true;
         $("#settings").css("display", "");
-        window.frameElement.style.height = $("body").outerHeight() + 125 + "px";
+        window.frameElement.style.height = $("body").outerHeight() + 35 + "px";
     }else{
         g_displaySetting = false;
         $("#settings").css("display", "none");
-        window.frameElement.style.height = setting.widgetHeight;
+        window.frameElement.style.height = g_mode.modeCode == -2 ? 
+            setting.widgetHeight : setting.widgetBarOnlyHeight;
     }
 }
 
+/**
+ * 从设置项读取并更改进度条外观
+ */
 function changeBarAppearance(){
     let frontColor = $("#frontColor").val();
     let backColor = $("#backColor").val();
@@ -876,9 +881,9 @@ function changeBarAppearance(){
 async function saveAppearance(){
     let data = {};
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
-    data[setting.frontColorAttrName] = $("#frontColor").val();
-    data[setting.backColorAttrName] = $("#backColor").val();
-    data[setting.barWidthAttrName] = $("#barWidth").val();
+    data[attrName.frontColor] = $("#frontColor").val();
+    data[attrName.backColor] = $("#backColor").val();
+    data[attrName.barWidth] = $("#barWidth").val();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("已写入外观属性");
@@ -887,6 +892,42 @@ async function saveAppearance(){
         errorPush(language["writeAttrFailed"]);
         console.error("属性获取失败", response);
     }
+}
+
+/**
+ * 写入块id、开始时间、结束时间
+ */
+async function saveSettings(){
+    let data = {};
+    //获取用户设置，写入data
+    //注意判空，为空写null
+    //为空时保留null（因为为空时不显示null）
+    // if ($("#blockId").val() != ""){
+    //     data[attrName.autoTarget] = $("#blockId").val();
+    // }
+    // if ($("#startTime").val() != ""){
+    //     data[attrName.startTime] = $("#startTime").val();
+    // }
+    // if ($("#endTime").val() != ""){
+    //     data[attrName.endTime] = $("#endTime").val();
+    // }
+    data[attrName.autoTarget] = $("#blockId").val();
+    data[attrName.startTime] = $("#startTime").val();
+    data[attrName.endTime] = $("#endTime").val();
+    data[attrName.taskCalculateMode] = document.getElementById("allTask").checked.toString();
+    for (let attr in data){
+        if (data[attr] == "") data[attr] = "null";
+    }
+    console.log("属性项", data);
+    //保存属性
+    if (await addblockAttrAPI(data, g_thisWidgetId)){
+        console.error(language["writeAttrFailed"]);
+        errorPush("保存失败");
+        return;
+    }
+    //保存属性后触发刷新，可能需要延时？
+    infoPush("请等待刷新完成");
+    setTimeout(__refresh, 1000);
 }
 /******************     非函数部分       ************************ */
 
@@ -901,7 +942,6 @@ let g_progressElem = document.getElementById("progress");
 let g_progressContainerElem = document.getElementById("container");
 let g_mode;
 let g_barRefreshLogTimeout;
-let g_hideInfo = false;
 let g_displaySetting = false;
 let g_apperance = {
     frontColor: defaultAttr.frontColor,
@@ -921,6 +961,7 @@ try{
     document.getElementById("settingBtn").onclick = displaySetting;
     $("#frontColor, #backColor, #barWidth").on("change", changeBarAppearance);
     $("#saveAppearBtn").on("click", saveAppearance);
+    $("#saveSettingBtn").on("click", async function(){await saveSettings();})
     await __init();
 }catch (err){
     errorPush(err);

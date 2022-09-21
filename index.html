@@ -17,15 +17,21 @@
         </div>
         <div id="percentage">N/A</div>
         
-        <div class="btn"><button id="refresh"></button></div>
+        <div class="btn">
+            <button id="refresh"></button>
+        </div>
+        <div class="btn">
+            <button id="settingBtn"></button>
+        </div>
     </div>
-    <div class="infos" id="infos">
-        <button id="settingBtn"></button>
-        <span id="errorInfo"></span>
-        <span id="infoInfo"></span>
+    <div class="infos" style="display: none;" id="outerInfos">
         <span id="modeInfo"></span>
     </div>
     <div class="settings" id="settings" style="display:none;">
+        <div class="infos" id="infos">
+            <span id="errorInfo"></span>
+            <span id="infoInfo"></span>
+        </div>
         <span id="frontText"></span>
         <input id="frontColor">
         <br/>
@@ -36,6 +42,20 @@
         <input id="barWidth" type="number" value="10">
         <br/>
         <button id="saveAppearBtn"></button>
+        <br/>
+        <span id="blockIdText"></span>
+        <input id="blockId">
+        <br/>
+        <span id="startTimeText"></span>
+        <input id="startTime">
+        <br/>
+        <span id="endTimeText"></span>
+        <input id="endTime">
+        <br/>
+        <span id="allTaskText"></span>
+        <input type="checkbox" id="allTask">
+        <br/>
+        <button id="saveSettingBtn"></button>
     </div>
     <script type="module" src="./src/progressMain.js"></script>
 </body>

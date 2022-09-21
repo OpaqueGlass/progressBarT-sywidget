@@ -1,16 +1,15 @@
 :root {
     /* v0.0.1->v0.0.2升级提示
-    除夜间模式外，进度条颜色已经纳入config.js管理，手动更改css可能会被config.js设定覆盖 */
-
+    进度条颜色已经纳入config.js管理，手动更改css将会被config.js设定覆盖 */
     /* 进度条背景色(未达到部分)*/
-    --container-color: ;
+    /* --container-color: ; */
     /* 进度条前景色(已达到部分)*/
-    --progress-color: ;
+    /* --progress-color: ; */
 
     /* 进度条背景色（已达到部分-黑夜模式*/
     --container-dark-color: rgba(175, 184, 193, 0.2);
     /* 进度条前景色（未达到部分-黑夜模式  */
-    --progress-dark: rgb(45, 164, 78);
+    --progress-dark: rgb(45, 164, 255);
 
     /* 进度百分比文字-黑夜模式 */
     --text-dark: rgb(201, 209, 217);
@@ -23,30 +22,39 @@
 
 #settingBtn {
     background-image: url("./iconSetting.png");
-    width: 1.3em;
-    background-size: auto 1.3em;
-    height: 1.3em;
+    width: 1.4em;
+    background-size: auto 1.4em;
+    height: 1.4em;
     border: 0px;
+    margin-left: 2px;
+    padding: 1px 6px;
 }
 
 /* fn按钮 */
 .infos button {
-    border: gray 2px solid;
+    border-radius: 0.3em;
+    border-width: 1px;
+    background-color: #f0f0f022;
+    /* border: 1px solid;
     font-weight: 300;
     background-size: auto 1.5em;
     background-repeat: no-repeat;
     background-position: center;
-    width: 3em;
-    height: 1.3em;
+    width: 1.5em;
+    height: 1em;
     vertical-align: middle;
     border-radius: 0.3em;
     box-sizing: border-box;
     text-align: center;
-    line-height: 1em;
-    text-decoration: none;
+    line-height: 1.3em;
+    text-decoration: none; */
     /* display: inline-block; */
-    font-size: 16px;
-    background-color: #f0f0f022;
+    /* font-size: 15px;
+    margin-left: 3px;
+    background-color: #f0f0f022; */
+}
+#barWidth{
+    width: 30px;
 }
 
 .app button {
@@ -63,10 +71,13 @@
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
+    font-size: 14px;
     background-color: #f0f0f000;
 }
 
+.btn {
+    height: 1.5em;
+}
 
 /* 进度条主体 */
 #container {
@@ -159,6 +170,6 @@
 
 .app {
     display: flex;
-    justify-content: flex-start;
+    /* justify-content: flex-start; */
 
 }
