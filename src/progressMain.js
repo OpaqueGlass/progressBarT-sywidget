@@ -589,8 +589,8 @@ function changeBar(percentage){
     let origin = percentage;
     if (percentage >= 100) {
         percentage = 100;
-        document.getElementById("progress").style.borderBottomRightRadius = 5 + "px";
-        document.getElementById("progress").style.borderTopRightRadius = 5 + "px";
+        document.getElementById("progress").style.borderBottomRightRadius = g_apperance.barWidth / 2 + "px";
+        document.getElementById("progress").style.borderTopRightRadius = g_apperance.barWidth / 2 + "px";
     }else{
         //设定圆角
         document.getElementById("progress").style.borderBottomRightRadius = 0;
@@ -605,7 +605,7 @@ function changeBar(percentage){
 
 
 /**
- * 初始化时从属性中获取当前工作模式、应用颜色设置
+ * 初始化时从属性中获取当前工作模式、获取/应用颜色设置
  * @returns 手动，当前要显示的百分比，null自动
  */
 async function getSettingAtStartUp(){
@@ -617,6 +617,13 @@ async function getSettingAtStartUp(){
     if (setting.hideInfoAttrName in response.data){//获取hideInfo设定
         g_hideInfo = response.data[setting.hideInfoAttrName] == "true"?true:false;
     }
+    //获取外观属性
+    g_apperance.frontColor = response.data[setting.frontColorAttrName] ? 
+        response.data[setting.frontColorAttrName] : $("#progress").css("background");
+    g_apperance.backColor = response.data[setting.backColorAttrName] ? 
+        response.data[setting.backColorAttrName] : $("#container").css("background");
+    g_apperance.barWidth = response.data[setting.barWidthAttrName] ? 
+        response.data[setting.barWidthAttrName] : $("#progress").css("height");
     if (setting.manualAttrName in response.data){//获取进度设定
         return response.data[setting.manualAttrName];
     }
@@ -632,16 +639,22 @@ function applyProgressColor(response){
     //一并进行进度条颜色样式读取和设置
     if (setting.frontColorAttrName in response.data && setting.backColorAttrName in response.data){
         //判断为null?
-        if (isValidStr(response.data[setting.frontColorAttrName])){
+        if (isValidStr(response.data[setting.frontColorAttrName])){//前景色
             $("#progress").css("background", response.data[setting.frontColorAttrName]);
         }else{
             $("#progress").css("background", "");
         }
-        if (isValidStr(response.data[setting.backColorAttrName])){
+        if (isValidStr(response.data[setting.backColorAttrName])){//背景色
             $("#container").css("background", response.data[setting.backColorAttrName]);
         }else{
             $("#container").css("background", "");
         }
+        //宽度和圆角
+        let width = isValidStr(response.data[setting.barWidthAttrName]) ?
+            response.data[setting.barWidthAttrName] : defaultAttr.barWidth;
+        $("#progress, #container").css("height", width + "px");
+        $("#progress, #container").css("border-bottom-left-radius", width/2 + "px");
+        $("#progress, #container").css("border-top-left-radius", width/2 + "px"); 
     }
 }
 
@@ -675,6 +688,7 @@ async function setDefaultSetting2Attr(){
     data[setting["backColorAttrName"]] = defaultAttr["backColor"];
     data[setting["taskCalculateModeAttrName"]] = defaultAttr["alltask"].toString();
     data[setting["hideInfoAttrName"]] = defaultAttr["hideInfo"].toString();
+    data[setting["barWidthAttrName"]] = defaultAttr["barWidth"].toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);
@@ -737,7 +751,7 @@ function modePush(msg = "", timeout = 2000){
 async function __init(){
     //读取模式
     g_manualPercentage = await getSettingAtStartUp();
-    console.log("启动时模式", g_manualPercentage);
+    // console.log("启动时模式", g_manualPercentage);
     //没有响应属性
     if (g_manualPercentage == null || g_manualPercentage == NaN){
         //创建属性（延时创建，防止无法写入）
@@ -745,14 +759,20 @@ async function __init(){
         g_manualPercentage = defaultAttr["percentage"];
     }
     g_manualPercentage = parseFloat(g_manualPercentage);
-    //防止首次启动读取错误
-    //设置挂件宽高
-    // if (g_manualPercentage == null){
-        window.frameElement.style.width = setting.widgetWidth;
-        window.frameElement.style.height = setting.widgetHeight;
-    // }
+    //初始化外观设置项input
+    defaultAttr.frontColorSelector.value = g_apperance.frontColor;
+    $("#frontColor").attr("data-jscolor", JSON.stringify(defaultAttr.frontColorSelector));
+    defaultAttr.backColorSelector.value = g_apperance.backColor;
+    $("#backColor").attr("data-jscolor", JSON.stringify(defaultAttr.backColorSelector));
+    jscolor.install();//注入jscolor
+    $("#barWidth").val(g_apperance.barWidth);
+    $("#saveAppearBtn").text(language["saveBtnText"]);
+    $("#frontText").text(language["frontColorText"]);
+    $("#backText").text(language["backColorText"]);
+    $("#barWidthText").text(language["barWidthText"]);
     //样式更新
     __refreshAppreance();
+    //模式更改
     if (g_manualPercentage >= 0){//手动模式
         g_mode = new ManualMode();
     }else if (g_manualPercentage == -2){//时间模式
@@ -764,6 +784,7 @@ async function __init(){
         console.warn("初始化时模式设定不正确，将被重设", g_manualPercentage);
         g_manualPercentage = 0;
     }
+    //初始化模式
     await g_mode.init();
 }
 
@@ -824,6 +845,49 @@ async function clickManualRefresh(){
     clearTimeout(g_refreshBtnTimeout);
     g_refreshBtnTimeout = setTimeout(__refresh, 400);
 };
+
+/**
+ * 控制是否显示设置项目
+ */
+function displaySetting(){
+    if (g_displaySetting == false){
+        g_displaySetting = true;
+        $("#settings").css("display", "");
+        window.frameElement.style.height = $("body").outerHeight() + 125 + "px";
+    }else{
+        g_displaySetting = false;
+        $("#settings").css("display", "none");
+        window.frameElement.style.height = setting.widgetHeight;
+    }
+}
+
+function changeBarAppearance(){
+    let frontColor = $("#frontColor").val();
+    let backColor = $("#backColor").val();
+    let width = $("#barWidth").val();
+    $("#progress").css("background", frontColor);
+    $("#container").css("background", backColor);
+    $("#progress, #container").css("height", width + "px");
+    //圆角重设, i.e. 
+    $("#progress, #container").css("border-bottom-left-radius", width/2 + "px");
+    $("#progress, #container").css("border-top-left-radius", width/2 + "px");
+}
+
+async function saveAppearance(){
+    let data = {};
+    g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
+    data[setting.frontColorAttrName] = $("#frontColor").val();
+    data[setting.backColorAttrName] = $("#backColor").val();
+    data[setting.barWidthAttrName] = $("#barWidth").val();
+    let response = await addblockAttrAPI(data, g_thisWidgetId);
+    if (response == 0){
+        console.log("已写入外观属性");
+        infoPush(language["saved"], 1500);
+    }else{
+        errorPush(language["writeAttrFailed"]);
+        console.error("属性获取失败", response);
+    }
+}
 /******************     非函数部分       ************************ */
 
 let g_targetBlockId;//目标任务列表块id
@@ -838,13 +902,25 @@ let g_progressContainerElem = document.getElementById("container");
 let g_mode;
 let g_barRefreshLogTimeout;
 let g_hideInfo = false;
+let g_displaySetting = false;
+let g_apperance = {
+    frontColor: defaultAttr.frontColor,
+    backColor: defaultAttr.backColor,
+    barWidth: defaultAttr.barWidth
+}
 
 try{
+    //设置挂件宽高
+    window.frameElement.style.width = setting.widgetWidth;
+    window.frameElement.style.height = setting.widgetHeight;
     //绑定按钮事件
     //单击，手动刷新
     document.getElementById("refresh").onclick = clickManualRefresh;
     //双击：切换模式
     document.getElementById("refresh").ondblclick = dblClickChangeMode;
+    document.getElementById("settingBtn").onclick = displaySetting;
+    $("#frontColor, #backColor, #barWidth").on("change", changeBarAppearance);
+    $("#saveAppearBtn").on("click", saveAppearance);
     await __init();
 }catch (err){
     errorPush(err);

@@ -1,8 +1,11 @@
 :root {
+    /* v0.0.1->v0.0.2升级提示
+    除夜间模式外，进度条颜色已经纳入config.js管理，手动更改css可能会被config.js设定覆盖 */
+
     /* 进度条背景色(未达到部分)*/
-    --container-color: rgba(175, 184, 193, 0.2);
+    --container-color: ;
     /* 进度条前景色(已达到部分)*/
-    --progress-color: rgb(45, 164, 78);
+    --progress-color: ;
 
     /* 进度条背景色（已达到部分-黑夜模式*/
     --container-dark-color: rgba(175, 184, 193, 0.2);
@@ -16,6 +19,14 @@
 
 #refresh {
     background-image: url("./icon.png");
+}
+
+#settingBtn {
+    background-image: url("./iconSetting.png");
+    width: 1.3em;
+    background-size: auto 1.3em;
+    height: 1.3em;
+    border: 0px;
 }
 
 /* fn按钮 */
@@ -39,13 +50,13 @@
 }
 
 .app button {
-    border-width: 2px;
+    border-width: 0px;
     /*自动模式按钮边框*/
     font-weight: 300;
     background-size: auto 1.5em;
     background-repeat: no-repeat;
     background-position: center;
-    width: 3em;
+    width: 1.5em;
     height: 1.5em;
     border-radius: 0.3em;
     box-sizing: border-box;
@@ -53,7 +64,7 @@
     text-decoration: none;
     display: inline-block;
     font-size: 16px;
-    background-color: #f0f0f022;
+    background-color: #f0f0f000;
 }
 
 
@@ -71,7 +82,7 @@
 
 .container {
     /*进度条背景色（未达到的部分）*/
-    background: var(--container-color);
+    /* background: var(--container-color); */
 }
 
 .infos>* {
@@ -90,7 +101,7 @@
 }
 
 .progress {
-    background: var(--progress-color);
+    /* background: var(--progress-color); */
 }
 
 /* 黑夜模式下进度条已完成颜色 */
@@ -124,24 +135,24 @@
 
 /* 手动模式按钮样式 */
 .manualMode {
-    border-color: darkred;
-    border-style: dashed;
+    /* border-color: darkred; */
+    /* border-style: dashed; */
     /* background-color: #d4508c35; */
     /*红212 80 140*/
 }
 
 /* 自动模式按钮样式 */
 .autoMode {
-    border-color: cornflowerblue;
-    border-style: solid;
+    /* border-color: cornflowerblue; */
+    /* border-style: solid; */
     /* background-color: #28aadb35; */
     /*蓝40 170 219*/
 }
 
 /* 时间模式按钮样式 */
 .timeMode {
-    border-color: darkgreen;
-    border-style: dotted;
+    /* border-color: darkgreen; */
+    /* border-style: dotted; */
     /* background-color: #f1e34235; */
     /*黄241 227 42*/
 }

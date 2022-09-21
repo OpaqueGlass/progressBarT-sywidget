@@ -7,6 +7,7 @@
     <title>progress bar for sy</title>
     <link rel="stylesheet" href="./static/progressbar.css" />
     <script src="./static/jquery-3.6.0.min.js"></script>
+    <script src="./static/jscolor.js"></script>
 </head>
 
 <body>
@@ -19,9 +20,22 @@
         <div class="btn"><button id="refresh"></button></div>
     </div>
     <div class="infos" id="infos">
+        <button id="settingBtn"></button>
         <span id="errorInfo"></span>
         <span id="infoInfo"></span>
         <span id="modeInfo"></span>
+    </div>
+    <div class="settings" id="settings" style="display:none;">
+        <span id="frontText"></span>
+        <input id="frontColor">
+        <br/>
+        <span id="backText"></span>
+        <input id="backColor">
+        <br/>
+        <span id="barWidthText"></span>
+        <input id="barWidth" type="number" value="10">
+        <br/>
+        <button id="saveAppearBtn"></button>
     </div>
     <script type="module" src="./src/progressMain.js"></script>
 </body>
