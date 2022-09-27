@@ -34,7 +34,6 @@ class ManualMode extends Mode {
     //初始化
     async init(){
         // super.init();
-        errorPush("");
         //提示词设置
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"]);
@@ -184,7 +183,8 @@ class AutoMode extends Mode {
         }
         $("#outerInfos").css("display", "none");
         //设定自动模式功能键
-        $(`<button id="cancelAll">Fn</button><br/>`).prependTo("#settings");
+        $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
+        __refreshAppreance();//为刚刚写入的按钮加深色模式
         // $("#cancelAll").click(this.fnclick);
         $("#cancelAll").dblclick(this.uncheckAll);
         $("#cancelAll").attr("title", language["autoModeFnBtn"]);
@@ -484,6 +484,7 @@ class TimeMode extends Mode {
     destory(){
         clearInterval(this.timeRefreshInterval);
         $("#refresh").removeClass("timeMode");
+        $("#outerInfos").css("display", "none");     
     }
     //计算时间差
     calculateTimeGap(){
@@ -797,10 +798,14 @@ function __refreshAppreance(){
         $("#container").addClass("container_dark");
         $("#progress").addClass("progress_dark");
         $("#percentage, #modeInfo, .settings span").addClass("text_dark");
+        $("input").addClass("input_dark");
+        $("button").addClass("btn_dark");
     }else{
         $("#container").removeClass("container_dark");
         $("#progress").removeClass("progress_dark");
         $("#percentage, #modeInfo, .settings span").removeClass("text_dark");
+        $("input").removeClass("input_dark");
+        $("button").removeClass("btn_dark");
     }
 }
 
@@ -854,7 +859,7 @@ function displaySetting(){
     if (g_displaySetting == false){
         g_displaySetting = true;
         $("#settings").css("display", "");
-        window.frameElement.style.height = $("body").outerHeight() + 35 + "px";
+        window.frameElement.style.height = $("body").outerHeight() + 55 + "px";
     }else{
         g_displaySetting = false;
         $("#settings").css("display", "none");

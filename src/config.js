@@ -83,7 +83,7 @@ let zh_CN = {
     "saveSettingText": "保存设置项",
     "startTimeText": "开始时间：",
     "endTimeText": "结束时间：",
-    "allTaskText": "统计子任务（建议禁用）：",
+    "allTaskText": "统计子任务：",
     "blockIdText": "任务列表块id：",
 }
 let language = zh_CN;

@@ -17,7 +17,7 @@
         </div>
         <div id="percentage">N/A</div>
         
-        <div class="btn">
+        <div class="btn" id="refresh">
             <button id="refresh"></button>
         </div>
         <div class="btn">
@@ -32,29 +32,68 @@
             <span id="errorInfo"></span>
             <span id="infoInfo"></span>
         </div>
-        <span id="frontText"></span>
-        <input id="frontColor">
-        <br/>
-        <span id="backText"></span>
-        <input id="backColor">
-        <br/>
-        <span id="barWidthText"></span>
-        <input id="barWidth" type="number" value="10">
-        <br/>
+        <table class="settingTable">
+            <tr>
+                <td class="linel">
+                    <span id="frontText"></span>
+                </td>
+                <td class="liner">
+                    <input id="frontColor">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="backText"></span>
+                </td>
+                <td class="liner">
+                    <input id="backColor">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="barWidthText"></span>
+                </td>
+                <td class="liner">
+                    <input id="barWidth" type="number" value="10">
+                </td>
+            </tr>
+        </table>   
         <button id="saveAppearBtn"></button>
         <br/>
-        <span id="blockIdText"></span>
-        <input id="blockId">
-        <br/>
-        <span id="startTimeText"></span>
-        <input id="startTime">
-        <br/>
-        <span id="endTimeText"></span>
-        <input id="endTime">
-        <br/>
-        <span id="allTaskText"></span>
-        <input type="checkbox" id="allTask">
-        <br/>
+        <table class="settingTable">
+            <tr>
+                <td class="linel">
+                    <span id="blockIdText"></span>
+                </td>
+                <td class="liner">
+                    <input id="blockId">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="startTimeText"></span>
+                </td>
+                <td class="liner">
+                    <input id="startTime">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="endTimeText"></span>
+                </td>
+                <td class="liner">
+                    <input id="endTime">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="allTaskText"></span>
+                </td>
+                <td class="liner">
+                    <input type="checkbox" id="allTask">
+                </td>
+            </tr>
+        </table>
         <button id="saveSettingBtn"></button>
     </div>
     <script type="module" src="./src/progressMain.js"></script>

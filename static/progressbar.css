@@ -16,12 +16,40 @@
     --bar-radius: 5px;
 }
 
+.settings input:not(#allTask){
+    border: 1px solid rgb(45, 164, 255);
+    font-weight: 300;
+    background-size: auto 1.5em;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 13em;
+    height: 1.5em;
+    border-radius: 0.3em;
+    box-sizing: border-box;
+    /* color: white; */
+    /* padding: 15px 32px; */
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    min-width: 15px;
+    background-color: #f0f0f022;
+    /* background-color:darkslategray;
+    color: white; */
+}
+/* 
+
+td{
+    width: 96px;
+    height: 26px;
+} */
+
 #refresh {
     background-image: url("./icon.png");
 }
 
 #settingBtn {
     background-image: url("./iconSetting.png");
+    fill: currentColor;
     width: 1.4em;
     background-size: auto 1.4em;
     height: 1.4em;
@@ -30,34 +58,19 @@
     padding: 1px 6px;
 }
 
-/* fn按钮 */
-.infos button {
-    border-radius: 0.3em;
-    border-width: 1px;
-    background-color: #f0f0f022;
-    /* border: 1px solid;
-    font-weight: 300;
-    background-size: auto 1.5em;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 1.5em;
-    height: 1em;
-    vertical-align: middle;
-    border-radius: 0.3em;
-    box-sizing: border-box;
-    text-align: center;
-    line-height: 1.3em;
-    text-decoration: none; */
-    /* display: inline-block; */
-    /* font-size: 15px;
-    margin-left: 3px;
-    background-color: #f0f0f022; */
-}
 #barWidth{
-    width: 30px;
+    width: 40px;
 }
 
-.app button {
+.linel{
+    text-align: right;
+}
+
+.liner{
+    text-align: left;
+}
+
+.btn > button{
     border-width: 0px;
     /*自动模式按钮边框*/
     font-weight: 300;
@@ -73,6 +86,19 @@
     display: inline-block;
     font-size: 14px;
     background-color: #f0f0f000;
+}
+
+.infos > button{
+    width: 2em;
+    height: 1.5em;
+    border-width:1px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.settingTable{
+    width: 50%;
 }
 
 .btn {
@@ -172,4 +198,12 @@
     display: flex;
     /* justify-content: flex-start; */
 
+}
+.input_dark{
+    color: var(--text-dark);
+    background-color: #f0f0f000;
+}
+.btn_dark{
+    color: var(--text-dark);
+    background-color: #1259536e;
 }
