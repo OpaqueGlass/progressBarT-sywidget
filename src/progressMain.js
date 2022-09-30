@@ -421,7 +421,7 @@ class AutoMode extends Mode {
             this.calculateAllTasks = defaultAttr["alltask"];
         }
         //向挂件设置项写入id
-        $("#blockId").val(isValidStr(g_targetBlockId)?g_targetBlockId:"");
+        $("#blockId").val(isValidStr(g_targetBlockId) ? g_targetBlockId : "");
         //如果没有设定，则自动获取上下文id
         try{
         if (!isValidStr(g_targetBlockId)){
@@ -500,9 +500,6 @@ class TimeMode extends Mode {
         if (result < 0){
             errorPush(language["earlyThanStart"], 7000);
             console.warn(language["earlyThanStart"]);
-        }else if (result > 100){
-            // result = 100;
-            // infoPush();
         }
         return result;
     }
@@ -619,7 +616,7 @@ async function getSettingAtStartUp(){
     let response = await getblockAttrAPI(g_thisWidgetId);
     console.log("getAttr", response);
     if (response.data == null) return null;
-    applyProgressColor(response);
+    applyProgressColor(response);//应用属性
     //获取外观属性
     g_apperance.frontColor = isValidStr(response.data[attrName.frontColor])? 
         response.data[attrName.frontColor] : $("#progress").css("background-color");
@@ -632,7 +629,12 @@ async function getSettingAtStartUp(){
         console.warn("获取barheight失败", err);
         g_apperance.barWidth = defaultAttr.barWidth;
     }
-    if (attrName.manual in response.data){//获取进度设定
+    //初始化设置-统计子项
+    if (response.data[attrName.taskCalculateMode] == "true"){
+        $("#allTask").prop("checked", true);
+    }
+    //获取进度设定
+    if (attrName.manual in response.data){
         return response.data[attrName.manual];
     }
     return null;
@@ -756,6 +758,7 @@ async function __init(){
     g_manualPercentage = parseFloat(g_manualPercentage);
     //初始化外观设置项input;
     console.log("外观", g_apperance)
+    //设定Jscolor设置参数
     defaultAttr.frontColorSelector.value = g_apperance.frontColor;
     $("#frontColor").attr("data-jscolor", JSON.stringify(defaultAttr.frontColorSelector));
     defaultAttr.backColorSelector.value = g_apperance.backColor;
@@ -855,7 +858,7 @@ async function clickManualRefresh(){
 /**
  * 显示/隐藏设置项目
  */
-function displaySetting(){
+function    displaySetting(){
     if (g_displaySetting == false){
         g_displaySetting = true;
         $("#settings").css("display", "");
@@ -907,15 +910,6 @@ async function saveSettings(){
     //获取用户设置，写入data
     //注意判空，为空写null
     //为空时保留null（因为为空时不显示null）
-    // if ($("#blockId").val() != ""){
-    //     data[attrName.autoTarget] = $("#blockId").val();
-    // }
-    // if ($("#startTime").val() != ""){
-    //     data[attrName.startTime] = $("#startTime").val();
-    // }
-    // if ($("#endTime").val() != ""){
-    //     data[attrName.endTime] = $("#endTime").val();
-    // }
     data[attrName.autoTarget] = $("#blockId").val();
     data[attrName.startTime] = $("#startTime").val();
     data[attrName.endTime] = $("#endTime").val();

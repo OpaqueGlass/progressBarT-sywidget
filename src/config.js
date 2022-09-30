@@ -11,7 +11,6 @@ let defaultAttr = {//挂件创建时默认属性设定
     frontColor: "rgba(45, 164, 78, 1)",//进度条前景色对应的属性默认值
     backColor: "rgba(175, 184, 193, 0.2)",//进度条背景色对应的属性默认值
     alltask: false,//计算子任务进度默认值。认为所有任务（包括子任务）的权重相同，统计所有任务完成的进度，而不只是第一层级
-    hideInfo: true,//自动、手动模式不显示提示信息（错误信息仍然显示），只留下进度条和刷新按钮;此设置更改只在挂件重新载入后生效
     barWidth: 10,//进度条高度，单位px像素
     frontColorSelector: {//前景色颜色选择器配置（jscolor）
         value: 'rgba(51,153,255,0.5)',//没用到
@@ -27,7 +26,7 @@ let defaultAttr = {//挂件创建时默认属性设定
         position: 'bottom',
         height: 80,
         backgroundColor: '#333',
-        palette: 'rgba(176,176,176,0.2) #e9d7c740 #dbe4e540 rgba(175,184,193,0.2) rgba(255, 231, 231, 0.25) #ffe438 #88dd20 #22e0cd #269aff #bb1cd4',
+        palette: 'rgba(176,176,176,0.2) #e9d7c740 #dbe4e540 rgba(175,184,193,0.2) rgba(255, 231, 231, 0.25) #ffe438 #88dd20 #22e0cd #269aff #bb1cd4',//预设颜色组
         paletteCols: 11, hideOnPaletteClick: true
     }
 }
@@ -79,8 +78,8 @@ let zh_CN = {
     "frontColorText": "前景色设定：",
     "backColorText": "背景色设定：",
     "barWidthText": "进度条高度：",
-    "saveBtnText": "保存外观设定",
-    "saveSettingText": "保存设置项",
+    "saveBtnText": "保存外观↑",
+    "saveSettingText": "保存设置↓",
     "startTimeText": "开始时间：",
     "endTimeText": "结束时间：",
     "allTaskText": "统计子任务：",

@@ -16,7 +16,8 @@
     --bar-radius: 5px;
 }
 
-.settings input:not(#allTask){
+/* 除alltask外的用户输入 */
+.settings input:not(#allTask) {
     border: 1px solid rgb(45, 164, 255);
     font-weight: 300;
     background-size: auto 1.5em;
@@ -36,6 +37,7 @@
     /* background-color:darkslategray;
     color: white; */
 }
+
 /* 
 
 td{
@@ -58,19 +60,27 @@ td{
     padding: 1px 6px;
 }
 
-#barWidth{
+#barWidth {
     width: 40px;
 }
 
-.linel{
+/* 左侧栏 */
+.linel {
     text-align: right;
 }
 
-.liner{
+/* 右侧栏 */
+.liner {
     text-align: left;
 }
 
-.btn > button{
+.btnline {
+    text-align: center;
+}
+
+
+/* 主界面刷新按钮 */
+.btn > button {
     border-width: 0px;
     /*自动模式按钮边框*/
     font-weight: 300;
@@ -88,16 +98,17 @@ td{
     background-color: #f0f0f000;
 }
 
-.infos > button{
+/* 提示区功能按钮 */
+.infos>button {
     width: 2em;
     height: 1.5em;
-    border-width:1px;
+    border-width: 1px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
 }
 
-.settingTable{
+.settingTable {
     width: 50%;
 }
 
@@ -122,8 +133,15 @@ td{
     /* background: var(--container-color); */
 }
 
+/* 提示词子项间隔 */
 .infos>* {
     margin-left: 3px;
+}
+
+/* 设置项保存按钮 */
+.settings button {
+    border: 1px dotted;
+    border-radius: 3px;
 }
 
 #progress {
@@ -199,11 +217,13 @@ td{
     /* justify-content: flex-start; */
 
 }
-.input_dark{
+
+.input_dark {
     color: var(--text-dark);
     background-color: #f0f0f000;
 }
-.btn_dark{
+
+.btn_dark {
     color: var(--text-dark);
     background-color: #1259536e;
 }
