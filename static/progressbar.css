@@ -23,7 +23,7 @@
     background-size: auto 1.5em;
     background-repeat: no-repeat;
     background-position: center;
-    width: 13em;
+    width: 12em;
     height: 1.5em;
     border-radius: 0.3em;
     box-sizing: border-box;
@@ -67,6 +67,7 @@ td{
 /* 左侧栏 */
 .linel {
     text-align: right;
+    min-width: 4em;
 }
 
 /* 右侧栏 */
