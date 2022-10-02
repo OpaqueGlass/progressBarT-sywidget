@@ -1,6 +1,6 @@
 ## progress Bar T 进度条
 
-> 当前版本： v0.0.1-从这里开始
+> 当前版本： v0.1.0 支持挂件内设定设置；支持自动定位下/上方紧邻任务列表块；
 
 > 展示进度条的思源笔记挂件。
 
@@ -18,57 +18,58 @@
 
 - 双击刷新按钮切换模式；
 - 单击刷新按钮触发进度计算/手动模式保存进度；
-- 修改挂件属性后单击刷新按钮应用设置；
+- 点击设置按钮显示/隐藏设置；
 
 ### 使用说明
 
-目前本挂件未在界面上安排设置位置，相关设定需要在挂件属性中修改。
-
-挂件块属性设置方法：鼠标在挂件中时，`shift+左键点击`挂件块左上角块标。（或左键点击块标，点击`属性`）。
-
-![挂件属性设置说明](README.assets/attrsetting.png)
-
-![挂件属性设置说明](/widgets/progressBarT/README.assets/attrsetting.png)
-
 #### 自动模式
 
-> 自动模式下刷新按钮边框为实线。
+默认情况下（任务列表块id为空时），挂件将自动获取**下方紧邻的**任务列表块并计算其进度。（若下方没有任务列表块，则获取挂件上方紧邻的任务列表块）
 
-复制已经存在的任务列表块id（<u>容器块、不是列表项块</u>）到`2targetid`属性中，点击确定保存属性，在挂件中点击刷新按钮应用更改。
+您也可以复制已经存在的任务列表块id（<u>容器块、不是列表项块</u>）到设置->任务列表块id中，点击“保存设置”按钮在挂件中应用更改。
 
 ![复制任务列表容器块id](README.assets/taskListId.png)
 
 ![复制任务列表容器块id](/widgets/progressBarT/README.assets/taskListId.png)
 
-- 双击`Fn`按钮：取消/完成`2targetid`对应的**全部**任务列表项。
+自动模式下，双击`Fn`按钮（需要点开设置才能看到）：取消/完成块id对应的**全部**任务列表项。
 
 > 鼠标悬停在刷新按钮上，有`(API)`标注时，无法在修改任务列表块后自动刷新，需要手动点击刷新按钮计算进度。
 
 #### 手动模式
 
-> 手动模式下刷新按钮边框为短线。
+点击进度条对应位置设定进度，然后点击刷新按钮保存进度，默认将在手动更改后0.5秒自动保存。
 
-点击进度条对应位置设定进度，然后点击刷新按钮保存进度，默认将在手动更改后1.5秒自动保存。
+进度百分比下方出现下划线并随后消失，表明已经成功保存设定，请确定保存成功后再关闭文档。
 
 #### 时间模式
 
-> 时间模式下刷新按钮边框为点。
+设置开始时间、结束时间，然后点击“保存设置”按钮。
 
-分别设置挂件块属性`3start`、`4end`为开始时间和结束时间。挂件接受的时间字符串格式为：（年、月、日、时、分之间需要使用任意的非数字字符隔开）
+挂件接受的时间字符串格式为：（年、月、日、时、分之间需要使用任意的非数字字符隔开）
 
-- `YYYY MM DD`（年 月 日），例如`2020.1.1`
+- `YYYY MM DD`（年 月 日），例如`2020.1.1` `2020年1月1日`
 - `YYYY MM DD HH MM` （年 月 日 时 分），例如`2020.1.1 12.20`
-- `HH MM`（将在计算进度时自动补全为挂件<u>运行时当天</u>对应时间，用于展示当天进度），例如`12.20`
+- `HH MM`（将在计算进度时自动补全为挂件<u>运行时当天</u>对应时间，用于展示当天进度），例如`12.20` `12:20`
 
 若为20xx年，年份数字可只写后两位。
 
+请注意：时间模式下，进度刷新频率由`config.js`设定（请参考自定义设置），默认10分钟刷新一次；
+
+#### v0.0.1兼容性说明
+
+- 设置项可以在挂件内配置，也可直接修改属性配置，但同时只能使用一种方式设定，请避免混用；
+- 如果使用css background特有方式设定进度条外观，请在属性保存，并避免在挂件内保存外观设定，挂件内保存外观设定只接受颜色；
+- 之前在css中设定的进度条颜色将无效，请在`config.js`设定；
+- 如果出现问题，请尝试在文档中删除挂件后重新添加。
+
 ### 属性设置示例
 
-![属性说明](README.assets/setattrhint2.png)
+> 如果您不清楚属性含义，请从挂件中完成设置，不要修改属性。
 
-![属性说明](/widgets/progressBarT/README.assets/setattrhint2.png)
+[属性说明](/widgets/progressBarT/README.assets/setattrhint2.png)
 
-- `1progress`：进度条模式/手动模式进度保存，请勿手动更改；
+- `1progress`：进度条模式/手动模式进度保存，**请勿手动更改**；
   - [0, 100]手动模式；
   - -1自动模式；
   - -2时间模式；
@@ -92,19 +93,21 @@
 - `7alltask`：~~自动模式统计包括子任务的所有任务完成进度~~ ；
   - 不建议使用，详见注意，请设置为`false`；
 
+属性修改后，请点击刷新按钮应用设定，或者重新打开文档。
+
 ### 自定义设置
 
-打开`${思源data目录}/widget/progressBar/src/config.js`，可进行自定义设置，请参考设置项旁边的说明。以下是一些可能常用的设置项：
+打开`${思源data目录}/widget/progressBarT/src/config.js`，可进行自定义设置，请参考设置项旁边的说明。以下是一些可能常用的设置项：
 
 - 手动模式操作后自动保存延迟`saveAttrTimeout`；
 - 自动模式API统计时自动计算间隔`refreshInterval`；
 - 自定义挂件属性名称`manualAttrName`、`autoTargetAttrName`、`startTimeAttrName`、`endTimeAttrName`等；
 - 自动模式：如果块不存在则创建块`createBlock`；
-- 显示/隐藏自动模式Fn按钮：`taskFunction`；
+- 时间模式：定时刷新间隔`timeModeRefreshInterval`；
 
-打开`${思源data目录}/widget/progressBar/static/progressbar.css`，可编辑进度条显示样式，例如：
+打开`${思源data目录}/widget/progressBarT/static/progressbar.css`，可编辑进度条显示样式，例如：
 
-- 进度条默认颜色，或其他默认进度条样式；
+- ~~进度条默认颜色；~~请注意，进度条颜色设定迁移至config.js设置；
 - 按钮样式，等；
 
 ## ⚠️注意
@@ -120,25 +123,6 @@
 - 关于`7alltask`统计包括子节点在内的进度：
   - 上一层级任务（父任务）完成，其下子任务不会被认为完成，父任务、子任务统计时权重相同；
   - 在进行大量任务节点增删时，会反复触发MutaionObserver（节点变动监视）重设，可能导致卡顿；
-
-
-### 附录--颜色设定示例
-
-> P.S.这是由开发者提供的颜色，这里的颜色都不太好看。另外，建议背景色有点透明度。
-
-| 颜色       | 已完成（前景色）`5frontcolor` | 未完成（背景色）`6backcolor` |
-| ---------- | ----------------------------- | ---------------------------- |
-| 暗橙       | rgb(175, 72, 27)              | rgba(176, 176, 176, 0.25)    |
-| 淡绿       | rgb(22,170,157)               | rgba(197, 229, 234, 0.2)     |
-| 亮橙       | rgb(255, 123, 0)              | rgba(233, 215, 199, 0.2)     |
-| 蓝         | rgb(0, 128, 207)              | rgba(216, 228, 229,0.25)     |
-| 蓝2        | rgb(40, 170, 219)             |                              |
-| 洋红       | rgb(203, 64, 108)             |                              |
-| 红         | rgb(255, 84, 84)              | rgba(255, 231, 231, 0.25)    |
-| 红-较深    | rgb(218,57,57)                |                              |
-| 绿（默认） | rgb(45,164,78)                | rgba(175,184,193,0.2)        |
-
-
 
 ## 反馈bug
 
@@ -163,5 +147,18 @@ jQuery JavaScript Library v3.6.0  https://jquery.com/
 Copyright OpenJS Foundation and other contributors
 Released under the MIT license  https://jquery.org/license
 ```
+
+2. jsColor
+
+开源协议：[GNU GPL v3](http://www.gnu.org/licenses/gpl-3.0.txt)
+官方网站：[https://jscolor.com/download/](https://jscolor.com/download/)
+
+### 图标
+
+1. [刷新按钮图标](https://www.iconfinder.com/icons/5402417/refresh_rotate_sync_update_reload_repeat_icon)，作者：[amoghdesign](https://www.iconfinder.com/amoghdesign)，授权协议：[CC3.0 BY-NC](http://creativecommons.org/licenses/by-nc/3.0/)；
+
+2. [设置按钮图标](https://www.iconfinder.com/icons/5925600/control_options_settings_icon)，作者：[IconPai](https://www.iconfinder.com/iconpai)，授权说明：Free for commercial use (Include link to authors website；
+
+
 
 [^1]: 计算默认使用DOM统计任务列表进度、配合MutationObserver在任务列表变化时触发重新统计，但在一些条件下无法使用，详见“注意”一节；
