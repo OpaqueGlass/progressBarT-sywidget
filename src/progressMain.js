@@ -589,15 +589,10 @@ class TimeMode extends Mode {
 function changeBar(percentage){
     clearTimeout(g_barRefreshLogTimeout);
     let origin = percentage;
-    if (percentage >= 100) {
+    if (percentage > 100) {
         percentage = 100;
-        let width = $("#progress").height();
-        $("#progress, #container").css("border-bottom-right-radius", width / 2 + "px");
-        $("#progress, #container").css("border-top-right-radius", width / 2 + "px");
-    }else{
-        //设定圆角
-        document.getElementById("progress").style.borderBottomRightRadius = 0;
-        document.getElementById("progress").style.borderTopRightRadius = 0;
+    }else if (percentage < 0){
+        percentage = 0;
     }
     let accuratePercentage = Math.floor(percentage * 100) / 100//下取整（间接保留两位小数）
     let intPercentage = Math.round(origin);//四舍五入取整
@@ -641,7 +636,7 @@ async function getSettingAtStartUp(){
 }
 
 /**
- * 应用属性中关于颜色的设置
+ * 发送请求后，用于应用属性中关于颜色的设置
  * @param {*} response 
  */
 function applyProgressColor(response){
@@ -662,8 +657,7 @@ function applyProgressColor(response){
     let width = isValidStr(response.data[attrName.barWidth]) ?
         response.data[attrName.barWidth] : defaultAttr.barWidth;
     $("#progress, #container").css("height", width + "px");
-    $("#progress, #container").css("border-bottom-left-radius", width/2 + "px");
-    $("#progress, #container").css("border-top-left-radius", width/2 + "px"); 
+    $("#container").css("border-radius", width/2 + "px");
 }
 
 /**
@@ -757,7 +751,6 @@ async function __init(){
     }
     g_manualPercentage = parseFloat(g_manualPercentage);
     //初始化外观设置项input;
-    console.log("外观", g_apperance)
     //设定Jscolor设置参数
     defaultAttr.frontColorSelector.value = g_apperance.frontColor;
     $("#frontColor").attr("data-jscolor", JSON.stringify(defaultAttr.frontColorSelector));
@@ -882,8 +875,7 @@ function changeBarAppearance(){
     $("#container").css("background", backColor);
     $("#progress, #container").css("height", width + "px");
     //圆角重设, i.e. 
-    $("#progress, #container").css("border-bottom-left-radius", width/2 + "px");
-    $("#progress, #container").css("border-top-left-radius", width/2 + "px");
+    $("#container").css("border-radius", width/2 + "px");
 }
 
 async function saveAppearance(){

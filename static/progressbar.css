@@ -125,6 +125,8 @@ td{
     border-radius: var(--bar-radius);
     /*进度条圆角*/
     align-self: center;
+    /* 禁止子元素溢出 */
+    overflow: hidden;
     /* float: right; */
 }
 
