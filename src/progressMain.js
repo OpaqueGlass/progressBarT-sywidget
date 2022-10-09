@@ -352,7 +352,7 @@ class AutoMode extends Mode {
             directSymbol = " ";//要统计所有元素，就不限定为直接子元素了
         }
         //寻找指定块下的任务项
-        let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}[data-marker="*"]`);
+        let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}[data-marker="*"][data-subtype="t"]`);
         let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}.protyle-task--done[data-marker="*"]`);
         if (allTasks.length == 0){
             console.warn("DOM计算进度失败：找不到对应块，或块类型错误。", blockid);
