@@ -1,6 +1,6 @@
 ## progress Bar T 进度条
 
-> 当前版本： v0.1.0 支持挂件内设定设置；支持自动定位下/上方紧邻任务列表块；
+> 当前版本： v0.1.1 修复：子项包括无序列表时，错误计算任务总数的问题；
 
 > 展示进度条的思源笔记挂件。
 
@@ -26,7 +26,7 @@
 
 默认情况下（任务列表块id为空时），挂件将自动获取**下方紧邻的**任务列表块并计算其进度。（若下方没有任务列表块，则获取挂件上方紧邻的任务列表块）
 
-您也可以复制已经存在的任务列表块id（<u>容器块、不是列表项块</u>）到设置->任务列表块id中，点击“保存设置”按钮在挂件中应用更改。
+您也可以复制已经存在的任务列表块id（<u>不是列表项块</u>）到设置->任务列表块id中，点击“保存设置”按钮在挂件中应用更改。
 
 ![复制任务列表容器块id](README.assets/taskListId.png)
 
@@ -63,37 +63,6 @@
 - 之前在css中设定的进度条颜色将无效，请在`config.js`设定；
 - 如果出现问题，请尝试在文档中删除挂件后重新添加。
 
-### 属性设置示例
-
-> 如果您不清楚属性含义，请从挂件中完成设置，不要修改属性。
-
-[属性说明](/widgets/progressBarT/README.assets/setattrhint2.png)
-
-- `1progress`：进度条模式/手动模式进度保存，**请勿手动更改**；
-  - [0, 100]手动模式；
-  - -1自动模式；
-  - -2时间模式；
-
-- `2targetid`：自动模式下，将计算该id对应的任务列表块进度；
-  - `20220823231306-1ud2gjv`；
-
-- `3start`：时间模式开始时间；
-  - 年 月 日 时 分`2022-6-8 12:20`；
-  - 年 月 日`2022-6-8`   `2022 6 8`    `22-6-8`；
-  - 时 分`22:22`；
-
-- `4end`：时间模式结束时间；
-- `5frontcolor`：进度条前景色（已完成部分颜色）css(background)，这里的设定将应用于进度条css的`background`，设置后点刷新生效；
-  - 红绿蓝`rgb(255, 0, 0)`；
-  - 红绿蓝不透明度`rgba(216, 228, 229, 0.737)`；
-  - 线性渐变`linear-gradient(to right , #7A88FE, #7AFFB0)`；（显示效果一般）
-
-- `6backcolor`：进度条背景色（未完成部分颜色）css(background)；
-
-- `7alltask`：~~自动模式统计包括子任务的所有任务完成进度~~ ；
-  - 不建议使用，详见注意，请设置为`false`；
-
-属性修改后，请点击刷新按钮应用设定，或者重新打开文档。
 
 ### 自定义设置
 
@@ -107,8 +76,9 @@
 
 打开`${思源data目录}/widget/progressBarT/static/progressbar.css`，可编辑进度条显示样式，例如：
 
-- ~~进度条默认颜色；~~请注意，进度条颜色设定迁移至config.js设置；
+-  ~~进度条默认颜色；~~ 请注意，进度条颜色设定迁移至config.js设置；
 - 按钮样式，等；
+
 
 ## ⚠️注意
 
@@ -120,7 +90,7 @@
   - 因为挂件未更新而在新版本失效；
 - 没有设置界面，需要自行设定挂件属性；
 - 任务完成/取消完成勾选的变动，通过MutationObserver获取对应任务节点的class属性变化实现，频繁高亮、选中任务列表块可能导致卡顿；
-- 关于`7alltask`统计包括子节点在内的进度：
+- 关于`7alltask`统计子任务功能：
   - 上一层级任务（父任务）完成，其下子任务不会被认为完成，父任务、子任务统计时权重相同；
   - 在进行大量任务节点增删时，会反复触发MutaionObserver（节点变动监视）重设，可能导致卡顿；
 
@@ -151,13 +121,14 @@ Released under the MIT license  https://jquery.org/license
 2. jsColor
 
 开源协议：[GNU GPL v3](http://www.gnu.org/licenses/gpl-3.0.txt)
+
 官方网站：[https://jscolor.com/download/](https://jscolor.com/download/)
 
 ### 图标
 
-1. [刷新按钮图标](https://www.iconfinder.com/icons/5402417/refresh_rotate_sync_update_reload_repeat_icon)，作者：[amoghdesign](https://www.iconfinder.com/amoghdesign)，授权协议：[CC3.0 BY-NC](http://creativecommons.org/licenses/by-nc/3.0/)；
+1. [刷新按钮图标](https://www.iconfinder.com/icons/5402417/refresh_rotate_sync_update_reload_repeat_icon)，作者：[amoghdesign](https://www.iconfinder.com/amoghdesign)，许可协议：[CC3.0 BY-NC](http://creativecommons.org/licenses/by-nc/3.0/)；
 
-2. [设置按钮图标](https://www.iconfinder.com/icons/5925600/control_options_settings_icon)，作者：[IconPai](https://www.iconfinder.com/iconpai)，授权说明：Free for commercial use (Include link to authors website；
+2. [设置按钮图标](https://www.iconfinder.com/icons/5925600/control_options_settings_icon)，作者：[IconPai](https://www.iconfinder.com/iconpai)，许可说明：Free for commercial use (Include link to authors website；
 
 
 
