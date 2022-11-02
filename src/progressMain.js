@@ -446,6 +446,7 @@ class TimeMode extends Mode {
     timeRefreshInterval;
     times = [null, null];//0开始时间，1结束时间
     todayMode = false;
+    dateString = ["", ""];// 开始时间，结束时间字符串
     async init(){
         super.init();
         //设定提示词
@@ -472,11 +473,31 @@ class TimeMode extends Mode {
                 }, setting.timeModeRefreshInterval);
             }
             changeBar(this.calculateTimeGap());
-            if (this.todayMode){
-                modePush(`${this.times[0].toLocaleTimeString()} ~ ${this.times[1].toLocaleTimeString()}`, 0);
-            }else{
-                modePush(`${this.times[0].toLocaleString()} ~ ${this.times[1].toLocaleString()}`, 0);
-            }
+            try {
+                if (this.todayMode) {
+                    modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
+                }else{
+                    // 计算还有多少天
+                    let gapDay = this.calculateDateGapByDay(new Date(), this.times[1]);
+                    let dateGapString = "";
+                    if (gapDay > 0) {
+                        dateGapString = `[D-${gapDay}]`;
+                    } else if (gapDay == 0) {
+                        dateGapString = `[D-DAY]`;
+                    } else {
+                        dateGapString = `[+${-gapDay}]`;
+                    }
+                    modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
+                }
+            }catch(err) {
+                console.error(err);
+                console.warn("输出日期时出现错误");
+                if (this.todayMode) {
+                    modePush(`${this.times[0].toLocaleTimeString()} ~ ${this.times[1].toLocaleTimeString()}`, 0);
+                }else{
+                    modePush(`${this.times[0].toLocaleString()} ~ ${this.times[1].toLocaleString()}`, 0);
+                }
+            } 
         }else{
             //失败情况应该已经在readTimesFromAttr中处理
         }
@@ -544,10 +565,12 @@ class TimeMode extends Mode {
                 switch (nums[i].length){
                     case 3: {//输入格式YYYY MM DD
                         this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2]);
+                        this.dateString[i] = this.times[i].toLocaleDateString();
                         break;
                     }
                     case 5: {//输入格式YYYY MM DD HH MM
                         this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][3], nums[i][4]);
+                        this.dateString[i] = this.times[i].toLocaleString();
                         break;
                     }
                     case 2: {//输入格式HH MM
@@ -555,6 +578,7 @@ class TimeMode extends Mode {
                         this.times[i].setHours(nums[i][0]);
                         this.times[i].setMinutes(nums[i][1]);
                         this.times[i].setSeconds(0);
+                        this.dateString[i] = this.times[i].toLocaleTimeString();
                         this.todayMode = true;//标记为当天模式
                         break;
                     }
@@ -576,6 +600,18 @@ class TimeMode extends Mode {
             errorPush(language["noTimeAttr"]);
         }
         return false;
+    }
+    /**
+     * 计算两个日期相差的天数，返回天数
+     * end - start
+     * @param {Date} start
+     * @param {Date} end
+     * @return {int} 正数：start距离end还有x天
+     */
+     calculateDateGapByDay(start, end) {
+        let from = Date.parse(start.toDateString());
+        let to = Date.parse(end.toDateString());
+        return Math.ceil((to - from) / (1 * 24 * 60 * 60 * 1000));
     }
     async refresh(){
         await this.calculateApply();
@@ -825,6 +861,7 @@ async function __refresh(){
  */
 async function dblClickChangeMode(){
     clearTimeout(g_refreshBtnTimeout);
+    // TODO 更改为数组控制切换顺序，弃用if else 结构
     g_mode.destory();//退出上一模式
     if (g_manualPercentage == -1){//如果当前为自动模式，则切换为时间模式
         g_manualPercentage = -2;
