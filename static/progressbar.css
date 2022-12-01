@@ -16,8 +16,8 @@
     --bar-radius: 5px;
 }
 
-/* 除alltask外的用户输入 */
-.settings input:not(#allTask) {
+/* 除alltask\showButtonCheckBox外的用户输入 */
+.settings input:not(#allTask, #showButtonCheckBox) {
     border: 1px solid rgb(45, 164, 255);
     font-weight: 300;
     background-size: auto 1.5em;
@@ -107,6 +107,10 @@ td{
     text-align: center;
     text-decoration: none;
     display: inline-block;
+}
+
+.innerinfos {
+    height: 47px;
 }
 
 .settingTable {

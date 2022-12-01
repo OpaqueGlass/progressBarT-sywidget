@@ -28,12 +28,20 @@
         <span id="modeInfo"></span>
     </div>
     <div class="settings" id="settings" style="display:none;">
-        <div class="infos" id="infos">
+        <div class="infos innerinfos" id="infos">
             <span id="errorInfo"></span>
             <span id="infoInfo"></span>
             <span id="innerModeInfo"></span>
+            <span id="innerCurrentMode"></span>
         </div>
         <table class="settingTable">
+            <tr>
+                <td class="linel btnline" colspan="2">
+                    <button id="changeMode"></button>
+                </td>
+                <td class="liner btnline">
+                </td>
+            </tr>
             <tr>
                 <td class="linel">
                     <span id="frontText"></span>
@@ -56,6 +64,14 @@
                 </td>
                 <td class="liner">
                     <input id="barWidth" type="number" value="10">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="showButtonText"></span>
+                </td>
+                <td class="liner">
+                    <input id="showButtonCheckBox" type="checkbox">
                 </td>
             </tr>
             <tr>

@@ -1,5 +1,5 @@
 export {
-    token, includeOs, setting, language, defaultAttr, attrName
+    token, includeOs, setting, language, defaultAttr, attrName, attrSetting
 };
 let token = "";//api鉴权token
 let includeOs = [];//目前没用
@@ -40,6 +40,10 @@ let attrName = {
     backColor: "6backcolor",//进度条背景色对应的属性名称
     taskCalculateMode: "7alltask",//自动模式统计任务范围对应的属性名称
     barWidth: "6width", //进度条高度
+    basicSetting: "pgbtconfig", //进度条基础设定
+}
+let attrSetting = {
+    showButtons: true, // 在进度条右侧展示刷新和设置按钮
 }
 let setting = {
     widgetWidth: "50em",//挂件的宽
@@ -51,6 +55,7 @@ let setting = {
     timeModeRefreshInterval: 1000 * 60 * 10,//时间模式定时刷新间隔，单位毫秒，请勿设定的时间过短；为0则禁用
     createBlock: false, //如果块不存在，则创建块
     updateForSubNode: true,//在子任务增删时更新进度(beta)，此选项开启后，可能出现性能问题，建议关闭
+    showGapDay: true, // 时间模式显示日期间隔天数
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。",
@@ -84,6 +89,8 @@ let zh_CN = {
     "endTimeText": "结束时间：",
     "allTaskText": "统计子任务：",
     "blockIdText": "任务列表块id：",
+    "showButtonText": "显示按钮：",
+    "changeModeText": "切换模式"
 }
 let language = zh_CN;
 

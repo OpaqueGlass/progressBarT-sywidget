@@ -6,10 +6,12 @@ import {
     insertBlockAPI,
     addblockAttrAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
-import {language, setting, defaultAttr, attrName} from './config.js';
+import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
+    // 模式id
+    modeId = 0;
     // get modeCode(){
     //     return this._modeCode;
     // }
@@ -38,6 +40,7 @@ class ManualMode extends Mode {
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"]);
         modePush(language["manualMode"]);
+        $("#innerCurrentMode").text(language["manualMode"]);
         g_progressContainerElem = document.getElementById("container");
         //获取点击/拖拽/触摸拖拽进度条事件
         //实现单击进度条任意位置
@@ -163,6 +166,7 @@ class AutoMode extends Mode {
         $("#refresh").attr("title", language["autoMode"]);
         $("#refresh").addClass("autoMode");
         modePush(language["autoMode"]);
+        $("#innerCurrentMode").text(language["autoMode"]);
         //重新读取目标块id
         await this.readBlockIdFromAttr();
         //设置domobserver
@@ -453,6 +457,7 @@ class TimeMode extends Mode {
         $("#refresh").addClass("timeMode");
         $("#refresh").attr("title", language["timeMode"]);
         modePush(language["timeMode"], 0);
+        $("#innerCurrentMode").text(language["timeMode"]);
         clearInterval(this.timeRefreshInterval);
         if (setting.onstart){
             await this.calculateApply();
@@ -474,6 +479,10 @@ class TimeMode extends Mode {
             }
             changeBar(this.calculateTimeGap());
             try {
+                if (setting.showGapDay == false) {
+                    modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`);
+                    return;
+                }
                 if (this.todayMode) {
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
                 }else{
@@ -481,11 +490,11 @@ class TimeMode extends Mode {
                     let gapDay = this.calculateDateGapByDay(new Date(), this.times[1]);
                     let dateGapString = "";
                     if (gapDay > 0) {
-                        dateGapString = `[D-${gapDay}]`;
+                        dateGapString = `D-${gapDay}`;
                     } else if (gapDay == 0) {
-                        dateGapString = `[D-DAY]`;
+                        dateGapString = `D-DAY`;
                     } else {
-                        dateGapString = `[+${-gapDay}]`;
+                        dateGapString = `+${-gapDay}`;
                     }
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
                 }
@@ -644,6 +653,7 @@ function changeBar(percentage){
  */
 async function getSettingAtStartUp(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
+    // 通过API获取进度条属性
     let response = await getblockAttrAPI(g_thisWidgetId);
     console.log("getAttr", response);
     if (response.data == null) return null;
@@ -664,7 +674,13 @@ async function getSettingAtStartUp(){
     if (response.data[attrName.taskCalculateMode] == "true"){
         $("#allTask").prop("checked", true);
     }
-    //获取进度设定
+
+    // 获取挂件其他设定
+    if (attrName.basicSetting in response.data) {
+        g_attrSetting = JSON.parse(response.data[attrName.basicSetting].replaceAll("&quot;", "\""));
+    }
+
+    //获取进度设定[请不要在之后处理属性内容]
     if (attrName.manual in response.data){
         return response.data[attrName.manual];
     }
@@ -726,6 +742,7 @@ async function setDefaultSetting2Attr(){
     data[attrName["backColor"]] = defaultAttr["backColor"];
     data[attrName["taskCalculateMode"]] = defaultAttr["alltask"].toString();
     data[attrName["barWidth"]] = defaultAttr["barWidth"].toString();
+    data[attrName["basicSetting"]] = JSON.stringify(g_attrSetting);
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);
@@ -782,7 +799,7 @@ async function __init(){
     //没有响应属性
     if (g_manualPercentage == null || g_manualPercentage == NaN){
         //创建属性（延时创建，防止无法写入）
-        setTimeout(async function(){await setDefaultSetting2Attr();}, 1000);
+        setTimeout(async function(){await setDefaultSetting2Attr();}, 3000);
         g_manualPercentage = defaultAttr["percentage"];
     }
     g_manualPercentage = parseFloat(g_manualPercentage);
@@ -794,6 +811,8 @@ async function __init(){
     $("#backColor").attr("data-jscolor", JSON.stringify(defaultAttr.backColorSelector));
     jscolor.install();//注入jscolor
     $("#barWidth").val(g_apperance.barWidth);
+    $("#showButtonCheckBox").prop("checked", g_attrSetting.showButtons);
+    showButtonsController(g_attrSetting.showButtons);
     //呃，写入提示文字
     $("#saveAppearBtn").text(language["saveBtnText"]);
     $("#saveSettingBtn").text(language["saveSettingText"]);
@@ -804,6 +823,8 @@ async function __init(){
     $("#startTimeText").text(language["startTimeText"]);
     $("#endTimeText").text(language["endTimeText"]);
     $("#allTaskText").text(language["allTaskText"]);
+    $("#showButtonText").text(language["showButtonText"]);
+    $("#changeMode").text(language["changeModeText"]);
     //样式更新
     __refreshAppreance();
     //模式更改
@@ -863,6 +884,11 @@ async function dblClickChangeMode(){
     clearTimeout(g_refreshBtnTimeout);
     // TODO 更改为数组控制切换顺序，弃用if else 结构
     g_mode.destory();//退出上一模式
+    if (g_manualPercentage) {
+
+    }
+    let modes = [AutoMode, TimeMode, ManualMode];
+
     if (g_manualPercentage == -1){//如果当前为自动模式，则切换为时间模式
         g_manualPercentage = -2;
         g_mode = new TimeMode();
@@ -877,6 +903,12 @@ async function dblClickChangeMode(){
     await g_mode.init();//进入下一模式
 }
 
+/** 双击百分比打开设置界面 */
+function dblClickShowSetting() {
+    clearTimeout(g_refreshBtnTimeout);
+    displaySetting();
+}
+
 /**
  * 单击刷新按钮
  */
@@ -888,7 +920,7 @@ async function clickManualRefresh(){
 /**
  * 显示/隐藏设置项目
  */
-function    displaySetting(){
+function displaySetting(){
     if (g_displaySetting == false){
         g_displaySetting = true;
         $("#settings").css("display", "");
@@ -908,19 +940,45 @@ function changeBarAppearance(){
     let frontColor = $("#frontColor").val();
     let backColor = $("#backColor").val();
     let width = $("#barWidth").val();
+    let showButtons = $("#showButtonCheckBox").prop("checked");
     $("#progress").css("background", frontColor);
     $("#container").css("background", backColor);
     $("#progress, #container").css("height", width + "px");
     //圆角重设, i.e. 
     $("#container").css("border-radius", width/2 + "px");
+    showButtonsController(showButtons);
 }
 
+/**
+ * 控制按钮是否显示，传入true显示，false不显示
+ * @param {*} showButtons 
+ */
+function showButtonsController(showButtons) {
+    $(".btn").css("display", showButtons ? "" : "none");
+    g_attrSetting.showButtons = showButtons;
+    document.getElementById("percentage").onclick = showButtons ? null : clickManualRefresh;
+    document.getElementById("percentage").ondblclick = showButtons ? null : dblClickShowSetting;
+    // 控制不显示按钮时的交互方式
+    $("#percentage").css({
+        "-moz-user-select": showButtons ? "" : "none",
+        "-o-user-select": showButtons ? "" : "none",
+        "-khtml-user-select": showButtons ? "" : "none",
+        "-webkit-user-select": showButtons ? "" : "none",
+        "-ms-user-select": showButtons ? "" : "none",
+        "user-select": showButtons ? "" : "none",
+    });
+}
+
+/**
+ * 保存外观设置
+ */
 async function saveAppearance(){
     let data = {};
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     data[attrName.frontColor] = $("#frontColor").val();
     data[attrName.backColor] = $("#backColor").val();
     data[attrName.barWidth] = $("#barWidth").val();
+    data[attrName.basicSetting] = JSON.stringify(g_attrSetting);
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("已写入外观属性");
@@ -969,8 +1027,10 @@ let g_manualPercentage = null;//手动模式下百分比，注意，负值用于
 let g_progressElem = document.getElementById("progress");
 let g_progressContainerElem = document.getElementById("container");
 let g_mode;
+let g_modeId;
 let g_barRefreshLogTimeout;
 let g_displaySetting = false;
+let g_attrSetting = Object.assign({}, attrSetting);
 let g_apperance = {
     frontColor: defaultAttr.frontColor,
     backColor: defaultAttr.backColor,
@@ -987,9 +1047,13 @@ try{
     //双击：切换模式
     document.getElementById("refresh").ondblclick = dblClickChangeMode;
     document.getElementById("settingBtn").onclick = displaySetting;
-    $("#frontColor, #backColor, #barWidth").on("change", changeBarAppearance);
+    $("#changeMode").on("click", dblClickChangeMode);
+    $("#frontColor, #backColor, #barWidth, #showButtonCheckBox").on("change", changeBarAppearance);
     $("#saveAppearBtn").on("click", saveAppearance);
-    $("#saveSettingBtn").on("click", async function(){await saveSettings();})
+    $("#saveSettingBtn").on("click", async function(){await saveSettings();});
+    if (g_attrSetting.showButtons == false) {
+        showButtonsController(g_attrSetting.showButtons);
+    }
     await __init();
 }catch (err){
     errorPush(err);
