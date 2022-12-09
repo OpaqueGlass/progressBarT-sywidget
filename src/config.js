@@ -13,7 +13,7 @@ let defaultAttr = {//挂件创建时默认属性设定
     alltask: false,//计算子任务进度默认值。认为所有任务（包括子任务）的权重相同，统计所有任务完成的进度，而不只是第一层级
     barWidth: 10,//进度条高度，单位px像素
     frontColorSelector: {//前景色颜色选择器配置（jscolor）
-        value: 'rgba(51,153,255,0.5)',//没用到
+        value: 'rgba(51,153,255,0.5)',//好像实际上没用到
         position: 'bottom',
         height: 80,
         backgroundColor: '#333',
@@ -43,7 +43,7 @@ let attrName = {
     basicSetting: "pgbtconfig", //进度条基础设定
 }
 let attrSetting = {
-    showButtons: true, // 在进度条右侧展示刷新和设置按钮
+    
 }
 let setting = {
     widgetWidth: "50em",//挂件的宽
@@ -56,6 +56,7 @@ let setting = {
     createBlock: false, //如果块不存在，则创建块
     updateForSubNode: true,//在子任务增删时更新进度(beta)，此选项开启后，可能出现性能问题，建议关闭
     showGapDay: true, // 时间模式显示日期间隔天数
+    showButtons: false, // 在进度条右侧展示刷新和设置按钮
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。",
@@ -89,12 +90,67 @@ let zh_CN = {
     "endTimeText": "结束时间：",
     "allTaskText": "统计子任务：",
     "blockIdText": "任务列表块id：",
-    "showButtonText": "显示按钮：",
-    "changeModeText": "切换模式"
+    "changeModeText": "切换模式",
+    "refreshed": "已刷新"
 }
+
 let language = zh_CN;
+// let lang = window.top.siyuan.config.lang;
+// 测试中的外部json语言配置文件读入，但再开个语言文件意义不大，废弃中
+// language = await getLanguageFile(`/widgets/progress-dev/lang/${lang}.json`).catch(async(error)=>{
+//     language = await getLanguageFile("/widgets/progress-dev/lang/zh_CN.json")
+// });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
 
 //补充属性名的custom-
 for (let attr in attrName){
     attrName[attr] = "custom-" + attrName[attr];
+}
+
+// 导入外部config.js 测试功能
+try {
+    let allCustomConfig = await import('/widgets/custom.js');
+    let customConfig = null;
+    let customConfigName = "progressBarT";
+    if (allCustomConfig[customConfigName] != undefined) {
+        customConfig = allCustomConfig[customConfigName];
+    }else if (allCustomConfig.config != undefined && allCustomConfig.config[customConfigName] != undefined) {
+        customConfig = allCustomConfig.config[customConfigName];
+    }
+    // 导入token
+    if (allCustomConfig.token != undefined) {
+        token = allCustomConfig.token;
+    }else if (allCustomConfig.config != undefined && allCustomConfig.config.token != undefined) {
+        token = allCustomConfig.config.token;
+    }
+    
+    // 仅限于config.setting/config.defaultAttr下一级属性存在则替换，深层对象属性将完全覆盖
+    if (customConfig != null) {
+        if ("setting" in customConfig) {
+            for (let key in customConfig.setting) {
+                if (key in setting) {
+                    setting[key] = customConfig.setting[key];
+                }
+            }
+        }
+
+        if ("defaultAttr" in customConfig) {
+            for (let key in customConfig.defaultAttr) {
+                if (key in defaultAttr) {
+                    defaultAttr[key] = customConfig.defaultAttr[key];
+                }
+            }
+        }
+        
+    }
+    
+}catch (err) {
+    console.warn("导入用户自定义设置时出现错误", err);
+}
+
+async function getLanguageFile(url) {
+    let result;
+    await fetch(url).then((response) => {
+        result = response.json();
+    });
+    return result;
 }

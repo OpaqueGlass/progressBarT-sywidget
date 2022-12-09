@@ -6,7 +6,7 @@ import {
     insertBlockAPI,
     addblockAttrAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
-import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
+import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -41,6 +41,7 @@ class ManualMode extends Mode {
         $("#refresh").attr("title", language["manualMode"]);
         modePush(language["manualMode"]);
         $("#innerCurrentMode").text(language["manualMode"]);
+        errorPush("");
         g_progressContainerElem = document.getElementById("container");
         //获取点击/拖拽/触摸拖拽进度条事件
         //实现单击进度条任意位置
@@ -676,9 +677,9 @@ async function getSettingAtStartUp(){
     }
 
     // 获取挂件其他设定
-    if (attrName.basicSetting in response.data) {
-        g_attrSetting = JSON.parse(response.data[attrName.basicSetting].replaceAll("&quot;", "\""));
-    }
+    // if (attrName.basicSetting in response.data) {
+    //     g_attrSetting = JSON.parse(response.data[attrName.basicSetting].replaceAll("&quot;", "\""));
+    // }
 
     //获取进度设定[请不要在之后处理属性内容]
     if (attrName.manual in response.data){
@@ -742,7 +743,7 @@ async function setDefaultSetting2Attr(){
     data[attrName["backColor"]] = defaultAttr["backColor"];
     data[attrName["taskCalculateMode"]] = defaultAttr["alltask"].toString();
     data[attrName["barWidth"]] = defaultAttr["barWidth"].toString();
-    data[attrName["basicSetting"]] = JSON.stringify(g_attrSetting);
+    // data[attrName["basicSetting"]] = JSON.stringify(g_attrSetting);
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("初始化时写入属性", data);
@@ -775,6 +776,9 @@ function infoPush(msg, timeout = 7000){
     if (msg === language["saved"]) {//已保存时下划线注明
         $("#percentage").css("text-decoration", "underline");
     }
+    if (msg === language["refreshed"]) {
+        $("#percentage").css("text-decoration", "overline");
+    }
     if (timeout == 0) return;
     g_infoPushTimeout = setTimeout(()=>{
         $("#infoInfo").text("");
@@ -798,6 +802,9 @@ async function __init(){
     // console.log("启动时模式", g_manualPercentage);
     //没有响应属性
     if (g_manualPercentage == null || g_manualPercentage == NaN){
+        // //设置挂件宽高
+        window.frameElement.style.width = setting.widgetWidth;
+        window.frameElement.style.height = setting.widgetHeight;
         //创建属性（延时创建，防止无法写入）
         setTimeout(async function(){await setDefaultSetting2Attr();}, 3000);
         g_manualPercentage = defaultAttr["percentage"];
@@ -811,8 +818,7 @@ async function __init(){
     $("#backColor").attr("data-jscolor", JSON.stringify(defaultAttr.backColorSelector));
     jscolor.install();//注入jscolor
     $("#barWidth").val(g_apperance.barWidth);
-    $("#showButtonCheckBox").prop("checked", g_attrSetting.showButtons);
-    showButtonsController(g_attrSetting.showButtons);
+    // showButtonsController(setting.showButtons);
     //呃，写入提示文字
     $("#saveAppearBtn").text(language["saveBtnText"]);
     $("#saveSettingBtn").text(language["saveSettingText"]);
@@ -823,7 +829,7 @@ async function __init(){
     $("#startTimeText").text(language["startTimeText"]);
     $("#endTimeText").text(language["endTimeText"]);
     $("#allTaskText").text(language["allTaskText"]);
-    $("#showButtonText").text(language["showButtonText"]);
+    // $("#showButtonText").text(language["showButtonText"]);
     $("#changeMode").text(language["changeModeText"]);
     //样式更新
     __refreshAppreance();
@@ -871,6 +877,7 @@ async function __refresh(){
         await g_mode.refresh();
         __refreshAppreance();//深色模式重设
         applyProgressColor(await getblockAttrAPI(g_thisWidgetId));//进度条颜色重设
+        infoPush(language["refreshed"], 1500);
     }catch(err){
         console.error(err);
         errorPush(err);
@@ -940,13 +947,13 @@ function changeBarAppearance(){
     let frontColor = $("#frontColor").val();
     let backColor = $("#backColor").val();
     let width = $("#barWidth").val();
-    let showButtons = $("#showButtonCheckBox").prop("checked");
+    // let showButtons = $("#showButtonCheckBox").prop("checked");
     $("#progress").css("background", frontColor);
     $("#container").css("background", backColor);
     $("#progress, #container").css("height", width + "px");
     //圆角重设, i.e. 
     $("#container").css("border-radius", width/2 + "px");
-    showButtonsController(showButtons);
+    // showButtonsController(showButtons);
 }
 
 /**
@@ -955,7 +962,7 @@ function changeBarAppearance(){
  */
 function showButtonsController(showButtons) {
     $(".btn").css("display", showButtons ? "" : "none");
-    g_attrSetting.showButtons = showButtons;
+    setting.showButtons = showButtons;
     document.getElementById("percentage").onclick = showButtons ? null : clickManualRefresh;
     document.getElementById("percentage").ondblclick = showButtons ? null : dblClickShowSetting;
     // 控制不显示按钮时的交互方式
@@ -978,7 +985,7 @@ async function saveAppearance(){
     data[attrName.frontColor] = $("#frontColor").val();
     data[attrName.backColor] = $("#backColor").val();
     data[attrName.barWidth] = $("#barWidth").val();
-    data[attrName.basicSetting] = JSON.stringify(g_attrSetting);
+    // data[attrName.basicSetting] = JSON.stringify(g_attrSetting);
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
         console.log("已写入外观属性");
@@ -1030,7 +1037,7 @@ let g_mode;
 let g_modeId;
 let g_barRefreshLogTimeout;
 let g_displaySetting = false;
-let g_attrSetting = Object.assign({}, attrSetting);
+// let g_attrSetting = Object.assign({}, attrSetting);
 let g_apperance = {
     frontColor: defaultAttr.frontColor,
     backColor: defaultAttr.backColor,
@@ -1038,9 +1045,7 @@ let g_apperance = {
 }
 
 try{
-    //设置挂件宽高
-    window.frameElement.style.width = setting.widgetWidth;
-    window.frameElement.style.height = setting.widgetHeight;
+    
     //绑定按钮事件
     //单击，手动刷新
     document.getElementById("refresh").onclick = clickManualRefresh;
@@ -1048,11 +1053,11 @@ try{
     document.getElementById("refresh").ondblclick = dblClickChangeMode;
     document.getElementById("settingBtn").onclick = displaySetting;
     $("#changeMode").on("click", dblClickChangeMode);
-    $("#frontColor, #backColor, #barWidth, #showButtonCheckBox").on("change", changeBarAppearance);
+    $("#frontColor, #backColor, #barWidth").on("change", changeBarAppearance);
     $("#saveAppearBtn").on("click", saveAppearance);
     $("#saveSettingBtn").on("click", async function(){await saveSettings();});
-    if (g_attrSetting.showButtons == false) {
-        showButtonsController(g_attrSetting.showButtons);
+    if (setting.showButtons == false) {
+        showButtonsController(setting.showButtons);
     }
     await __init();
 }catch (err){
