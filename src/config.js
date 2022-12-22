@@ -12,7 +12,7 @@ let defaultAttr = {//挂件创建时默认属性设定
     backColor: "rgba(175, 184, 193, 0.2)",//进度条背景色对应的属性默认值
     alltask: false,//计算子任务进度默认值。认为所有任务（包括子任务）的权重相同，统计所有任务完成的进度，而不只是第一层级
     barWidth: 10,//进度条高度，单位px像素
-    frontColorSelector: {//前景色颜色选择器配置（jscolor）
+    frontColorSelector: {//前景色颜色选择器配置（jscolor）（若在custom.js中设置此项，需包含其下的所有设置）
         value: 'rgba(51,153,255,0.5)',//好像实际上没用到
         position: 'bottom',
         height: 80,
@@ -21,7 +21,7 @@ let defaultAttr = {//挂件创建时默认属性设定
         paletteCols: 11,
         hideOnPaletteClick: true
     },
-    backColorSelector: {//背景色颜色选择器配置
+    backColorSelector: {//背景色颜色选择器配置（若在custom.js中设置此项，需包含其下的所有设置）
         value: 'rgba(51,153,255,0.5)',
         position: 'bottom',
         height: 80,

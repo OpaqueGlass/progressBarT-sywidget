@@ -3,9 +3,10 @@
 > 当前版本： v0.1.2 **改进**：时间模式时间段输出显示文案，支持显示相隔日期；
 > **新增**：（beta）支持从`widgets/custom.js`导入用户设置，避免升级后设置丢失；
 > **改进**：默认隐藏右侧的刷新和设置按钮；
-> **改进**除首次插入外，不再重设挂件宽高；
+> **改进**：除首次插入外，不再重设挂件宽高；
 
 > 📣提示：自此版本起，默认移除进度条右侧的刷新按钮。若需要刷新进度，请单击进度百分比；若要显示/隐藏设置，请双击进度百分比；若要切换模式，请在设置中操作。
+> 
 > 隐藏刷新按钮时，为避免操作冲突，禁止复制百分比文字；若要显示刷新和设置按钮，请参考自定义设置。
 
 > 展示进度条的思源笔记挂件。
@@ -62,17 +63,17 @@
 
 设置开始时间、结束时间，然后点击“保存设置”按钮。
 
-挂件接受的时间字符串格式为：（年、月、日、时、分之间需要使用任意的非数字字符隔开，小时为24小时制）
+**挂件接受的时间字符串格式**为：（年、月、日、时、分之间需要使用任意的非数字字符隔开，小时为24小时制）
 
 - `yyyy MM dd`（年 月 日），例如`2020.1.1` `2020年1月1日`
 - `yyyy MM dd HH mm` （年 月 日 时 分），例如`2020.1.1 12.20`
 - `HH mm`（将在计算进度时自动补全为挂件<u>运行时当天</u>对应时间，用于展示当天进度），例如`12.20` `12:20`
 
-若为20xx年，年份数字可只写后两位。
+> 若为20xx年，年份数字可只写后两位。
 
 请注意：时间模式下，进度刷新频率由`config.js`设定（请参考自定义设置），默认10分钟刷新一次；
 
-时间间隔展示说明：
+**时间间隔展示说明**：
 
 - `D-9`：当天距离结束日还有9天；
 - `D-Day`：当天是结束日；
@@ -93,7 +94,7 @@
 -  ~~进度条默认颜色；~~ 请注意，进度条颜色设定迁移至config.js设置；
 - 按钮样式，等；
 
-#### 在`config.js`中直接更改
+#### 在`config.js`中直接更改设置
 
 打开`${思源data目录}/widgets/progressBarT/src/config.js`，可进行自定义设置，请参考设置项旁边的说明。以下是一些可能常用的设置项：
 
@@ -108,20 +109,20 @@
 
 > 测试中，可能存在缺陷。
 
-创建或编辑`${思源data目录}/widgets/custom.js`，仅支持`config.js`文件中defaultAttr（创建挂件时的默认设置）、setting（全局设置）下的设置项。
+创建或编辑`${思源data目录}/widgets/custom.js`，仅支持`config.js`文件中defaultAttr（创建挂件时的默认设置）、setting（全局设置）下的设置项，以下是一个示例。
 
-```js
+```javascript
 /*方案1：若之前有config，需要添加progressBarT的部分*/
 export const config = {
     token: "",
-    progressBarT:{
+    progressBarT:{/*若之前有config，则只加入progressBarT的部分*/
         setting: { // 和config.js中setting对应
-            showButtons: false
+            showButtons: true
         },
         defaultAttr: {// 和config.js 中 defaultAttr对应
             frontColor: "rgba(255, 255, 255, 1)", //前景色更改
-            barWidth: 15, //进度条宽度
-            frontColorSelector: {//前景色颜色选择器配置（jscolor），复杂的设置项必须全部重新自定义，不能只自定义部分
+            barWidth: 12, //进度条宽度
+            frontColorSelector: {//前景色颜色选择器配置（jscolor），像这样复杂的设置项，如果有更改，必须重新自定义全部属性，不能只自定义部分属性
               value: 'rgba(51,153,255,0.5)',
               position: 'bottom',
               height: 80,
@@ -132,19 +133,24 @@ export const config = {
             },
         }
     }
-   /*其他挂件的自定义设置，例如query*/
+   /*...其他挂件的自定义设置*/
 };
+```
+
+```javascript
 /*方案2 单独配置export*/
 export const progressBarT = {
     setting: { // 和config.js中setting对应
-        showButtons: false
+        showButtons: true
     },
     defaultAttr: {// 和config.js 中 defaultAttr对应
         frontColor: "rgba(255, 255, 255, 1)", //前景色更改
-        barWidth: 15 //进度条宽度
+        barWidth: 12 //进度条宽度
     }
 }
 ```
+
+
 
 ## ⚠️注意
 
