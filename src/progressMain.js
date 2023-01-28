@@ -4,7 +4,8 @@ import {
     getblockAttrAPI,
     isValidStr,
     insertBlockAPI,
-    addblockAttrAPI
+    addblockAttrAPI,
+    updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
 /**模式类 */
@@ -438,6 +439,14 @@ class AutoMode extends Mode {
                 //下一个目标块不存在，获取上一个目标块
                 g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
                 infoPush(language["autoDetectId"] + "↑", 2500);
+            }else if ($(thisWidgetBlockElem.nextElementSibling).attr("data-type") === "NodeList") {
+                // 挂件下方是列表，但不是任务列表（若要统计无序列表/有序列表下的任务项，需要勾选统计子任务）
+                g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
+                infoPush(language["autoDetectId"] + "↓", 2500);
+            }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-type") === "NodeList") {
+                // 挂件上方是列表，但不是任务列表（若要统计无序列表/有序列表下的任务项，需要勾选统计子任务）
+                g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
+                infoPush(language["autoDetectId"] + "↑", 2500);
             }
         }
         }catch(err){
@@ -624,6 +633,7 @@ class TimeMode extends Mode {
         return Math.ceil((to - from) / (1 * 24 * 60 * 60 * 1000));
     }
     async refresh(){
+        errorPush("");
         await this.calculateApply();
     }
 }
@@ -656,7 +666,31 @@ async function getSettingAtStartUp(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     // 通过API获取进度条属性
     let response = await getblockAttrAPI(g_thisWidgetId);
-    console.log("getAttr", response);
+    // 将挂件的高度设定写入块
+    if (!("custom-resize-flag" in response.data) && setting.saveDefaultHeight && ("id" in response.data)) {
+        // 写属性
+        let data = {};
+        data["custom-resize-flag"] = "progressbarT: do not delete.请不要删去此属性，否则挂件将在下次加载时重新将挂件默认宽高写入文档中";
+        let response = await addblockAttrAPI(data, g_thisWidgetId);
+        // 获取kramdown
+        let widgetKramdown = await getKramdown(g_thisWidgetId);
+        // 重写Kramdown
+        let newWidgetKramdown = "";
+        if (widgetKramdown.includes("/widgets/progress")) {
+            if (widgetKramdown.includes("style=")) {
+                newWidgetKramdown = widgetKramdown.replace(new RegExp(`style="height: .*px; width: .*px;"`, ""), `style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"`) //765 48
+            }else{
+                newWidgetKramdown = widgetKramdown.replace(new RegExp("><\/iframe>", ""), ` style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"><\/iframe>`);
+            }
+            console.log("【挂件记忆宽高信息】!", newWidgetKramdown);
+            await updateBlockAPI(newWidgetKramdown, g_thisWidgetId);
+        }else{
+            console.log(widgetKramdown);
+            console.warn("当前id不对应progressBarT挂件，不设定挂件高度");
+        }
+        throw new Error(language["writeHeightInfoFailed"]);
+    }
+    // console.log("getAttr", response);
     if (response.data == null) return null;
     applyProgressColor(response);//应用属性
     //获取外观属性
@@ -802,6 +836,7 @@ async function __init(){
     // console.log("启动时模式", g_manualPercentage);
     //没有响应属性
     if (g_manualPercentage == null || g_manualPercentage == NaN){
+        console.log("重设挂件宽高")
         // //设置挂件宽高
         window.frameElement.style.width = setting.widgetWidth;
         window.frameElement.style.height = setting.widgetHeight;

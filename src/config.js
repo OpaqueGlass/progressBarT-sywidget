@@ -57,18 +57,20 @@ let setting = {
     updateForSubNode: true,//在子任务增删时更新进度(beta)，此选项开启后，可能出现性能问题，建议关闭
     showGapDay: true, // 时间模式显示日期间隔天数
     showButtons: false, // 在进度条右侧展示刷新和设置按钮
+    saveDefaultHeight: true, // 挂件默认高度记忆（加载时将默认宽高写入文档，以减少载入文档时挂件高度变化）
 };
 let zh_CN = {
-    "notTaskList": "不是任务列表块，或块id填写错误。",
+    "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
     "getKramdownFailed": "通过API获取块失败，请检查块ID是否正确：",
     "unknownIdAtDom": "页面内未找到对应块，正尝试API获取。",
     "cantObserve": "页面内未找到对应块，无法自动触发进度计算",
     "setObserveErr": "内部错误，无法自动触发进度计算",
     "autoMode": "当前：自动模式",
     "manualMode": "当前：手动模式",
-    "needSetAttr": `未设置目标块id且未在紧邻块发现任务列表，请创建任务列表或设定id。`,
+    "needSetAttr": `未设置目标块id且未在紧邻块发现列表，请创建任务列表或设定id。`,
     "saved": "已保存",
     "writeAttrFailed": "保存失败，写入属性失败",
+    "writeHeightInfoFailed": "记忆挂件宽高设定失败",
     "timeMode": "当前：时间模式",
     "timeModeSetError": "时间设定错误，开始时间晚于或等于结束时间",
     "timeSetIllegal": "时间设定错误，时间格式请参考说明文档README.md",
@@ -80,7 +82,7 @@ let zh_CN = {
     "autoModeAPI": `当前：自动模式(API)`,//
     "usingAPI": `当前正在使用API自动计算。若未设置间隔刷新，则必须手动点击刷新。`,
     "autoModeFnBtn": "取消全部/完成全部",
-    "autoDetectId": "已自动定位临近的任务列表",
+    "autoDetectId": "已自动定位临近的列表",
     "frontColorText": "前景色设定：",
     "backColorText": "背景色设定：",
     "barWidthText": "进度条高度：",
