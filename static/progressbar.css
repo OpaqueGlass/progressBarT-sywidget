@@ -97,6 +97,7 @@ td{
     display: inline-block;
     font-size: 14px;
     background-color: #f0f0f000;
+    cursor: pointer;
 }
 
 /* 提示区功能按钮 */
@@ -119,6 +120,10 @@ td{
 
 .btn {
     height: 1.5em;
+}
+
+.canClick {
+    cursor: pointer;
 }
 
 /* 进度条主体 */

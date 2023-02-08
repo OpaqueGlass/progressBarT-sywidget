@@ -93,7 +93,11 @@ let zh_CN = {
     "allTaskText": "统计子任务：",
     "blockIdText": "任务列表块id：",
     "changeModeText": "切换模式",
-    "refreshed": "已刷新"
+    "refreshed": "已刷新",
+    "ui_percentage_hint": "进度百分比\n出现下划线=>已保存",
+    "ui_percentage_btn_hint": "进度百分比\n[单击] 刷新/(手动模式)保存\n[双击] 显示/隐藏设置\n出现下划线=>已保存\n出现上划线=>已刷新",
+    "ui_click_btn_hint": "\n[单击] 刷新/(手动模式)保存\n[双击] 切换模式",
+    "ui_setting_btn_hint": "显示/隐藏设置",
 }
 
 let language = zh_CN;

@@ -39,9 +39,10 @@ class ManualMode extends Mode {
         // super.init();
         //提示词设置
         $("#refresh").addClass("manualMode");
-        $("#refresh").attr("title", language["manualMode"]);
+        $("#refresh").attr("title", language["manualMode"] + language["ui_click_btn_hint"]);
         modePush(language["manualMode"]);
         $("#innerCurrentMode").text(language["manualMode"]);
+        $("#container").addClass("canClick");
         errorPush("");
         g_progressContainerElem = document.getElementById("container");
         //获取点击/拖拽/触摸拖拽进度条事件
@@ -84,6 +85,7 @@ class ManualMode extends Mode {
         g_progressContainerElem.removeEventListener("mousedown", this.eventMousedownBar);
         g_progressContainerElem.removeEventListener("touchstart", this.eventTouchstartBar);
         $("#refresh").removeClass("manualMode");
+        $("#container").removeClass("canClick");
     }
     //点击刷新按钮：保存进度
     async refresh(){
@@ -165,7 +167,7 @@ class AutoMode extends Mode {
     async init(){
         super.init();
         //设定自动模式提示词
-        $("#refresh").attr("title", language["autoMode"]);
+        $("#refresh").attr("title", language["autoMode"] + language["ui_click_btn_hint"]);
         $("#refresh").addClass("autoMode");
         modePush(language["autoMode"]);
         $("#innerCurrentMode").text(language["autoMode"]);
@@ -193,7 +195,7 @@ class AutoMode extends Mode {
         __refreshAppreance();//为刚刚写入的按钮加深色模式
         // $("#cancelAll").click(this.fnclick);
         $("#cancelAll").dblclick(this.uncheckAll);
-        $("#cancelAll").attr("title", language["autoModeFnBtn"]);
+        $("#cancelAll").attr("title", language["autoModeFnBtn"] + language["ui_click_btn_hint"]);
     }
     destory(){
         this.observeClass.disconnect();
@@ -866,6 +868,7 @@ async function __init(){
     $("#allTaskText").text(language["allTaskText"]);
     // $("#showButtonText").text(language["showButtonText"]);
     $("#changeMode").text(language["changeModeText"]);
+    $("#settingBtn").attr("title", language["ui_setting_btn_hint"]);
     //样式更新
     __refreshAppreance();
     //模式更改
@@ -1000,6 +1003,7 @@ function showButtonsController(showButtons) {
     setting.showButtons = showButtons;
     document.getElementById("percentage").onclick = showButtons ? null : clickManualRefresh;
     document.getElementById("percentage").ondblclick = showButtons ? null : dblClickShowSetting;
+    document.getElementById("percentage").title = showButtons ? language["ui_percentage_hint"] : language["ui_percentage_btn_hint"];
     // 控制不显示按钮时的交互方式
     $("#percentage").css({
         "-moz-user-select": showButtons ? "" : "none",
@@ -1008,6 +1012,7 @@ function showButtonsController(showButtons) {
         "-webkit-user-select": showButtons ? "" : "none",
         "-ms-user-select": showButtons ? "" : "none",
         "user-select": showButtons ? "" : "none",
+        "cursor": showButtons ? "" : "pointer"
     });
 }
 
