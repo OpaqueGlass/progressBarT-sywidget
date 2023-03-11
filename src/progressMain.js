@@ -39,7 +39,7 @@ class ManualMode extends Mode {
         // super.init();
         //提示词设置
         $("#refresh").addClass("manualMode");
-        $("#refresh").attr("title", language["manualMode"] + language["ui_click_btn_hint"]);
+        $("#refresh").attr("title", language["manualMode"] + language["ui_refresh_btn_hint"]);
         modePush(language["manualMode"]);
         $("#innerCurrentMode").text(language["manualMode"]);
         $("#container").addClass("canClick");
@@ -167,7 +167,7 @@ class AutoMode extends Mode {
     async init(){
         super.init();
         //设定自动模式提示词
-        $("#refresh").attr("title", language["autoMode"] + language["ui_click_btn_hint"]);
+        $("#refresh").attr("title", language["autoMode"] + language["ui_refresh_btn_hint"]);
         $("#refresh").addClass("autoMode");
         modePush(language["autoMode"]);
         $("#innerCurrentMode").text(language["autoMode"]);
@@ -195,7 +195,7 @@ class AutoMode extends Mode {
         __refreshAppreance();//为刚刚写入的按钮加深色模式
         // $("#cancelAll").click(this.fnclick);
         $("#cancelAll").dblclick(this.uncheckAll);
-        $("#cancelAll").attr("title", language["autoModeFnBtn"] + language["ui_click_btn_hint"]);
+        $("#cancelAll").attr("title", language["autoModeFnBtn"]);
     }
     destory(){
         this.observeClass.disconnect();

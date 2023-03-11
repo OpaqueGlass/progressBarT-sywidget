@@ -81,7 +81,7 @@ let zh_CN = {
     "noTimeAttr": `读取挂件属性时发生错误`,
     "autoModeAPI": `当前：自动模式(API)`,//
     "usingAPI": `当前正在使用API自动计算。若未设置间隔刷新，则必须手动点击刷新。`,
-    "autoModeFnBtn": "取消全部/完成全部",
+    "autoModeFnBtn": "[双击] 取消全部/完成全部",
     "autoDetectId": "已自动定位临近的列表",
     "frontColorText": "前景色设定：",
     "backColorText": "背景色设定：",
@@ -96,7 +96,7 @@ let zh_CN = {
     "refreshed": "已刷新",
     "ui_percentage_hint": "进度百分比\n出现下划线=>已保存",
     "ui_percentage_btn_hint": "进度百分比\n[单击] 刷新/(手动模式)保存\n[双击] 显示/隐藏设置\n出现下划线=>已保存\n出现上划线=>已刷新",
-    "ui_click_btn_hint": "\n[单击] 刷新/(手动模式)保存\n[双击] 切换模式",
+    "ui_refresh_btn_hint": "\n[单击] 刷新/(手动模式)保存\n[双击] 切换模式",
     "ui_setting_btn_hint": "显示/隐藏设置",
 }
 
