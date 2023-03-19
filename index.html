@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./static/progressbar.css" />
     <script src="./static/jquery-3.6.0.min.js"></script>
     <script src="./static/jscolor.js"></script>
+    <script src="./static/layDate-v5.3.1/laydate.js"></script> 
 </head>
 
 <body>
@@ -37,7 +38,7 @@
         <table class="settingTable">
             <tr>
                 <td class="linel btnline" colspan="2">
-                    <button id="changeMode"></button>
+                    <button class="text_btn" id="changeMode"></button>
                 </td>
                 <td class="liner btnline">
                 </td>
@@ -68,7 +69,7 @@
             </tr>
             <tr>
                 <td class="linel btnline" colspan="2">
-                    <button id="saveAppearBtn"></button>
+                    <button class="text_btn" id="saveAppearBtn"></button>
                 </td>
                 <td class="liner btnline">
                 </td>
@@ -83,6 +84,7 @@
             </tr>
             <tr>
                 <td class="linel">
+                    <button class="calendar_btn" id="startTimePicker"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ca1eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg></button>
                     <span id="startTimeText"></span>
                 </td>
                 <td class="liner">
@@ -91,6 +93,7 @@
             </tr>
             <tr>
                 <td class="linel">
+                    <button class="calendar_btn" id="endTimePicker"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3ca1eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg></button>
                     <span id="endTimeText"></span>
                 </td>
                 <td class="liner">
@@ -107,7 +110,7 @@
             </tr>
             <tr>
                 <td class="linel btnline" colspan="2">
-                    <button id="saveSettingBtn"></button>
+                    <button class="text_btn" id="saveSettingBtn"></button>
                 </td>
                 <td class="liner btnline">
                 </td>

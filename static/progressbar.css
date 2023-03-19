@@ -16,6 +16,24 @@
     --bar-radius: 5px;
 }
 
+button.calendar_btn {
+    border: 0px;
+    /* font-weight: 300; */
+    width: 25px;
+    height: 25px;
+    border-radius: 3px;
+    box-sizing: border-box;
+    /* color: white; */
+    padding: 0px;
+    /* text-align: center;
+    text-decoration: none; */
+    display: inline-block;
+    /* font-size: 16px; */
+    /* min-width: 15px; */
+    background-color: #f0f0f022;
+    cursor: pointer;
+}
+
 /* 除alltask\showButtonCheckBox外的用户输入 */
 .settings input:not(#allTask, #showButtonCheckBox) {
     border: 1px solid rgb(45, 164, 255);
@@ -151,7 +169,7 @@ td{
 }
 
 /* 设置项保存按钮 */
-.settings button {
+.settings .text_btn {
     border: 1px dotted;
     border-radius: 3px;
 }
@@ -238,4 +256,41 @@ td{
 .btn_dark {
     color: var(--text-dark);
     background-color: #1259536e;
+}
+
+/* 日期选择控件 深色模式适配*/
+
+[dark_mode] .layui-laydate-header, 
+[dark_mode] .layui-laydate-content, 
+[dark_mode] .layui-laydate-footer,
+[dark_mode] .layui-laydate,
+[dark_mode] .layui-laydate-footer span,
+[dark_mode] .laydate-footer-btns,
+[dark_mode] .layui-laydate-list {
+    border-color: rgb(56, 61, 63) !important;
+    background-color: #181a1b !important;
+}
+
+[dark_mode] .layui-laydate-list li:hover,
+[dark_mode] .layui-laydate-main td:hover {
+    color: rgb(200, 195, 188);
+    background-color: #383c3f;
+}
+
+[dark_mode] .layui-icon {
+    color: #a8a095;
+}
+
+[dark_mode] .layui-laydate-main td, 
+[dark_mode] .layui-laydate-main th, 
+[dark_mode] .layui-laydate-footer * ,
+[dark_mode] .laydate-set-ym,
+[dark_mode] .layui-laydate-list li,
+[dark_mode] .layui-laydate-preview {
+    color: rgb(200, 195, 188);
+}
+
+[dark_mode] .laydate-day-prev, 
+[dark_mode] .laydate-day-next {
+    color: rgb(168, 160, 149) !important;
 }

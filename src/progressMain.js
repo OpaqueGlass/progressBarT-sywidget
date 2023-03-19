@@ -869,6 +869,36 @@ async function __init(){
     // $("#showButtonText").text(language["showButtonText"]);
     $("#changeMode").text(language["changeModeText"]);
     $("#settingBtn").attr("title", language["ui_setting_btn_hint"]);
+    laydate.render({
+        elem: "#startTimePicker"
+        ,format: "yyyy-MM-dd"
+        ,trigger: "click"
+        ,value: new Date()
+        ,ready: function(date) {
+            window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
+            $("#startTime").val(`${date.year}-${date.month}-${date.date}`);
+        }
+        ,change: function(value) {
+            $("#startTime").val(value);
+        }
+        ,done: function(value) {
+            $("#startTime").val(value);
+        }
+    });
+    laydate.render({
+        elem: "#endTimePicker"
+        ,format: "yyyy-MM-dd"
+        ,trigger: "click"
+        ,ready: function(){
+            window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
+        }
+        ,change: function(value) {
+            $("#endTime").val(value);
+        }
+        ,done: function(value) {
+            $("#endTime").val(value);
+        }
+    });
     //样式更新
     __refreshAppreance();
     //模式更改
@@ -897,12 +927,14 @@ function __refreshAppreance(){
         $("#percentage, #modeInfo, .settings span").addClass("text_dark");
         $("input").addClass("input_dark");
         $("button").addClass("btn_dark");
+        $("body").attr("dark_mode", "true");
     }else{
         $("#container").removeClass("container_dark");
         $("#progress").removeClass("progress_dark");
         $("#percentage, #modeInfo, .settings span").removeClass("text_dark");
         $("input").removeClass("input_dark");
         $("button").removeClass("btn_dark");
+        $("body").removeAttr("dark_mode");
     }
 }
 
