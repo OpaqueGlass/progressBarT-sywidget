@@ -58,6 +58,9 @@ let setting = {
     showGapDay: true, // 时间模式显示日期间隔天数
     showButtons: false, // 在进度条右侧展示刷新和设置按钮
     saveDefaultHeight: true, // 挂件默认高度记忆（加载时将默认宽高写入文档，以减少载入文档时挂件高度变化）
+    countDay_dayLeft: undefined, // 还剩余多少天显示方式自定义，其中%%将替换为天数
+    countDay_today: undefined,//时间段 当前为结束日
+    countDay_exceed: undefined, //时间段 当前已超期，超过多少天，其中%%将替换为天数
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -98,6 +101,9 @@ let zh_CN = {
     "ui_percentage_btn_hint": "进度百分比\n[单击] 刷新/(手动模式)保存\n[双击] 显示/隐藏设置\n出现下划线=>已保存\n出现上划线=>已刷新",
     "ui_refresh_btn_hint": "\n[单击] 刷新/(手动模式)保存\n[双击] 切换模式",
     "ui_setting_btn_hint": "显示/隐藏设置",
+    "countDay_dayLeft": "还有%%天",
+    "countDay_today": "截止日当天",
+    "countDay_exceed": "已过%%天"
 }
 
 let language = zh_CN;

@@ -8,11 +8,14 @@ import {
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
+import {parseTimeString, useUserTemplate} from "./uncommon.js"
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
     // 模式id
     modeId = 0;
+    // 挂件高度
+    widgetHeight=4.3;
     // get modeCode(){
     //     return this._modeCode;
     // }
@@ -34,6 +37,7 @@ class Mode {
 class ManualMode extends Mode {
     savePercentTimeout;
     modeCode = 0;
+    widgetHeight = 4.3;
     //初始化
     async init(){
         // super.init();
@@ -70,7 +74,7 @@ class ManualMode extends Mode {
         $("#progress").css("transition-duration", "0s");
         //隐藏提示信息
         if (!g_displaySetting){
-            window.frameElement.style.height = setting.widgetBarOnlyHeight;
+            window.frameElement.style.height = this.widgetHeight + "em";
         }
     }
     
@@ -164,6 +168,7 @@ class AutoMode extends Mode {
     calculateAllTasks = false;//模式：统计所有任务（含子任务）进度
     observerTimeout;//内保存延迟
     clickFnBtnTimeout;
+    widgetHeight=5;
     async init(){
         super.init();
         //设定自动模式提示词
@@ -172,7 +177,7 @@ class AutoMode extends Mode {
         modePush(language["autoMode"]);
         $("#innerCurrentMode").text(language["autoMode"]);
         //重新读取目标块id
-        await this.readBlockIdFromAttr();
+        await this.readAndApplyAttr();
         //设置domobserver
         if (isValidStr(g_targetBlockId)){
             this.__setObserver(g_targetBlockId);
@@ -208,7 +213,7 @@ class AutoMode extends Mode {
         errorPush("");//清空提示词
         infoPush("");
         //从挂件中读取id
-        await this.readBlockIdFromAttr();
+        await this.readAndApplyAttr();
         console.log("手动点击刷新，读取到属性中id", g_targetBlockId);
         //没有块则创建块
         if (!isValidStr(g_targetBlockId) && setting.createBlock){
@@ -415,7 +420,7 @@ class AutoMode extends Mode {
      * 从属性custom-targetId重设目标块id
      * 无返回值！
      */
-    async readBlockIdFromAttr(){
+    async readAndApplyAttr(){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
         let response = await getblockAttrAPI(g_thisWidgetId);
         if (attrName.autoTarget in response.data){
@@ -463,6 +468,7 @@ class TimeMode extends Mode {
     times = [null, null];//0开始时间，1结束时间
     todayMode = false;
     dateString = ["", ""];// 开始时间，结束时间字符串
+    widgetHeight=5;
     async init(){
         super.init();
         //设定提示词
@@ -484,6 +490,7 @@ class TimeMode extends Mode {
         clearInterval(this.timeRefreshInterval);
         //有时间才能计算
         if (await this.readTimesFromAttr()){
+            // 判断是否需要定时刷新
             if (setting.timeModeRefreshInterval > 0){
                 this.timeRefreshInterval = setInterval(() => {
                     this.calculateTimeGap();
@@ -502,11 +509,11 @@ class TimeMode extends Mode {
                     let gapDay = this.calculateDateGapByDay(new Date(), this.times[1]);
                     let dateGapString = "";
                     if (gapDay > 0) {
-                        dateGapString = `D-${gapDay}`;
+                        dateGapString = useUserTemplate("countDay_dayLeft", gapDay);
                     } else if (gapDay == 0) {
-                        dateGapString = `D-DAY`;
+                        dateGapString = useUserTemplate("countDay_today");
                     } else {
-                        dateGapString = `+${-gapDay}`;
+                        dateGapString = useUserTemplate("countDay_exceed", -gapDay);
                     }
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
                 }
@@ -566,49 +573,18 @@ class TimeMode extends Mode {
             //将获取到的时间字符串写入挂件设置部分
             $("#startTime").val(startimeStr);
             $("#endTime").val(endtimeStr);
-            //拆分连续的数字（string）
-            let startNums = startimeStr.match(/[0-9]+/gm);
-            let endNums = endtimeStr.match(/[0-9]+/gm);
-            let nums = [startNums, endNums];
-            this.todayMode = false;
-            for (let i = 0; i < nums.length; i++){
-                if (!isValidStr(nums[i])) { //无匹配项
-                    errorPush(language["timeSetIllegal"]);
-                    console.warn("时间设定非法", this.times[i]);
-                    return false;
-                }
-                //处理yy mm dd的情况
-                if (nums[i].length != 2){
-                    if (nums[i][0].length == 2){
-                        nums[i][0] = "20" + nums[i][0];
-                    }
-                }
-                switch (nums[i].length){
-                    case 3: {//输入格式YYYY MM DD
-                        this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2]);
-                        this.dateString[i] = this.times[i].toLocaleDateString();
-                        break;
-                    }
-                    case 5: {//输入格式YYYY MM DD HH MM
-                        this.times[i] = new Date(nums[i][0], nums[i][1] - 1, nums[i][2], nums[i][3], nums[i][4]);
-                        this.dateString[i] = this.times[i].toLocaleString();
-                        break;
-                    }
-                    case 2: {//输入格式HH MM
-                        this.times[i] = new Date();
-                        this.times[i].setHours(nums[i][0]);
-                        this.times[i].setMinutes(nums[i][1]);
-                        this.times[i].setSeconds(0);
-                        this.dateString[i] = this.times[i].toLocaleTimeString();
-                        this.todayMode = true;//标记为当天模式
-                        break;
-                    }
-                    default: {
-                        errorPush(Error(language["timeSetIllegal"]));
-                        console.warn("时间设定非法", this.times[i]);
-                        return false;
-                    }
-                }
+            let parseResult;
+            [parseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr);
+            if (parseResult <= 0) {
+                errorPush(Error(language["timeSetIllegal"]));
+                console.warn("时间设定非法", this.times[i]);
+                return false;
+            }
+            [parseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr);
+            if (parseResult <= 0) {
+                errorPush(Error(language["timeSetIllegal"]));
+                console.warn("时间设定非法", this.times[i]);
+                return false;
             }
             console.info(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
             return true;
@@ -839,7 +815,7 @@ async function __init(){
     //没有响应属性
     if (g_manualPercentage == null || g_manualPercentage == NaN){
         console.log("重设挂件宽高")
-        // //设置挂件宽高
+        //设置挂件宽高
         window.frameElement.style.width = setting.widgetWidth;
         window.frameElement.style.height = setting.widgetHeight;
         //创建属性（延时创建，防止无法写入）
@@ -856,6 +832,7 @@ async function __init(){
     jscolor.install();//注入jscolor
     $("#barWidth").val(g_apperance.barWidth);
     // showButtonsController(setting.showButtons);
+
     //呃，写入提示文字
     $("#saveAppearBtn").text(language["saveBtnText"]);
     $("#saveSettingBtn").text(language["saveSettingText"]);
@@ -869,6 +846,8 @@ async function __init(){
     // $("#showButtonText").text(language["showButtonText"]);
     $("#changeMode").text(language["changeModeText"]);
     $("#settingBtn").attr("title", language["ui_setting_btn_hint"]);
+
+    // 初始化日期选择控件
     laydate.render({
         elem: "#startTimePicker"
         ,format: "yyyy-MM-dd"
@@ -1005,8 +984,7 @@ function displaySetting(){
     }else{
         g_displaySetting = false;
         $("#settings").css("display", "none");
-        window.frameElement.style.height = g_mode.modeCode == -2 ? 
-            setting.widgetHeight : setting.widgetBarOnlyHeight;
+        window.frameElement.style.height = g_mode.widgetHeight + "em";
     }
 }
 
@@ -1080,6 +1058,7 @@ async function saveSettings(){
     data[attrName.startTime] = $("#startTime").val();
     data[attrName.endTime] = $("#endTime").val();
     data[attrName.taskCalculateMode] = document.getElementById("allTask").checked.toString();
+    // data[attrName.basicSetting] = JSON.stringify();
     for (let attr in data){
         if (data[attr] == "") data[attr] = "null";
     }
