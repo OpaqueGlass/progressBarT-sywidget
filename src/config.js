@@ -49,6 +49,7 @@ let setting = {
     widgetWidth: "50em",//挂件的宽
     widgetHeight: "4.3em",//挂件的高
     widgetBarOnlyHeight: "3em",//只显示进度条和刷新按钮时，挂件的高
+    widgetBarWithTitleHeight: "",
     refreshInterval: 0,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
     saveAttrTimeout: 1000 * 0.5, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
@@ -61,6 +62,7 @@ let setting = {
     countDay_dayLeft: undefined, // 还剩余多少天显示方式自定义，其中%%将替换为天数
     countDay_today: undefined,//时间段 当前为结束日
     countDay_exceed: undefined, //时间段 当前已超期，超过多少天，其中%%将替换为天数
+    countDay_auto_prefix: undefined,//自动模式截止时间提示前缀，其中%%将替换为截止日日期
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -102,8 +104,11 @@ let zh_CN = {
     "ui_refresh_btn_hint": "\n[单击] 刷新/(手动模式)保存\n[双击] 切换模式",
     "ui_setting_btn_hint": "显示/隐藏设置",
     "countDay_dayLeft": "还有%%天",
-    "countDay_today": "截止日当天",
-    "countDay_exceed": "已过%%天"
+    "countDay_today": `<span class="time-warn">截止日当天</span>`,
+    "countDay_exceed": `<span class="time-warn">已过%%天</span>`,
+    "countDay_hour": `还有%%小时`,
+    "countDay_auto_prefix": "任务截止日期：%%，",
+    "ui_select_all": "全部完成/全部取消"
 }
 
 let language = zh_CN;

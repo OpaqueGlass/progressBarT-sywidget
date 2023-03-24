@@ -294,3 +294,7 @@ td{
 [dark_mode] .laydate-day-next {
     color: rgb(168, 160, 149) !important;
 }
+
+.time-warn {
+    color: red;
+}

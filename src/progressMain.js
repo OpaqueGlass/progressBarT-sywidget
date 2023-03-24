@@ -8,7 +8,7 @@ import {
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
-import {parseTimeString, useUserTemplate} from "./uncommon.js"
+import {getDayGapString, parseTimeString, useUserTemplate} from "./uncommon.js"
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -16,6 +16,8 @@ class Mode {
     modeId = 0;
     // 挂件高度
     widgetHeight=4.3;
+    // 是否携带标题
+    titleEnable = false;
     // get modeCode(){
     //     return this._modeCode;
     // }
@@ -44,7 +46,6 @@ class ManualMode extends Mode {
         //提示词设置
         $("#refresh").addClass("manualMode");
         $("#refresh").attr("title", language["manualMode"] + language["ui_refresh_btn_hint"]);
-        modePush(language["manualMode"]);
         $("#innerCurrentMode").text(language["manualMode"]);
         $("#container").addClass("canClick");
         errorPush("");
@@ -168,13 +169,13 @@ class AutoMode extends Mode {
     calculateAllTasks = false;//模式：统计所有任务（含子任务）进度
     observerTimeout;//内保存延迟
     clickFnBtnTimeout;
-    widgetHeight=5;
+    widgetHeight=3;
+    endTimeStr = undefined;
     async init(){
         super.init();
         //设定自动模式提示词
         $("#refresh").attr("title", language["autoMode"] + language["ui_refresh_btn_hint"]);
         $("#refresh").addClass("autoMode");
-        modePush(language["autoMode"]);
         $("#innerCurrentMode").text(language["autoMode"]);
         //重新读取目标块id
         await this.readAndApplyAttr();
@@ -184,7 +185,7 @@ class AutoMode extends Mode {
         }
         //启动时自动刷新
         if (setting.onstart){
-            await g_mode.calculateApply();
+            await this.calculateApply();
         }
         //设定间隔定时刷新
         if (setting.refreshInterval > 0){
@@ -192,9 +193,8 @@ class AutoMode extends Mode {
         }
         //自动模式下隐藏提示信息
         if (!g_displaySetting){
-            window.frameElement.style.height = setting.widgetBarOnlyHeight;
+            window.frameElement.style.height = this.widgetHeight + "em";
         }
-        $("#outerInfos").css("display", "none");
         //设定自动模式功能键
         $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
         __refreshAppreance();//为刚刚写入的按钮加深色模式
@@ -244,7 +244,20 @@ class AutoMode extends Mode {
      */
      async calculateApply(noAPI = false){
         try{
-            //判断目标块
+            // 读取并设置时间
+            let [timeParseResult, time, timeStr] = parseTimeString(this.endTimeStr);
+            if (timeParseResult == 1) {
+                $("#outerInfos").css("display", "");
+                modePush(useUserTemplate("countDay_auto_prefix", timeStr) + getDayGapString(time), 0);
+                this.widgetHeight = 4.3;
+            }else{
+                $("#outerInfos").css("display", "none");
+                this.widgetHeight = 3;
+                if (isValidStr(this.endTimeStr) && this.endTimeStr != "null") {
+                    errorPush(language["timeSetIllegal"]);
+                }
+            }
+            // 判断目标块
             if (!isValidStr(g_targetBlockId)){
                 throw new Error(language["needSetAttr"]);
             };
@@ -324,6 +337,11 @@ class AutoMode extends Mode {
             errorPush("错误：无法获取任务列表变化" + err);
         }
     }
+    /**
+     * 重设observer
+     * @param {*} blockid 
+     * @returns 
+     */
     __setObserver(blockid){
         console.log("设定/重设observer");
         try{
@@ -433,6 +451,10 @@ class AutoMode extends Mode {
         }else{
             this.calculateAllTasks = defaultAttr["alltask"];
         }
+        // 读取结束时间
+        if (attrName.endTime in response.data) {
+            this.endTimeStr = response.data[attrName.endTime];
+        }
         //向挂件设置项写入id
         $("#blockId").val(isValidStr(g_targetBlockId) ? g_targetBlockId : "");
         //如果没有设定，则自动获取上下文id
@@ -505,16 +527,7 @@ class TimeMode extends Mode {
                 if (this.todayMode) {
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
                 }else{
-                    // 计算还有多少天
-                    let gapDay = this.calculateDateGapByDay(new Date(), this.times[1]);
-                    let dateGapString = "";
-                    if (gapDay > 0) {
-                        dateGapString = useUserTemplate("countDay_dayLeft", gapDay);
-                    } else if (gapDay == 0) {
-                        dateGapString = useUserTemplate("countDay_today");
-                    } else {
-                        dateGapString = useUserTemplate("countDay_exceed", -gapDay);
-                    }
+                    let dateGapString = getDayGapString(this.times[1]);
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
                 }
             }catch(err) {
@@ -598,18 +611,6 @@ class TimeMode extends Mode {
         }
         return false;
     }
-    /**
-     * 计算两个日期相差的天数，返回天数
-     * end - start
-     * @param {Date} start
-     * @param {Date} end
-     * @return {int} 正数：start距离end还有x天
-     */
-     calculateDateGapByDay(start, end) {
-        let from = Date.parse(start.toDateString());
-        let to = Date.parse(end.toDateString());
-        return Math.ceil((to - from) / (1 * 24 * 60 * 60 * 1000));
-    }
     async refresh(){
         errorPush("");
         await this.calculateApply();
@@ -668,10 +669,9 @@ async function getSettingAtStartUp(){
         }
         throw new Error(language["writeHeightInfoFailed"]);
     }
-    // console.log("getAttr", response);
     if (response.data == null) return null;
     applyProgressColor(response);//应用属性
-    //获取外观属性
+    // 获取外观属性
     g_apperance.frontColor = isValidStr(response.data[attrName.frontColor])? 
         response.data[attrName.frontColor] : $("#progress").css("background-color");
     g_apperance.backColor = isValidStr(response.data[attrName.backColor]) ? 
@@ -683,10 +683,14 @@ async function getSettingAtStartUp(){
         console.warn("获取barheight失败", err);
         g_apperance.barWidth = defaultAttr.barWidth;
     }
-    //初始化设置-统计子项
+    //UI载入设置-统计子项
     if (response.data[attrName.taskCalculateMode] == "true"){
         $("#allTask").prop("checked", true);
     }
+
+    // UI载入设置-开始、结束时间
+    $("#startTime").val(response.data[attrName.startTime] == "null" ? "" : response.data[attrName.startTime]);
+    $("#endTime").val(response.data[attrName.endTime] == "null" ? "" : response.data[attrName.endTime]);
 
     // 获取挂件其他设定
     // if (attrName.basicSetting in response.data) {
@@ -800,7 +804,7 @@ function infoPush(msg, timeout = 7000){
 
 function modePush(msg = "", timeout = 2000){
     clearTimeout(g_modePushTimeout);
-    $("#modeInfo").text(msg);
+    $("#modeInfo").html(msg);
     if (timeout == 0) return;
     g_modePushTimeout = setTimeout(()=>{$("#modeInfo").text("");}, timeout);
 }
@@ -855,6 +859,12 @@ async function __init(){
         ,value: new Date()
         ,ready: function(date) {
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
+            if (date.month < 10) {
+                date.month = "0" + date.month;
+            }
+            if (date.date < 10) {
+                date.date = "0" + date.date;
+            }
             $("#startTime").val(`${date.year}-${date.month}-${date.date}`);
         }
         ,change: function(value) {

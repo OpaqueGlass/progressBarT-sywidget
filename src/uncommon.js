@@ -20,7 +20,7 @@ export function parseTimeString(timeStr, format = "") {
     // 拆分连续的数字（string）
     let timeNums = timeStr.match(/[0-9]+/gm);
     // 无数字的情况
-    if (timeNums.length <= 1) {
+    if (!timeNums ||timeNums.length <= 1) {
         return [0, null, ""];
     }
     // 处理yy MM dd的情况
@@ -87,6 +87,15 @@ export function calculateDateGapByDay(start, end) {
 }
 
 /**
+ * 计算截止小时
+ */
+export function calculateDateGapByHour(start, end) {
+    let from = Date.parse(start.toDateString());
+    let to = Date.parse(end.toDateString());
+    return Math.ceil((to - from) / (60 * 60 * 1000) * 10) / 10;
+}
+
+/**
  * 载入用户设定的输出模板
  * @param {*} attrName 
  * @param  {...any} args 
@@ -109,4 +118,23 @@ export function useUserTemplate(attrName, ...args) {
         }
         return result;
     }
+}
+
+/**
+ * 返回当前时间距离输入参数endTime
+ * @param {*} endTime 
+ * @returns 
+ */
+export function getDayGapString(endTime, by="day") {
+    // 计算还有多少天
+    let gapDay = calculateDateGapByDay(new Date(), endTime);
+    let dateGapString = "";
+    if (gapDay > 0) {
+        dateGapString = useUserTemplate("countDay_dayLeft", gapDay);
+    } else if (gapDay == 0) {
+        dateGapString = useUserTemplate("countDay_today");
+    } else {
+        dateGapString = useUserTemplate("countDay_exceed", -gapDay);
+    }
+    return dateGapString;
 }
