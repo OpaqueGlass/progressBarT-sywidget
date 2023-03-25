@@ -123,18 +123,20 @@ export function useUserTemplate(attrName, ...args) {
 /**
  * 返回当前时间距离输入参数endTime
  * @param {*} endTime 
+ * @param {boolean} simplify 简化输出（用于自动模式）
  * @returns 
  */
-export function getDayGapString(endTime, by="day") {
+export function getDayGapString(endTime, simplify=false) {
     // 计算还有多少天
     let gapDay = calculateDateGapByDay(new Date(), endTime);
     let dateGapString = "";
     if (gapDay > 0) {
-        dateGapString = useUserTemplate("countDay_dayLeft", gapDay);
+        dateGapString = useUserTemplate(simplify ? "countDay_dayLeft_sim":"countDay_dayLeft", gapDay);
     } else if (gapDay == 0) {
-        dateGapString = useUserTemplate("countDay_today");
+        dateGapString = useUserTemplate(simplify ? "countDay_today_sim":"countDay_today");
     } else {
-        dateGapString = useUserTemplate("countDay_exceed", -gapDay);
+        dateGapString = useUserTemplate(simplify ? "countDay_exceed_sim":"countDay_exceed", -gapDay);
     }
+    // TODO: 处理并返回时间颜色
     return dateGapString;
 }

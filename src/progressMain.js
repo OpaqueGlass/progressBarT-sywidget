@@ -39,7 +39,7 @@ class Mode {
 class ManualMode extends Mode {
     savePercentTimeout;
     modeCode = 0;
-    widgetHeight = 4.3;
+    widgetHeight = 3;
     //初始化
     async init(){
         // super.init();
@@ -248,7 +248,7 @@ class AutoMode extends Mode {
             let [timeParseResult, time, timeStr] = parseTimeString(this.endTimeStr);
             if (timeParseResult == 1) {
                 $("#outerInfos").css("display", "");
-                modePush(useUserTemplate("countDay_auto_prefix", timeStr) + getDayGapString(time), 0);
+                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString(time, true), timeStr), 0);
                 this.widgetHeight = 4.3;
             }else{
                 $("#outerInfos").css("display", "none");
@@ -632,7 +632,8 @@ function changeBar(percentage){
     let accuratePercentage = Math.floor(percentage * 100) / 100//下取整（间接保留两位小数）
     let intPercentage = Math.round(origin);//四舍五入取整
     document.getElementById("progress").style.width = accuratePercentage + "%";
-    document.getElementById("percentage").innerHTML = intPercentage + "%";
+    // document.getElementById("percentage").innerHTML = ;
+    $(".apply-percentage").html(intPercentage + "%");
     g_barRefreshLogTimeout = setTimeout(()=>{console.log("进度条进度已刷新", g_thisWidgetId)}, 500);
 }
 

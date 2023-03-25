@@ -59,10 +59,12 @@ let setting = {
     showGapDay: true, // 时间模式显示日期间隔天数
     showButtons: false, // 在进度条右侧展示刷新和设置按钮
     saveDefaultHeight: true, // 挂件默认高度记忆（加载时将默认宽高写入文档，以减少载入文档时挂件高度变化）
-    countDay_dayLeft: undefined, // 还剩余多少天显示方式自定义，其中%%将替换为天数
-    countDay_today: undefined,//时间段 当前为结束日
+
+    // 自动、时间模式时间提示词覆盖，请参考zh_CN中同名属性
+    countDay_dayLeft: undefined, // 时间段：剩余天数显示模板，其中%%将替换为天数
+    countDay_today: undefined,//时间段：当前为结束日
     countDay_exceed: undefined, //时间段 当前已超期，超过多少天，其中%%将替换为天数
-    countDay_auto_prefix: undefined,//自动模式截止时间提示前缀，其中%%将替换为截止日日期
+    countDay_auto_modeinfo: undefined, //自动模式截止时间提示前缀，其中%2%将替换为截止日日期，%1%将被替换为剩余天数模板，%0%将被替换为完成进度百分比
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -104,10 +106,13 @@ let zh_CN = {
     "ui_refresh_btn_hint": "\n[单击] 刷新/(手动模式)保存\n[双击] 切换模式",
     "ui_setting_btn_hint": "显示/隐藏设置",
     "countDay_dayLeft": "还有%%天",
-    "countDay_today": `<span class="time-warn">截止日当天</span>`,
+    "countDay_today": `<span class="time-warn">当天</span>`,
     "countDay_exceed": `<span class="time-warn">已过%%天</span>`,
     "countDay_hour": `还有%%小时`,
-    "countDay_auto_prefix": "任务截止日期：%%，",
+    "countDay_dayLeft_sim": "剩%%天",
+    "countDay_today_sim": `<span class="time-warn">截止日</span>`,
+    "countDay_exceed_sim": `<span class="time-warn">超%%天</span>`,
+    "countDay_auto_modeinfo": `完成%0%，%1%，%2%截止`,
     "ui_select_all": "全部完成/全部取消"
 }
 

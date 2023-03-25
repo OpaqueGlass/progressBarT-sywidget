@@ -218,33 +218,9 @@ td{
     color: cornflowerblue;
 }
 
-/* 手动模式按钮样式 */
-.manualMode {
-    /* border-color: darkred; */
-    /* border-style: dashed; */
-    /* background-color: #d4508c35; */
-    /*红212 80 140*/
-}
-
-/* 自动模式按钮样式 */
-.autoMode {
-    /* border-color: cornflowerblue; */
-    /* border-style: solid; */
-    /* background-color: #28aadb35; */
-    /*蓝40 170 219*/
-}
-
-/* 时间模式按钮样式 */
-.timeMode {
-    /* border-color: darkgreen; */
-    /* border-style: dotted; */
-    /* background-color: #f1e34235; */
-    /*黄241 227 42*/
-}
-
 .app {
     display: flex;
-    /* justify-content: flex-start; */
+    white-space: nowrap;
 
 }
 
@@ -297,4 +273,18 @@ td{
 
 .time-warn {
     color: red;
+}
+
+#header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.time-mode-a {
+    display: none !important;
+}
+
+#outerInfos {
+    text-align: center;
 }
