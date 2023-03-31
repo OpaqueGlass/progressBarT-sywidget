@@ -126,7 +126,7 @@ export function useUserTemplate(attrName, ...args) {
  * @param {boolean} simplify 简化输出（用于自动模式）
  * @returns 
  */
-export function getDayGapString(endTime, simplify=false) {
+export function getDayGapString({endTime, simplify=false, percentage=null}) {
     // 计算还有多少天
     let gapDay = calculateDateGapByDay(new Date(), endTime);
     let dateGapString = "";
@@ -138,5 +138,120 @@ export function getDayGapString(endTime, simplify=false) {
         dateGapString = useUserTemplate(simplify ? "countDay_exceed_sim":"countDay_exceed", -gapDay);
     }
     // TODO: 处理并返回时间颜色
+    // let gradientColors = generateGradientColor("#FF0000", "#00FF00", 30);
+    // let gradientColors = generateGradientColors(7);
+    // let ratio = Math.floor(gapDay / 30 * 7);
+    // console.log(gradientColors);
+    // if (gapDay <= 0) gapDay = 0;
+    // if (gapDay >= gradientColors.length) gapDay = gradientColors.length - 1;
+    let colorStr = getCorrespondingColor(gapDay)
+    if (isValidStr(colorStr)) {
+        dateGapString = `<span style="color: ${colorStr}">${dateGapString}</span>`;
+    }else{
+        dateGapString = `${dateGapString}`;
+    }
+    // debug 颜色设定方格
+    $("#color-test").html(generateColorBlocksPlus(setting.colorGrandient_baseColor, setting.colorGrandient_triggerDay))
     return dateGapString;
+}
+/**
+ * 两段渐变色生成
+ * @param {*} startColor 
+ * @param {*} endColor 
+ * @param {*} steps 
+ * @returns 颜色数组
+ */
+function generateGradientColor(startColor, endColor, steps) {
+    const start = {
+      red: parseInt(startColor.slice(1, 3), 16),
+      green: parseInt(startColor.slice(3, 5), 16),
+      blue: parseInt(startColor.slice(5, 7), 16),
+    };
+    const end = {
+      red: parseInt(endColor.slice(1, 3), 16),
+      green: parseInt(endColor.slice(3, 5), 16),
+      blue: parseInt(endColor.slice(5, 7), 16),
+    };
+    const diff = {
+      red: end.red - start.red,
+      green: end.green - start.green,
+      blue: end.blue - start.blue,
+    };
+    const gradientColors = [];
+    for (let i = 0; i < steps; i++) {
+      const ratio = i / (steps - 1);
+      const color = {
+        red: Math.round(start.red + diff.red * ratio),
+        green: Math.round(start.green + diff.green * ratio),
+        blue: Math.round(start.blue + diff.blue * ratio),
+      };
+      const hex = `#${color.red.toString(16).padStart(2, '0')}${color.green.toString(16).padStart(2, '0')}${color.blue.toString(16).padStart(2, '0')}`;
+      gradientColors.push(hex);
+    }
+    return gradientColors;
+}
+/**
+ * 多段渐变色生成
+ * @returns 颜色数组
+ */
+function generateGradientColors(colors, n) {
+    // const colors = ['#FF0000', '#FFA500', '#008000', '#00FFFF', '#0000FF', '#800080'];
+    // const colors = ["#FF0000", "#FF3300", "#FF6600", "#FFA500", "#CCFF00", "#66FF00", "#00FF00 "];
+    const gradientColors = [];
+    const colorCount = colors.length - 1;
+    const colorStep = 1 / (n - 1);
+    for (let i = 0; i < n; i++) {
+      const colorIndex1 = Math.floor(i * colorStep * colorCount);
+      const colorIndex2 = Math.ceil(i * colorStep * colorCount);
+      const color1 = colors[colorIndex1];
+      const color2 = colors[colorIndex2];
+      const ratio = i * colorStep * colorCount - colorIndex1;
+      const r1 = parseInt(color1.substring(1, 3), 16);
+      const g1 = parseInt(color1.substring(3, 5), 16);
+      const b1 = parseInt(color1.substring(5, 7), 16);
+      const r2 = parseInt(color2.substring(1, 3), 16);
+      const g2 = parseInt(color2.substring(3, 5), 16);
+      const b2 = parseInt(color2.substring(5, 7), 16);
+      const r = Math.floor(r1 * (1 - ratio) + r2 * ratio);
+      const g = Math.floor(g1 * (1 - ratio) + g2 * ratio);
+      const b = Math.floor(b1 * (1 - ratio) + b2 * ratio);
+      const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      gradientColors.push(color);
+    }
+    return gradientColors;
+}
+/**
+ * 通过config获取颜色配置，并选择颜色
+ * @param {*} remainDay 
+ * @param {*} gapPercentage 
+ */
+function getCorrespondingColor(remainDay, gapPercentage = null) {
+    // 安全检查
+    if (setting.colorGrandient_baseColor.length != setting.colorGrandient_triggerDay.length) {
+        console.warn("设置中数组长度不匹配，无法应用颜色");
+        return null;
+    }
+    for (let i = 0; i < setting.colorGrandient_baseColor.length; i++) {
+        if (remainDay <= setting.colorGrandient_triggerDay[i]) {
+            return setting.colorGrandient_baseColor[i];
+        }
+    }
+    return undefined;
+}
+
+/**
+ * 横排生成颜色预览
+ * @param {*} colors 
+ * @param {*} numbers 
+ * @returns html
+ */
+function generateColorBlocksPlus(colors, numbers) {
+    let html = '';
+    if (!isValidStr(colors) || !isValidStr(numbers) || colors.length != numbers.length) {
+        return language["gradient_error"];
+    }
+    for (let i = 0; i < colors.length; i++) {
+        html += `<div style="background-color:${colors[i]}; width:50px; height:50px; display:inline-block;">${numbers[i]}</div>`;
+    }
+    return html;
 }

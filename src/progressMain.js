@@ -248,7 +248,7 @@ class AutoMode extends Mode {
             let [timeParseResult, time, timeStr] = parseTimeString(this.endTimeStr);
             if (timeParseResult == 1) {
                 $("#outerInfos").css("display", "");
-                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString(time, true), timeStr), 0);
+                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({endTime:time, simplify:true}), timeStr), 0);
                 this.widgetHeight = 4.3;
             }else{
                 $("#outerInfos").css("display", "none");

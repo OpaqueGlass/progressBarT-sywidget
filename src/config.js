@@ -65,6 +65,20 @@ let setting = {
     countDay_today: undefined,//时间段：当前为结束日
     countDay_exceed: undefined, //时间段 当前已超期，超过多少天，其中%%将替换为天数
     countDay_auto_modeinfo: undefined, //自动模式截止时间提示前缀，其中%2%将替换为截止日日期，%1%将被替换为剩余天数模板，%0%将被替换为完成进度百分比
+
+    /* 时间倒数日颜色渐变控制 */
+    // 颜色骤变/渐变基准色，数组，从左至右为倒数日由近至远；
+    // 数组元素格式不仅限于#十六进制、也可以是rgb(255,255,255)类型，值直接填入css color
+    colorGrandient_baseColor: ["#FF0000", "#FF3300", "#FF6600", "#FFA500", "#abd505", "#039e03", "#04a1a0"], 
+    // 颜色骤变触发天数，数组，从左至右逐渐变大
+    // 在天数小于等于对应位置天数值时，选用上面对应位置的颜色，和上面数组长度必须相同
+    colorGrandient_triggerDay: [1, 3, 5, 7, 10, 14, 21], 
+    // 【暂不支持】颜色骤变触发百分比，数组，从左至右逐渐变小
+    // 
+    colorGrandient_triggerPercentage: [1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5],
+    // 【暂不支持】控制是否使用颜色渐变【注意：渐变使用RGB各色线性变化实现，可能出现不期望的颜色】
+    // 
+    //colorGrandient_gradient: false, 
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -109,11 +123,12 @@ let zh_CN = {
     "countDay_today": `<span class="time-warn">当天</span>`,
     "countDay_exceed": `<span class="time-warn">已过%%天</span>`,
     "countDay_hour": `还有%%小时`,
-    "countDay_dayLeft_sim": "剩%%天",
+    "countDay_dayLeft_sim": "还有%%天",
     "countDay_today_sim": `<span class="time-warn">截止日</span>`,
     "countDay_exceed_sim": `<span class="time-warn">超%%天</span>`,
-    "countDay_auto_modeinfo": `完成%0%，%1%，%2%截止`,
-    "ui_select_all": "全部完成/全部取消"
+    "countDay_auto_modeinfo": `完成%0%，%2%截止，%1%`,
+    "ui_select_all": "全部完成/全部取消",
+    "gradient_error": "提示词颜色变化设置错误，请检查"
 }
 
 let language = zh_CN;
