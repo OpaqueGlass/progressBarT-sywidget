@@ -1,7 +1,7 @@
 /**
  * common.js 可能可以应用到其他项目的操作函数
  */
-import { isValidStr } from "./API.js";
+import { isValidStr, isDarkMode } from "./API.js";
 import { language, setting } from "./config.js";
 
 /**
@@ -151,7 +151,9 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
         dateGapString = `${dateGapString}`;
     }
     // debug 颜色设定方格
-    $("#color-test").html(generateColorBlocksPlus(setting.colorGrandient_baseColor, setting.colorGrandient_triggerDay))
+    $("#color-test").html(generateColorBlocksPlus(
+        isDarkMode()?setting.colorGradient_baseColor_night : setting.colorGradient_baseColor, 
+        setting.colorGradient_triggerDay));
     return dateGapString;
 }
 /**
@@ -227,13 +229,17 @@ function generateGradientColors(colors, n) {
  */
 function getCorrespondingColor(remainDay, gapPercentage = null) {
     // 安全检查
-    if (setting.colorGrandient_baseColor.length != setting.colorGrandient_triggerDay.length) {
+    if (setting.colorGradient_baseColor.length != setting.colorGradient_triggerDay.length
+        || setting.colorGradient_baseColor_night.length != setting.colorGradient_baseColor.length) {
         console.warn("设置中数组长度不匹配，无法应用颜色");
         return null;
     }
-    for (let i = 0; i < setting.colorGrandient_baseColor.length; i++) {
-        if (remainDay <= setting.colorGrandient_triggerDay[i]) {
-            return setting.colorGrandient_baseColor[i];
+    for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
+        if (remainDay <= setting.colorGradient_triggerDay[i]) {
+            if (isDarkMode()) {
+                return setting.colorGradient_baseColor_night[i];
+            }
+            return setting.colorGradient_baseColor[i];
         }
     }
     return undefined;
@@ -251,7 +257,8 @@ function generateColorBlocksPlus(colors, numbers) {
         return language["gradient_error"];
     }
     for (let i = 0; i < colors.length; i++) {
-        html += `<div style="background-color:${colors[i]}; width:50px; height:50px; display:inline-block;">${numbers[i]}</div>`;
+        // html += `<div style="background-color:${colors[i]}; width:50px; height:50px; display:inline-block;">${numbers[i]}</div>`;
+        html += `<span style="color: ${colors[i]}">█少于${numbers[i]}天 </span>`
     }
     return html;
 }

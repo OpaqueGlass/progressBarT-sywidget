@@ -251,3 +251,7 @@ export async function getKramdown(blockid){
     }
     return null;
 }
+
+export function isDarkMode() {
+    return window.top.siyuan.config.appearance.mode == 1 ? true : false;
+}

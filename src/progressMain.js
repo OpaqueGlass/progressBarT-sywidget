@@ -527,7 +527,7 @@ class TimeMode extends Mode {
                 if (this.todayMode) {
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
                 }else{
-                    let dateGapString = getDayGapString(this.times[1]);
+                    let dateGapString = getDayGapString({endTime:this.times[1]});
                     modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
                 }
             }catch(err) {

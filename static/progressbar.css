@@ -275,6 +275,10 @@ td{
     color: red;
 }
 
+[dark_mode] .time-warn {
+    color: #FF0000;
+}
+
 #header {
     display: flex;
     justify-content: space-between;

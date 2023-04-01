@@ -69,16 +69,18 @@ let setting = {
     /* 时间倒数日颜色渐变控制 */
     // 颜色骤变/渐变基准色，数组，从左至右为倒数日由近至远；
     // 数组元素格式不仅限于#十六进制、也可以是rgb(255,255,255)类型，值直接填入css color
-    colorGrandient_baseColor: ["#FF0000", "#FF3300", "#FF6600", "#FFA500", "#abd505", "#039e03", "#04a1a0"], 
+    colorGradient_baseColor: ["#f94144", "#f3722c", "#43aa8b", "#1982c4", "#6a4c93"],
+    colorGradient_baseColor_night: ["#f94144", "#f3722c", "#43aa8b", "#4cc9f0", "#A853ED"],
+    //["#FF0000", "#FF3300", "#FF6600", "#FFA500", "#abd505", "#039e03", "#04a1a0"], 
     // 颜色骤变触发天数，数组，从左至右逐渐变大
     // 在天数小于等于对应位置天数值时，选用上面对应位置的颜色，和上面数组长度必须相同
-    colorGrandient_triggerDay: [1, 3, 5, 7, 10, 14, 21], 
+    colorGradient_triggerDay: [1, 4, 7, 14, 21], 
     // 【暂不支持】颜色骤变触发百分比，数组，从左至右逐渐变小
     // 
-    colorGrandient_triggerPercentage: [1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5],
+    colorGradient_triggerPercentage: [1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5],
     // 【暂不支持】控制是否使用颜色渐变【注意：渐变使用RGB各色线性变化实现，可能出现不期望的颜色】
     // 
-    //colorGrandient_gradient: false, 
+    //colorGradient_gradient: false, 
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
