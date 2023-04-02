@@ -279,16 +279,34 @@ td{
     color: #FF0000;
 }
 
+[dark_mode] #color-test {
+    color:rgb(201, 209, 217);
+}
+
 #header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
 }
 
-.time-mode-a {
+/* .time-mode-a {
     display: none !important;
+} */
+
+[dark_mode] * {
+    color: rgb(201, 209, 217);
 }
 
 #outerInfos {
     text-align: center;
+}
+
+#header {
+    margin-bottom: 5px;
+}
+
+#header-left-info > * {
+    
+    user-select: none;
+    cursor: pointer;
 }

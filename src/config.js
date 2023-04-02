@@ -41,6 +41,7 @@ let attrName = {
     taskCalculateMode: "7alltask",//自动模式统计任务范围对应的属性名称
     barWidth: "6width", //进度条高度
     basicSetting: "pgbtconfig", //进度条基础设定
+    barTitle: "71title", // 进度条标题（时间模式）
 }
 let attrSetting = {
     
@@ -69,8 +70,8 @@ let setting = {
     /* 时间倒数日颜色渐变控制 */
     // 颜色骤变/渐变基准色，数组，从左至右为倒数日由近至远；
     // 数组元素格式不仅限于#十六进制、也可以是rgb(255,255,255)类型，值直接填入css color
-    colorGradient_baseColor: ["#f94144", "#f3722c", "#43aa8b", "#1982c4", "#6a4c93"],
-    colorGradient_baseColor_night: ["#f94144", "#f3722c", "#43aa8b", "#4cc9f0", "#A853ED"],
+    colorGradient_baseColor: ["#f94144", "#6a4c93", "#f3722c", "#1982c4", "#43aa8b"],
+    colorGradient_baseColor_night: ["#f94144", "#A853ED", "#f3722c", "#4cc9f0", "#43aa8b"],
     //["#FF0000", "#FF3300", "#FF6600", "#FFA500", "#abd505", "#039e03", "#04a1a0"], 
     // 颜色骤变触发天数，数组，从左至右逐渐变大
     // 在天数小于等于对应位置天数值时，选用上面对应位置的颜色，和上面数组长度必须相同
@@ -81,6 +82,9 @@ let setting = {
     // 【暂不支持】控制是否使用颜色渐变【注意：渐变使用RGB各色线性变化实现，可能出现不期望的颜色】
     // 
     //colorGradient_gradient: false, 
+
+    // 时间模式开始结束时间显示格式
+    // dateFormat: "MM月dd日"
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -115,6 +119,7 @@ let zh_CN = {
     "endTimeText": "结束时间：",
     "allTaskText": "统计子任务：",
     "blockIdText": "任务列表块id：",
+    "barTitleText": "时间模式标题：",
     "changeModeText": "切换模式",
     "refreshed": "已刷新",
     "ui_percentage_hint": "进度百分比\n出现下划线=>已保存",
@@ -130,7 +135,9 @@ let zh_CN = {
     "countDay_exceed_sim": `<span class="time-warn">超%%天</span>`,
     "countDay_auto_modeinfo": `完成%0%，%2%截止，%1%`,
     "ui_select_all": "全部完成/全部取消",
-    "gradient_error": "提示词颜色变化设置错误，请检查"
+    "gradient_error": "提示词颜色变化设置错误，请检查",
+    "colorCardExample": "色卡示例: ",
+    "dateFormat": "MM月dd日",
 }
 
 let language = zh_CN;

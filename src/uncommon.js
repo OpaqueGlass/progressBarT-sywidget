@@ -38,7 +38,7 @@ export function parseTimeString(timeStr, format = "") {
         }
         case 5: {//输入格式yyyy MM dd HH mm
             resultDate = new Date(timeNums[0], timeNums[1] - 1, timeNums[2], timeNums[3], timeNums[4]);
-            resultDateStr = formatDateString(resultDate, format) + resultDate.toLocaleTimeString();
+            resultDateStr = formatDateString(resultDate, format) + " " + resultDate.toLocaleTimeString();
             break;
         }
         case 2: {//输入格式HH mm
@@ -66,7 +66,7 @@ export function formatDateString(date, format) {
     }
     result = result.replace(new RegExp("yyyy","g"), date.getFullYear());
     result = result.replace(new RegExp("yy","g"), date.getFullYear() % 100);
-    result = result.replace(new RegExp("MM","g"), date.getMonth() - 1);
+    result = result.replace(new RegExp("MM","g"), date.getMonth() + 1);
     result = result.replace(new RegExp("dd","g"), date.getDate());
     result = result.replace(new RegExp("HH","g"), date.getHours());
     result = result.replace(new RegExp("mm","g"), date.getMinutes());
@@ -252,7 +252,7 @@ function getCorrespondingColor(remainDay, gapPercentage = null) {
  * @returns html
  */
 function generateColorBlocksPlus(colors, numbers) {
-    let html = '';
+    let html = language["colorCardExample"];
     if (!isValidStr(colors) || !isValidStr(numbers) || colors.length != numbers.length) {
         return language["gradient_error"];
     }

@@ -8,7 +8,7 @@ import {
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
-import {getDayGapString, parseTimeString, useUserTemplate} from "./uncommon.js"
+import {getDayGapString, parseTimeString, useUserTemplate, formatDateString} from "./uncommon.js"
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -208,6 +208,7 @@ class AutoMode extends Mode {
         clearInterval(this.autoRefreshInterval);
         $("#refresh").removeClass("autoMode");
         $("#cancelAll").remove();
+        $("#outerInfos").css("display", "none");
     }
     async refresh(){
         errorPush("");//清空提示词
@@ -491,6 +492,7 @@ class TimeMode extends Mode {
     todayMode = false;
     dateString = ["", ""];// 开始时间，结束时间字符串
     widgetHeight=5;
+    title = "";
     async init(){
         super.init();
         //设定提示词
@@ -506,7 +508,12 @@ class TimeMode extends Mode {
         if (!g_displaySetting){
             window.frameElement.style.height = setting.widgetHeight;
         }
-        $("#outerInfos").css("display", "");     
+        // 外观更改
+        $(".time-mode-a").css("display", "");
+        // $("#outerInfos").css("display", "none")
+        $("#percentage").css("display", "none");
+        document.getElementById("header-left-info").onclick = clickManualRefresh;
+        document.getElementById("header-left-info").ondblclick = dblClickShowSetting;
     }
     async calculateApply(){
         clearInterval(this.timeRefreshInterval);
@@ -515,20 +522,19 @@ class TimeMode extends Mode {
             // 判断是否需要定时刷新
             if (setting.timeModeRefreshInterval > 0){
                 this.timeRefreshInterval = setInterval(() => {
-                    this.calculateTimeGap();
+                    this.calculateApply();
                 }, setting.timeModeRefreshInterval);
             }
-            changeBar(this.calculateTimeGap());
+            changeBar(this.calculateTimePercentage());
             try {
-                if (setting.showGapDay == false) {
-                    modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`);
-                    return;
-                }
                 if (this.todayMode) {
-                    modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
+                    // modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
                 }else{
                     let dateGapString = getDayGapString({endTime:this.times[1]});
-                    modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
+                    $("#start-time-display").text(this.dateString[0]);
+                    $("#end-time-display").text(this.dateString[1]);
+                    $("#time-day-left").html(dateGapString);
+                    // modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
                 }
             }catch(err) {
                 console.error(err);
@@ -546,10 +552,13 @@ class TimeMode extends Mode {
     destory(){
         clearInterval(this.timeRefreshInterval);
         $("#refresh").removeClass("timeMode");
-        $("#outerInfos").css("display", "none");     
+        $("#percentage").css("display", "");
+        $(".time-mode-a").css("display", "none");
+        document.getElementById("header-left-info").onclick = null;
+        document.getElementById("header-left-info").ondblclick = null;
     }
     //计算时间差
-    calculateTimeGap(){
+    calculateTimePercentage(){
         let totalGap = this.times[1] - this.times[0];
         if (totalGap <= 0){
             errorPush(language["timeModeSetError"]);
@@ -574,6 +583,17 @@ class TimeMode extends Mode {
     async readTimesFromAttr(){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
         let response = await getblockAttrAPI(g_thisWidgetId);
+        // 读取标题
+        if (attrName.barTitle in response.data) {
+            let title = response.data[attrName.barTitle];
+            if (isValidStr(title) && title != "null") {
+                $("#title").html(title);
+                this.title = title;
+            }else{
+                $("#title").html("");
+                this.title = "";
+            }
+        }
         if (attrName.startTime in response.data && attrName.endTime in response.data){
             //属性原始字符串
             let startimeStr = response.data[attrName.startTime]
@@ -587,19 +607,23 @@ class TimeMode extends Mode {
             $("#startTime").val(startimeStr);
             $("#endTime").val(endtimeStr);
             let parseResult;
-            [parseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr);
+            [parseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat"));
             if (parseResult <= 0) {
                 errorPush(Error(language["timeSetIllegal"]));
                 console.warn("时间设定非法", this.times[i]);
                 return false;
             }
-            [parseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr);
+            [parseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat"));
             if (parseResult <= 0) {
                 errorPush(Error(language["timeSetIllegal"]));
                 console.warn("时间设定非法", this.times[i]);
                 return false;
             }
             console.info(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
+            // 
+            if (!isValidStr(this.title)) {
+                $("#title").text(`${formatDateString(this.times[0])}~${formatDateString(this.times[1])}`)
+            }
             return true;
         }
         if ("id" in response.data){
@@ -692,7 +716,7 @@ async function getSettingAtStartUp(){
     // UI载入设置-开始、结束时间
     $("#startTime").val(response.data[attrName.startTime] == "null" ? "" : response.data[attrName.startTime]);
     $("#endTime").val(response.data[attrName.endTime] == "null" ? "" : response.data[attrName.endTime]);
-
+    $("#barTitleSet").val(response.data[attrName.barTitle] == "null"? "":response.data[attrName.barTitle]);
     // 获取挂件其他设定
     // if (attrName.basicSetting in response.data) {
     //     g_attrSetting = JSON.parse(response.data[attrName.basicSetting].replaceAll("&quot;", "\""));
@@ -851,6 +875,7 @@ async function __init(){
     // $("#showButtonText").text(language["showButtonText"]);
     $("#changeMode").text(language["changeModeText"]);
     $("#settingBtn").attr("title", language["ui_setting_btn_hint"]);
+    $("#barTitleText").text(language["barTitleText"]);
 
     // 初始化日期选择控件
     laydate.render({
@@ -1069,6 +1094,7 @@ async function saveSettings(){
     data[attrName.startTime] = $("#startTime").val();
     data[attrName.endTime] = $("#endTime").val();
     data[attrName.taskCalculateMode] = document.getElementById("allTask").checked.toString();
+    data[attrName.barTitle] = $("#barTitleSet").val();
     // data[attrName.basicSetting] = JSON.stringify();
     for (let attr in data){
         if (data[attr] == "") data[attr] = "null";

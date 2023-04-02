@@ -12,16 +12,16 @@
 </head>
 
 <body>
-    <div id="header" class="time-mode-a">
+    <div id="header" class="time-mode-a" style="display: none;">
         <span id="title">标题</span>
-        <span id="header-left-info">还有x天 [100%]</span>
+        <div id="header-left-info"><span id="time-day-left">还有x天</span> [<span class="apply-percentage">N/A</span>]</div>
     </div>
     <div class="app">
-        <div id="start-time-display" class="time-mode-a">3月2日</div>
+        <div id="start-time-display" class="time-mode-a" style="display: none;">x月x日</div>
         <div id="container" class="container">
             <div id="progress" class="progress"></div>
         </div>
-        <div id="end-time-display" class="time-mode-a">3月31日</div>
+        <div id="end-time-display" class="time-mode-a" style="display: none;">x月x日</div>
         <div id="percentage" class="apply-percentage">N/A</div>
         
         <div class="btn" id="refresh">
@@ -112,6 +112,14 @@
                 </td>
                 <td class="liner">
                     <input type="checkbox" id="allTask">
+                </td>
+            </tr>
+            <tr>
+                <td class="linel">
+                    <span id="barTitleText"></span>
+                </td>
+                <td class="liner">
+                    <input id="barTitleSet">
                 </td>
             </tr>
             <tr>
