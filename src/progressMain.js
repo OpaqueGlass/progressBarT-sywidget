@@ -8,7 +8,7 @@ import {
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
-import {getDayGapString, parseTimeString, useUserTemplate, formatDateString} from "./uncommon.js"
+import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage} from "./uncommon.js"
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -171,6 +171,7 @@ class AutoMode extends Mode {
     clickFnBtnTimeout;
     widgetHeight=3;
     endTimeStr = undefined;
+    startTimeStr = undefined;
     async init(){
         super.init();
         //设定自动模式提示词
@@ -246,10 +247,16 @@ class AutoMode extends Mode {
      async calculateApply(noAPI = false){
         try{
             // 读取并设置时间
-            let [timeParseResult, time, timeStr] = parseTimeString(this.endTimeStr);
-            if (timeParseResult == 1) {
+            let [endParseResult, endTime, endTimeStr] = parseTimeString(this.endTimeStr);
+            let [startParseResult, startTime, startTimeStr] = parseTimeString(this.startTimeStr);
+            if (endParseResult == 1 && startParseResult != 1) {
                 $("#outerInfos").css("display", "");
-                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({endTime:time, simplify:true}), timeStr), 0);
+                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true}), endTimeStr), 0);
+                this.widgetHeight = 4.3;
+            }else if (endParseResult == 1 && startParseResult == 1) {
+                $("#outerInfos").css("display", "");
+                let percentage = calculateTimePercentage(startTime, endTime);
+                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage}), endTimeStr), 0);
                 this.widgetHeight = 4.3;
             }else{
                 $("#outerInfos").css("display", "none");
@@ -456,6 +463,9 @@ class AutoMode extends Mode {
         if (attrName.endTime in response.data) {
             this.endTimeStr = response.data[attrName.endTime];
         }
+        if (attrName.startTime in response.data) {
+            this.startTimeStr = response.data[attrName.startTime];
+        }
         //向挂件设置项写入id
         $("#blockId").val(isValidStr(g_targetBlockId) ? g_targetBlockId : "");
         //如果没有设定，则自动获取上下文id
@@ -531,8 +541,11 @@ class TimeMode extends Mode {
             try {
                 if (this.todayMode) {
                     // modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
+                    $("#start-time-display").text(this.dateString[0]);
+                    $("#end-time-display").text(this.dateString[1]);
+                    $("#time-day-left").html("");
                 }else{
-                    let dateGapString = getDayGapString({endTime:this.times[1]});
+                    let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": this.calculateTimePercentage()});
                     $("#start-time-display").text(this.dateString[0]);
                     $("#end-time-display").text(this.dateString[1]);
                     $("#time-day-left").html(dateGapString);
@@ -563,20 +576,7 @@ class TimeMode extends Mode {
     }
     //计算时间差
     calculateTimePercentage(){
-        let totalGap = this.times[1] - this.times[0];
-        if (totalGap <= 0){
-            errorPush(language["timeModeSetError"]);
-            console.warn(language["timeModeSetError"]);
-            return;
-        }
-        let nowDate = new Date();
-        let passed = nowDate - this.times[0];
-        let result = passed / totalGap * 100.0;
-        if (result < 0){
-            errorPush(language["earlyThanStart"], 7000);
-            console.warn(language["earlyThanStart"]);
-        }
-        return result;
+        return calculateTimePercentage(this.times[0], this.times[1]);
     }
     /**
      * 读取属性中时间，并设定时间
@@ -610,23 +610,27 @@ class TimeMode extends Mode {
             //将获取到的时间字符串写入挂件设置部分
             $("#startTime").val(startimeStr);
             $("#endTime").val(endtimeStr);
-            let parseResult;
-            [parseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat"));
-            if (parseResult <= 0) {
+            let startParseResult;
+            [startParseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat"));
+            if (startParseResult <= 0) {
                 errorPush(Error(language["timeSetIllegal"]));
-                console.warn("时间设定非法", this.times[i]);
+                console.warn("时间设定非法", this.times[0]);
                 return false;
             }
-            [parseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat"));
-            if (parseResult <= 0) {
+            let endParseResult;
+            [endParseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat"));
+            if (endParseResult <= 0) {
                 errorPush(Error(language["timeSetIllegal"]));
-                console.warn("时间设定非法", this.times[i]);
+                console.warn("时间设定非法", this.times[1]);
                 return false;
             }
+            if (startParseResult == 2 && endParseResult == 2) {
+                this.todayMode = true;
+            } 
             console.info(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
             // 
             if (!isValidStr(this.title)) {
-                $("#title").text(`${formatDateString(this.times[0])}~${formatDateString(this.times[1])}`)
+                $("#title").text(`${formatDateString(this.times[0])}~${formatDateString(this.times[1])}`);
             }
             return true;
         }

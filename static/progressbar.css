@@ -174,7 +174,7 @@ td{
     border-radius: 3px;
 }
 
-#progress {
+#progress, #progress2 {
     width: 0%;
     /*初始值，刷新后由js控制*/
     height: inherit;
@@ -309,4 +309,21 @@ td{
     
     user-select: none;
     cursor: pointer;
+}
+
+#progress2 {
+    width: 0%;
+    position: relative;
+    left: 0px;
+    top: -12px;
+    z-index: -1;
+    background-color: rgba(255, 0, 0, 0.15);
+}
+
+#progress {
+    z-index: 0;
+}
+
+#container {
+    z-index: -255;
 }

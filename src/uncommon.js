@@ -144,7 +144,7 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
     // console.log(gradientColors);
     // if (gapDay <= 0) gapDay = 0;
     // if (gapDay >= gradientColors.length) gapDay = gradientColors.length - 1;
-    let colorStr = getCorrespondingColor(gapDay)
+    let colorStr = getCorrespondingColor(gapDay, percentage);
     if (isValidStr(colorStr)) {
         dateGapString = `<span style="color: ${colorStr}">${dateGapString}</span>`;
     }else{
@@ -153,7 +153,7 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
     // debug 颜色设定方格
     $("#color-test").html(generateColorBlocksPlus(
         isDarkMode()?setting.colorGradient_baseColor_night : setting.colorGradient_baseColor, 
-        setting.colorGradient_triggerDay));
+        setting.colorGradient_triggerDay, setting.colorGradient_triggerPercentage));
     return dateGapString;
 }
 /**
@@ -225,7 +225,7 @@ function generateGradientColors(colors, n) {
 /**
  * 通过config获取颜色配置，并选择颜色
  * @param {*} remainDay 
- * @param {*} gapPercentage 
+ * @param {*} gapPercentage 百分比（已经乘以100）
  */
 function getCorrespondingColor(remainDay, gapPercentage = null) {
     // 安全检查
@@ -234,14 +234,26 @@ function getCorrespondingColor(remainDay, gapPercentage = null) {
         console.warn("设置中数组长度不匹配，无法应用颜色");
         return null;
     }
-    for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
-        if (remainDay <= setting.colorGradient_triggerDay[i]) {
-            if (isDarkMode()) {
-                return setting.colorGradient_baseColor_night[i];
+    if (!isValidStr(gapPercentage)) {
+        for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
+            if (remainDay <= setting.colorGradient_triggerDay[i]) {
+                if (isDarkMode()) {
+                    return setting.colorGradient_baseColor_night[i];
+                }
+                return setting.colorGradient_baseColor[i];
             }
-            return setting.colorGradient_baseColor[i];
+        }
+    }else{
+        for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
+            if (gapPercentage >= setting.colorGradient_triggerPercentage[i]) {
+                if (isDarkMode()) {
+                    return setting.colorGradient_baseColor_night[i];
+                }
+                return setting.colorGradient_baseColor[i];
+            }
         }
     }
+    
     return undefined;
 }
 
@@ -249,16 +261,40 @@ function getCorrespondingColor(remainDay, gapPercentage = null) {
  * 横排生成颜色预览
  * @param {*} colors 
  * @param {*} numbers 
+ * @param {*} percentages 
  * @returns html
  */
-function generateColorBlocksPlus(colors, numbers) {
+function generateColorBlocksPlus(colors, numbers, percentages) {
     let html = language["colorCardExample"];
     if (!isValidStr(colors) || !isValidStr(numbers) || colors.length != numbers.length) {
         return language["gradient_error"];
     }
     for (let i = 0; i < colors.length; i++) {
         // html += `<div style="background-color:${colors[i]}; width:50px; height:50px; display:inline-block;">${numbers[i]}</div>`;
-        html += `<span style="color: ${colors[i]}">█少于${numbers[i]}天 </span>`
+        html += `<span style="color: ${colors[i]}">█少于${numbers[i]}天(或${100 - percentages[i]}%） </span>`
     }
     return html;
+}
+
+/**
+ * 计算经过百分比（已经*100）
+ * @param {*} startTime 
+ * @param {*} endTime 
+ * @returns 
+ */
+export function calculateTimePercentage(startTime, endTime){
+    let totalGap = endTime - startTime;
+    if (totalGap <= 0){
+        errorPush(language["timeModeSetError"]);
+        console.warn(language["timeModeSetError"]);
+        return;
+    }
+    let nowDate = new Date();
+    let passed = nowDate - startTime;
+    let result = passed / totalGap * 100.0;
+    if (result < 0){
+        errorPush(language["earlyThanStart"], 7000);
+        console.warn(language["earlyThanStart"]);
+    }
+    return result;
 }
