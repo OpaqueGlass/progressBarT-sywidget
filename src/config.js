@@ -70,17 +70,16 @@ let setting = {
     /* 时间倒数日颜色渐变控制 */
     // 颜色骤变/渐变基准色，数组，从左至右为倒数日由近至远；
     // 数组元素格式不仅限于#十六进制、也可以是rgb(255,255,255)类型，值直接填入css color
-    colorGradient_baseColor: ["#f94144", "#6a4c93", "#f3722c", "#1982c4", "#43aa8b"],
-    colorGradient_baseColor_night: ["#f94144", "#A853ED", "#f3722c", "#4cc9f0", "#43aa8b"],
+    // 橙色#ff7f27 #EB7323
+    colorGradient_baseColor: ["#f94144", "#FF6E34", "#B88B06", "#2DA44E", "#2571BF"],//["#f94144", "#6a4c93", "#f3722c", "#1982c4", "#43aa8b"],
+    colorGradient_baseColor_night: ["#f94144", "#FF6E34", "#B88B06", "#2DA44E", "#3292F5"],//["#f94144", "#A853ED", "#f3722c", "#4cc9f0", "#43aa8b"],
     //["#FF0000", "#FF3300", "#FF6600", "#FFA500", "#abd505", "#039e03", "#04a1a0"], 
     // 颜色骤变触发天数，数组，从左至右逐渐变大
     // 在天数小于等于对应位置天数值时，选用上面对应位置的颜色，和上面数组长度必须相同
     colorGradient_triggerDay: [1, 4, 7, 14, 21], 
     // 【暂不支持】颜色骤变触发百分比，数组，从左至右逐渐变小
-    // 
-    colorGradient_triggerPercentage: [1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5],
+    colorGradient_triggerPercentage: [90, 70, 50, 30, 0],
     // 【暂不支持】控制是否使用颜色渐变【注意：渐变使用RGB各色线性变化实现，可能出现不期望的颜色】
-    // 
     //colorGradient_gradient: false, 
 
     // 时间模式开始结束时间显示格式
@@ -138,6 +137,8 @@ let zh_CN = {
     "gradient_error": "提示词颜色变化设置错误，请检查",
     "colorCardExample": "色卡示例: ",
     "dateFormat": "MM月dd日",
+    "timeModeSelectText": "时间模式选择：",
+    "timeModeArray": ["自定义", "当天", "当月", "当年"],//通过数组下标区分模式
 }
 
 let language = zh_CN;

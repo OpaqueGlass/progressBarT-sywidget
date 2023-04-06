@@ -305,7 +305,7 @@ td{
     margin-bottom: 5px;
 }
 
-#header-left-info > * {
+#header-left-info > *, #end-time-display {
     
     user-select: none;
     cursor: pointer;

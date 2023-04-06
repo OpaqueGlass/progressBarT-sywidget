@@ -512,8 +512,10 @@ class TimeMode extends Mode {
         $(".time-mode-a").css("display", "");
         // $("#outerInfos").css("display", "none")
         $("#percentage").css("display", "none");
-        document.getElementById("header-left-info").onclick = clickManualRefresh;
-        document.getElementById("header-left-info").ondblclick = dblClickShowSetting;
+        $("#header-left-info, #end-time-display").click(clickManualRefresh);
+        $("#header-left-info, #end-time-display").dblclick(dblClickShowSetting);
+        // document.getElementById("header-left-info").onclick = clickManualRefresh;
+        // document.getElementById("header-left-info").ondblclick = dblClickShowSetting;
     }
     async calculateApply(){
         clearInterval(this.timeRefreshInterval);
@@ -554,8 +556,10 @@ class TimeMode extends Mode {
         $("#refresh").removeClass("timeMode");
         $("#percentage").css("display", "");
         $(".time-mode-a").css("display", "none");
-        document.getElementById("header-left-info").onclick = null;
-        document.getElementById("header-left-info").ondblclick = null;
+        $("#header-left-info, #end-time-display").click(null);
+        $("#header-left-info, #end-time-display").dblclick(null);
+        // document.getElementById("header-left-info").onclick = null;
+        // document.getElementById("header-left-info").ondblclick = null;
     }
     //计算时间差
     calculateTimePercentage(){
@@ -876,6 +880,10 @@ async function __init(){
     $("#changeMode").text(language["changeModeText"]);
     $("#settingBtn").attr("title", language["ui_setting_btn_hint"]);
     $("#barTitleText").text(language["barTitleText"]);
+    $("#timeModeSelectText").text(language["timeModeSelectText"]);
+    for (let i = 0; i<language["timeModeArray"].length; i++) {
+        $("#timeModeSelect").append(`<option value="${i}">${language["timeModeArray"][i]}</option>`);
+    }
 
     // 初始化日期选择控件
     laydate.render({
@@ -891,11 +899,20 @@ async function __init(){
             if (date.date < 10) {
                 date.date = "0" + date.date;
             }
-            $("#startTime").val(`${date.year}-${date.month}-${date.date}`);
+            if (!isValidStr($("#startTime").val())) {
+                $("#startTime").val(`${date.year}-${date.month}-${date.date}`);
+            }else{
+                let [resultCode, newdate, _] = parseTimeString($("#startTime").val());
+                if (resultCode == 1) {
+                    // date.date = newdate.getDate();
+                    date = newdate;
+                }
+            }
+            
         }
-        ,change: function(value) {
-            $("#startTime").val(value);
-        }
+        // ,change: function(value) {
+        //     $("#startTime").val(value);
+        // }
         ,done: function(value) {
             $("#startTime").val(value);
         }
@@ -907,9 +924,9 @@ async function __init(){
         ,ready: function(){
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
         }
-        ,change: function(value) {
-            $("#endTime").val(value);
-        }
+        // ,change: function(value) {
+        //     $("#endTime").val(value);
+        // }
         ,done: function(value) {
             $("#endTime").val(value);
         }
