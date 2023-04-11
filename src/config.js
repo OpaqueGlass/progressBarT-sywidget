@@ -82,6 +82,11 @@ let setting = {
     // 【暂不支持】控制是否使用颜色渐变【注意：渐变使用RGB各色线性变化实现，可能出现不期望的颜色】
     //colorGradient_gradient: false, 
 
+    // 在年份相同时，省略年份提示，使用 dateFormat_simp 模板格式化日期
+    dateSimplize: true, 
+    
+    // 隐藏右侧进度百分比（仅自动模式且显示倒数日）
+    hideRightPercentage: false,
     // 时间模式开始结束时间显示格式
     // dateFormat: "MM月dd日"
 };
@@ -136,7 +141,9 @@ let zh_CN = {
     "ui_select_all": "全部完成/全部取消",
     "gradient_error": "提示词颜色变化设置错误，请检查",
     "colorCardExample": "色卡示例: ",
-    "dateFormat": "MM月dd日",
+    "dateFormat": "yyyy年MM月dd日",
+    "dateFormat_simp": "MM月dd日",
+    "timeFormat": "HH:mm",
     "timeModeSelectText": "时间模式选择：",
     "timeModeArray": ["自定义", "当天", "当月", "当年"],//通过数组下标区分模式
 }

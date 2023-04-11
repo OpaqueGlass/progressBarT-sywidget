@@ -210,6 +210,9 @@ class AutoMode extends Mode {
         $("#refresh").removeClass("autoMode");
         $("#cancelAll").remove();
         $("#outerInfos").css("display", "none");
+        $("#outerInfos").click(null);
+        $("#outerInfos").dblclick(null);
+        $("#percentage").css("display", "");
     }
     async refresh(){
         errorPush("");//清空提示词
@@ -249,6 +252,23 @@ class AutoMode extends Mode {
             // 读取并设置时间
             let [endParseResult, endTime, endTimeStr] = parseTimeString(this.endTimeStr);
             let [startParseResult, startTime, startTimeStr] = parseTimeString(this.startTimeStr);
+            // 简化截止日期字符串
+            if (endParseResult == 1 && setting.dateSimplize
+                 && endTime.getFullYear() == new Date().getFullYear()) {
+                endTimeStr = formatDateString(endTime, useUserTemplate("dateFormat_simp"));
+            }else if (endParseResult == 1) {
+                endTimeStr = formatDateString(endTime, useUserTemplate("dateFormat"));
+            }
+            // 隐藏右侧百分比
+            if (endParseResult == 1 && setting.hideRightPercentage) {
+                $("#percentage").css("display", "none");
+                $("#outerInfos").css({"user-select": "none", "cursor": "pointer"});
+                $("#outerInfos").click(clickManualRefresh);
+                $("#outerInfos").dblclick(dblClickShowSetting);
+            }else{
+                $("#percentage").css("display", "");
+                $("#outerInfos").css({"user-select": "", "cursor": ""});
+            }
             if (endParseResult == 1 && startParseResult != 1) {
                 $("#outerInfos").css("display", "");
                 modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true}), endTimeStr), 0);
@@ -540,7 +560,6 @@ class TimeMode extends Mode {
             changeBar(this.calculateTimePercentage());
             try {
                 if (this.todayMode) {
-                    // modePush(`${this.dateString[0]} ~ ${this.dateString[1]}`, 0);
                     $("#start-time-display").text(this.dateString[0]);
                     $("#end-time-display").text(this.dateString[1]);
                     $("#time-day-left").html("");
@@ -549,7 +568,6 @@ class TimeMode extends Mode {
                     $("#start-time-display").text(this.dateString[0]);
                     $("#end-time-display").text(this.dateString[1]);
                     $("#time-day-left").html(dateGapString);
-                    // modePush(`${this.dateString[0]} ~ ${this.dateString[1]} ${dateGapString}`, 0);
                 }
             }catch(err) {
                 console.error(err);
@@ -571,8 +589,6 @@ class TimeMode extends Mode {
         $(".time-mode-a").css("display", "none");
         $("#header-left-info, #end-time-display").click(null);
         $("#header-left-info, #end-time-display").dblclick(null);
-        // document.getElementById("header-left-info").onclick = null;
-        // document.getElementById("header-left-info").ondblclick = null;
     }
     //计算时间差
     calculateTimePercentage(){
@@ -611,14 +627,14 @@ class TimeMode extends Mode {
             $("#startTime").val(startimeStr);
             $("#endTime").val(endtimeStr);
             let startParseResult;
-            [startParseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat"));
+            [startParseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat_simp"));
             if (startParseResult <= 0) {
                 errorPush(Error(language["timeSetIllegal"]));
                 console.warn("时间设定非法", this.times[0]);
                 return false;
             }
             let endParseResult;
-            [endParseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat"));
+            [endParseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat_simp"));
             if (endParseResult <= 0) {
                 errorPush(Error(language["timeSetIllegal"]));
                 console.warn("时间设定非法", this.times[1]);
@@ -626,7 +642,9 @@ class TimeMode extends Mode {
             }
             if (startParseResult == 2 && endParseResult == 2) {
                 this.todayMode = true;
-            } 
+            }else{
+                this.todayMode = false;
+            }
             console.info(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
             // 
             if (!isValidStr(this.title)) {
@@ -725,6 +743,8 @@ async function getSettingAtStartUp(){
     $("#startTime").val(response.data[attrName.startTime] == "null" ? "" : response.data[attrName.startTime]);
     $("#endTime").val(response.data[attrName.endTime] == "null" ? "" : response.data[attrName.endTime]);
     $("#barTitleSet").val(response.data[attrName.barTitle] == "null"? "":response.data[attrName.barTitle]);
+    [g_startTimes.code, g_startTimes.time, g_startTimes.str] = parseTimeString($("#startTime").val());
+    [g_endTimes.code, g_endTimes.time, g_endTimes.str] = parseTimeString($("#endTime").val());
     // 获取挂件其他设定
     // if (attrName.basicSetting in response.data) {
     //     g_attrSetting = JSON.parse(response.data[attrName.basicSetting].replaceAll("&quot;", "\""));
@@ -758,7 +778,8 @@ function applyProgressColor(response){
     //宽度和圆角
     let width = isValidStr(response.data[attrName.barWidth]) ?
         response.data[attrName.barWidth] : defaultAttr.barWidth;
-    $("#progress, #container").css("height", width + "px");
+    $("#progress, #container, #progress2").css("height", width + "px");
+    $("#progress2").css("top", - width + "px");
     $("#container").css("border-radius", width/2 + "px");
 }
 
@@ -894,7 +915,7 @@ async function __init(){
         elem: "#startTimePicker"
         ,format: "yyyy-MM-dd"
         ,trigger: "click"
-        ,value: new Date()
+        ,value: g_startTimes.code > 0 ? g_startTimes.time : new Date()
         ,ready: function(date) {
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
             if (date.month < 10) {
@@ -924,6 +945,7 @@ async function __init(){
     laydate.render({
         elem: "#endTimePicker"
         ,format: "yyyy-MM-dd"
+        ,value: g_endTimes.code > 0 ? g_endTimes.time : null
         ,trigger: "click"
         ,ready: function(){
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
@@ -1146,6 +1168,8 @@ let g_mode;
 let g_modeId;
 let g_barRefreshLogTimeout;
 let g_displaySetting = false;
+let g_startTimes = {"code": null, time: null, str: null};
+let g_endTimes = {"code": null, time: null, str: null};
 // let g_attrSetting = Object.assign({}, attrSetting);
 let g_apperance = {
     frontColor: defaultAttr.frontColor,

@@ -46,7 +46,7 @@ export function parseTimeString(timeStr, format = "") {
             resultDate.setHours(timeNums[0]);
             resultDate.setMinutes(timeNums[1]);
             resultDate.setSeconds(0);
-            resultDateStr = resultDate.toLocaleTimeString();
+            resultDateStr = formatDateString(resultDate, useUserTemplate("timeFormat"));
             resultCode = 2;
             break;
         }
@@ -68,8 +68,8 @@ export function formatDateString(date, format) {
     result = result.replace(new RegExp("yy","g"), date.getFullYear() % 100);
     result = result.replace(new RegExp("MM","g"), date.getMonth() + 1);
     result = result.replace(new RegExp("dd","g"), date.getDate());
-    result = result.replace(new RegExp("HH","g"), date.getHours());
-    result = result.replace(new RegExp("mm","g"), date.getMinutes());
+    result = result.replace(new RegExp("HH","g"), date.getHours() > 9 ? date.getHours() : "0" + date.getHours());
+    result = result.replace(new RegExp("mm","g"), date.getMinutes() > 9 ? date.getMinutes() : "0" + date.getMinutes());
     return result;
 }
 
@@ -137,13 +137,14 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
     } else {
         dateGapString = useUserTemplate(simplify ? "countDay_exceed_sim":"countDay_exceed", -gapDay);
     }
-    // TODO: 处理并返回时间颜色
+    // 旧代码：时间段折合
     // let gradientColors = generateGradientColor("#FF0000", "#00FF00", 30);
     // let gradientColors = generateGradientColors(7);
     // let ratio = Math.floor(gapDay / 30 * 7);
     // console.log(gradientColors);
     // if (gapDay <= 0) gapDay = 0;
     // if (gapDay >= gradientColors.length) gapDay = gradientColors.length - 1;
+    // 处理并返回时间颜色
     let colorStr = getCorrespondingColor(gapDay, percentage);
     if (isValidStr(colorStr)) {
         dateGapString = `<span style="color: ${colorStr}">${dateGapString}</span>`;
@@ -271,7 +272,7 @@ function generateColorBlocksPlus(colors, numbers, percentages) {
     }
     for (let i = 0; i < colors.length; i++) {
         // html += `<div style="background-color:${colors[i]}; width:50px; height:50px; display:inline-block;">${numbers[i]}</div>`;
-        html += `<span style="color: ${colors[i]}">█少于${numbers[i]}天(或${100 - percentages[i]}%） </span>`
+        html += `<span style="color: ${colors[i]}">█剩余时间少于${100 - percentages[i]}%（或${numbers[i]}天） </span>`
     }
     return html;
 }

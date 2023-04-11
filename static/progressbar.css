@@ -158,11 +158,6 @@ td{
     /* float: right; */
 }
 
-.container {
-    /*进度条背景色（未达到的部分）*/
-    /* background: var(--container-color); */
-}
-
 /* 提示词子项间隔 */
 .infos>* {
     margin-left: 3px;
@@ -183,10 +178,6 @@ td{
     /*进度条已加载部分颜色*/
     transition-property: width;
     transition-duration: 200ms;
-}
-
-.progress {
-    /* background: var(--progress-color); */
 }
 
 /* 黑夜模式下进度条已完成颜色 */
