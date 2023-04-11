@@ -121,6 +121,27 @@ export function useUserTemplate(attrName, ...args) {
 }
 
 /**
+ * 格式化语言模板
+ * @param {*} attrName 
+ * @param  {...any} args 
+ * @returns 
+ */
+export function formatLanguageTemplate(attrName, ...args) {
+    let result;
+    result = language[attrName];
+    if (args.length == 0) {
+        return result;
+    }else if (args.length == 1) {
+        return result.replace(new RegExp("%%", "g"), args[0]);
+    }else{
+        for (let i = 0; i < args.length; i++) {
+            result = result.replace(new RegExp(`%${i}%`, "g"), args[i]);
+        }
+        return result;
+    }
+}
+
+/**
  * 返回当前时间距离输入参数endTime
  * @param {*} endTime 
  * @param {boolean} simplify 简化输出（用于自动模式）
@@ -151,10 +172,6 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
     }else{
         dateGapString = `${dateGapString}`;
     }
-    // debug 颜色设定方格
-    $("#color-test").html(generateColorBlocksPlus(
-        isDarkMode()?setting.colorGradient_baseColor_night : setting.colorGradient_baseColor, 
-        setting.colorGradient_triggerDay, setting.colorGradient_triggerPercentage));
     return dateGapString;
 }
 /**
@@ -231,10 +248,17 @@ function generateGradientColors(colors, n) {
 function getCorrespondingColor(remainDay, gapPercentage = null) {
     // 安全检查
     if (setting.colorGradient_baseColor.length != setting.colorGradient_triggerDay.length
-        || setting.colorGradient_baseColor_night.length != setting.colorGradient_baseColor.length) {
+        || setting.colorGradient_baseColor_night.length != setting.colorGradient_baseColor.length
+        || setting.colorGradient_triggerDay.length != setting.colorGradient_triggerPercentage.length) {
         console.warn("设置中数组长度不匹配，无法应用颜色");
+        $("#color-test").html(language["color_cards_error"]);
         return null;
     }
+    // debug 颜色设定方格
+    $("#color-test").html(generateColorBlocksPlus(
+        isDarkMode()?setting.colorGradient_baseColor_night : setting.colorGradient_baseColor, 
+        setting.colorGradient_triggerDay, setting.colorGradient_triggerPercentage));
+    
     if (!isValidStr(gapPercentage)) {
         for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
             if (remainDay <= setting.colorGradient_triggerDay[i]) {
@@ -272,7 +296,7 @@ function generateColorBlocksPlus(colors, numbers, percentages) {
     }
     for (let i = 0; i < colors.length; i++) {
         // html += `<div style="background-color:${colors[i]}; width:50px; height:50px; display:inline-block;">${numbers[i]}</div>`;
-        html += `<span style="color: ${colors[i]}">█剩余时间少于${100 - percentages[i]}%（或${numbers[i]}天） </span>`
+        html += `<span style="color: ${colors[i]}">${formatLanguageTemplate("color_cards", 100 - percentages[i], numbers[i])}</span>`
     }
     return html;
 }
