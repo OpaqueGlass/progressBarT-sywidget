@@ -698,26 +698,7 @@ async function getSettingAtStartUp(){
     let response = await getblockAttrAPI(g_thisWidgetId);
     // 将挂件的高度设定写入块
     if (!("custom-resize-flag" in response.data) && setting.saveDefaultHeight && ("id" in response.data)) {
-        // 写属性
-        let data = {};
-        data["custom-resize-flag"] = "progressbarT: do not delete.请不要删去此属性，否则挂件将在下次加载时重新将挂件默认宽高写入文档中";
-        let response = await addblockAttrAPI(data, g_thisWidgetId);
-        // 获取kramdown
-        let widgetKramdown = await getKramdown(g_thisWidgetId);
-        // 重写Kramdown
-        let newWidgetKramdown = "";
-        if (widgetKramdown.includes("/widgets/progress")) {
-            if (widgetKramdown.includes("style=")) {
-                newWidgetKramdown = widgetKramdown.replace(new RegExp(`style="height: .*px; width: .*px;"`, ""), `style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"`) //765 48
-            }else{
-                newWidgetKramdown = widgetKramdown.replace(new RegExp("><\/iframe>", ""), ` style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"><\/iframe>`);
-            }
-            console.log("【挂件记忆宽高信息】!", newWidgetKramdown);
-            await updateBlockAPI(newWidgetKramdown, g_thisWidgetId);
-        }else{
-            console.log(widgetKramdown);
-            console.warn("当前id不对应progressBarT挂件，不设定挂件高度");
-        }
+        await resetWidgetHeight();
         throw new Error(language["writeHeightInfoFailed"]);
     }
     if (response.data == null) return null;
@@ -755,6 +736,30 @@ async function getSettingAtStartUp(){
         return response.data[attrName.manual];
     }
     return null;
+}
+
+async function resetWidgetHeight() {
+    // 写属性
+    let data = {};
+    data["custom-resize-flag"] = "progressbarT: do not delete.请不要删去此属性，否则挂件将在下次加载时重新将挂件默认宽高写入文档中";
+    let response = await addblockAttrAPI(data, g_thisWidgetId);
+    // 获取kramdown
+    let widgetKramdown = await getKramdown(g_thisWidgetId);
+    // 重写Kramdown
+    let newWidgetKramdown = "";
+    if (widgetKramdown.includes("/widgets/progress")) {
+        if (widgetKramdown.includes("style=")) {
+            newWidgetKramdown = widgetKramdown.replace(new RegExp(`style="height: .*px; width: .*px;"`, ""), `style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"`) //765 48
+        }else{
+            newWidgetKramdown = widgetKramdown.replace(new RegExp("><\/iframe>", ""), ` style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"><\/iframe>`);
+        }
+        console.log("【挂件记忆宽高信息】!", newWidgetKramdown);
+        await updateBlockAPI(newWidgetKramdown, g_thisWidgetId);
+    }else{
+        console.log(widgetKramdown);
+        console.warn("当前id不对应progressBarT挂件，不设定挂件高度");
+    }
+    throw new Error(language["writeHeightInfoFailed"]);
 }
 
 /**
@@ -906,6 +911,9 @@ async function __init(){
     $("#settingBtn").attr("title", language["ui_setting_btn_hint"]);
     $("#barTitleText").text(language["barTitleText"]);
     $("#timeModeSelectText").text(language["timeModeSelectText"]);
+    $("#resetHeight").text(language["resetHeightText"]);
+    $("#resetHeight").prop("title", language["resetHeightHint"]);
+    
     for (let i = 0; i<language["timeModeArray"].length; i++) {
         $("#timeModeSelect").append(`<option value="${i}">${language["timeModeArray"][i]}</option>`);
     }
@@ -1187,6 +1195,7 @@ try{
     document.getElementById("settingBtn").onclick = displaySetting;
     $("#changeMode").on("click", dblClickChangeMode);
     $("#frontColor, #backColor, #barWidth").on("change", changeBarAppearance);
+    $("#resetHeight").click(resetWidgetHeight);
     $("#saveAppearBtn").on("click", saveAppearance);
     $("#saveSettingBtn").on("click", async function(){await saveSettings();});
     if (setting.showButtons == false) {
