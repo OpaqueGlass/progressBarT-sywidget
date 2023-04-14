@@ -150,11 +150,77 @@ let zh_CN = {
     "timeModeArray": ["自定义", "当天", "当月", "当年"],//通过数组下标区分模式
     "color_cards": "█剩余时间少于%0%%（或%1%天）",
     "color_cards_error": "倒数日颜色设定错误",
+    "calendar_lang": "cn"
+}
+let en_UK = {
+    "notTaskList": "Not a task list block, or the block id was filled in incorrectly. (If it is an unordered, mixed list of tasks, please tick the statistics subtask and try again)",
+    "getKramdownFailed": "Failed to get the block via API, please check if the block id is correct:",
+    "unknownIdAtDom": "The corresponding block was not found within the page, trying to get it via the API." ,
+    "cantObserve": "The corresponding block was not found within the page and the progress calculation could not be triggered automatically.",
+    "setObserveErr": "Internal error, unable to automatically trigger progress calculation",
+    "autoMode": "Current: auto mode",
+    "manualMode": "Current: manual mode",
+    "needSetAttr": `No target block id set and no list found in immediate block, create task list or set id. `,
+    "saved": "Saved",
+    "writeAttrFailed": "Failed to save, failed to write attribute",
+    "writeHeightInfoFailed": "Failed to set the width and height of the memory pendant",
+    "timeMode": "Current: time mode",
+    "timeModeSetError": "Time setting error, start time is later than or equal to end time",
+    "timeSetIllegal": "Time setting error, please refer to the documentation README.md for the time format",
+    "timeNotSet": `Start time or end time not set`,
+    "earlyThanStart": "The current time is earlier than the start time",
+    "startTime": "",
+    "endTime": "",
+    "noTimeAttr": `Error occurred while reading pendant attributes`,
+    "autoModeAPI": `Current: auto mode (API)`,
+    "usingAPI": `The API is currently being used for automatic calculations. If the interval refresh is not set, you must click refresh manually. `,
+    "autoModeFnBtn": "[double-click] Cancel All / Finish All",
+    "autoDetectId": "Has automatically positioned the adjacent list",
+    "frontColorText": "Front colour setting:",
+    "backColorText": "Background colour setting:",
+    "barWidthText": "Progress bar height:",
+    "saveBtnText": "Save appearance",
+    "saveSettingText": "Save settings",
+    "startTimeText": "Start time:",
+    "endTimeText": "End time:",
+    "allTaskText": "Count subtasks in:",
+    "blockIdText": "Task list block id:",
+    "barTitleText": "Time Mode Title:",
+    "changeModeText": "Switch modes",
+    "resetHeightText": "Reset the height of the widget",
+    "resetHeightHint": "Fix a problem with the pendant height changing abruptly when opening a document",
+    "refreshed": "Refreshed",
+    "ui_percentage_hint": "Progress percentage \n with underline => Saved",
+    "ui_percentage_btn_hint": "Progress percentage \n[click] Refresh/(manual mode) Save \n[double click] Show/hide settings \nUnderline appears => Saved \nOverline appears => Refreshed",
+    "ui_refresh_btn_hint": "\n[click] Refresh/(manual mode) Save \n[double click] Switch mode",
+    "ui_setting_btn_hint": "Show/hide settings",
+    "countDay_dayLeft": "%% day(s) left",
+    "countDay_today": `<span class="time-warn">On the day</span>`,
+    "countDay_exceed": `<span class="time-warn">%% day(s) passed</span>`,
+    "countDay_hour": `%% hour(s) left`,
+    "countDay_dayLeft_sim": "%% day(s) left",
+    "countDay_today_sim": `<span class="time-warn">Deadline</span>`,
+    "countDay_exceed_sim": `<span class="time-warn">%% days passed</span>`,
+    "countDay_auto_modeinfo": `%0% of tasks completed, Deadline %2%, %1%`,
+    "ui_select_all": "All done/all cancelled",
+    "gradient_error": "Cue word colour change is set incorrectly, please check it.",
+    "colorCardExample": "Example of colours ",
+    "dateFormat": "yyyy-MM-dd",
+    "dateFormat_simp": "MM-dd",
+    "timeFormat": "HH:mm",
+    "timeModeSelectText": "Time mode selection:",
+    "timeModeArray": ["自定义", "当天", "当月", "当年"],//通过数组下标区分模式
+    "color_cards": "█Less than %0%% time left (or %1% days) ",
+    "color_cards_error": "Wrong colour setting for the countdown day",
+    "calendar_lang": "en"
 }
 
 let language = zh_CN;
-// let lang = window.top.siyuan.config.lang;
+let lang = window.top.siyuan.config.lang;
 // 测试中的外部json语言配置文件读入，但再开个语言文件意义不大，废弃中
+if (lang != "zh_CN") {
+    language = en_UK;
+}
 // language = await getLanguageFile(`/widgets/progress-dev/lang/${lang}.json`).catch(async(error)=>{
 //     language = await getLanguageFile("/widgets/progress-dev/lang/zh_CN.json")
 // });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     

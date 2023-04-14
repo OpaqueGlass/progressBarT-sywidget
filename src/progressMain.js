@@ -923,6 +923,7 @@ async function __init(){
         elem: "#startTimePicker"
         ,format: "yyyy-MM-dd"
         ,trigger: "click"
+        ,lang: language["calendar_lang"]
         ,value: g_startTimes.code > 0 ? g_startTimes.time : new Date()
         ,ready: function(date) {
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
@@ -954,6 +955,7 @@ async function __init(){
         elem: "#endTimePicker"
         ,format: "yyyy-MM-dd"
         ,value: g_endTimes.code > 0 ? g_endTimes.time : null
+        ,lang: language["calendar_lang"]
         ,trigger: "click"
         ,ready: function(){
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
