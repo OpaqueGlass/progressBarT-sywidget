@@ -88,7 +88,10 @@ let setting = {
     // 隐藏右侧进度百分比（仅自动模式且显示倒数日）
     hideRightPercentage: false,
     // 时间模式开始结束时间显示格式
-    // dateFormat: "MM月dd日"
+    // dateFormat: "MM月dd日",
+
+    // 周开始日（周日为0，周一为1）
+    weekStartDay: 1
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -146,11 +149,16 @@ let zh_CN = {
     "dateFormat": "yyyy年MM月dd日",
     "dateFormat_simp": "MM月dd日",
     "timeFormat": "HH:mm",
-    "timeModeSelectText": "时间模式选择：",
-    "timeModeArray": ["自定义", "当天进度", "周进度", "月进度", "年进度"],//通过数组下标区分模式
+    "timeModeSelectText": "时间模式预设重复：",
+    "timeModeArray": ["无重复", "当天", "本周", "本月", "今年"],//通过数组下标区分模式
     "color_cards": "█剩余时间少于%0%%（或%1%天）",
     "color_cards_error": "倒数日颜色设定错误",
-    "calendar_lang": "cn"
+    "calendar_lang": "cn",
+    "weekOfDay": ["周日","周一","周二","周三","周四","周五","周六"],
+    "months": ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+    "yearFormat": "yyyy年",
+    "weekFormat": "第%0%周",
+    "monthFormat": "%0%",
 }
 let en_UK = {
     "notTaskList": "Not a task list block, or the block id was filled in incorrectly. (If it is an unordered, mixed list of tasks, please tick the statistics subtask and try again)",
@@ -212,7 +220,12 @@ let en_UK = {
     "timeModeArray": ["Custom", "By day", "By week", "当月", "当年"],//通过数组下标区分模式
     "color_cards": "█Less than %0%% time left (or %1% days) ",
     "color_cards_error": "Wrong colour setting for the countdown day",
-    "calendar_lang": "en"
+    "calendar_lang": "en",
+    "weekOfDay": ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+    "months": ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    "yearFormat": "yyyy",
+    "weekFormat": "%0%",
+    "monthFormat": "%0% (%1%)",
 }
 
 let language = zh_CN;

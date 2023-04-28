@@ -549,38 +549,41 @@ class TimeMode extends Mode {
     }
     async calculateApply(){
         clearInterval(this.timeRefreshInterval);
-        //有时间才能计算
-        if (await this.readTimesFromAttr()){
-            // 判断是否需要定时刷新
-            if (setting.timeModeRefreshInterval > 0){
-                this.timeRefreshInterval = setInterval(() => {
-                    this.calculateApply();
-                }, setting.timeModeRefreshInterval);
-            }
-            changeBar(this.getTimePercentage());
-            try {
-                if (this.todayMode) {
-                    $("#start-time-display").text(this.dateString[0]);
-                    $("#end-time-display").text(this.dateString[1]);
-                    $("#time-day-left").html("");
-                }else{
-                    let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": this.getTimePercentage()});
-                    $("#start-time-display").text(this.dateString[0]);
-                    $("#end-time-display").text(this.dateString[1]);
-                    $("#time-day-left").html(dateGapString);
-                }
-            }catch(err) {
-                console.error(err);
-                console.warn("输出日期时出现错误");
-                if (this.todayMode) {
-                    modePush(`${this.times[0].toLocaleTimeString()} ~ ${this.times[1].toLocaleTimeString()}`, 0);
-                }else{
-                    modePush(`${this.times[0].toLocaleString()} ~ ${this.times[1].toLocaleString()}`, 0);
-                }
-            } 
+        // 判断是否需要定时刷新
+        if (setting.timeModeRefreshInterval > 0){
+            clearInterval(this.timeRefreshInterval);
+            this.timeRefreshInterval = setInterval(() => {
+                this.calculateApply();
+            }, setting.timeModeRefreshInterval);
         }else{
-            //失败情况应该已经在readTimesFromAttr中处理
+            clearInterval(this.timeRefreshInterval);
         }
+        // 获取时间
+        const percentage = await this.getTimePercentage();
+        
+        try {
+            changeBar(percentage);
+            if (this.todayMode) {
+                $("#start-time-display").text(this.dateString[0]);
+                $("#end-time-display").text(this.dateString[1]);
+                $("#time-day-left").html("");
+            }else{
+                let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": percentage});
+                $("#start-time-display").text(this.dateString[0]);
+                $("#end-time-display").text(this.dateString[1]);
+                $("#time-day-left").html(dateGapString);
+            }
+        }catch(err) {
+            console.error(err);
+            console.warn("输出日期时出现错误");
+            if (this.todayMode) {
+                modePush(`${this.times[0].toLocaleTimeString()} ~ ${this.times[1].toLocaleTimeString()}`, 0);
+            }else{
+                modePush(`${this.times[0].toLocaleString()} ~ ${this.times[1].toLocaleString()}`, 0);
+            }
+            clearInterval(this.timeRefreshInterval);
+        } 
+        
     }
     destory(){
         clearInterval(this.timeRefreshInterval);
@@ -591,28 +594,97 @@ class TimeMode extends Mode {
         $("#header-left-info, #end-time-display").dblclick(null);
     }
     //计算时间差
-    getTimePercentage(){
+    async getTimePercentage(){
         // 根据模式切换
         switch (attrSetting["timeModeMode"]) {
             // 自定义
             case 0: {
+                let timeAttrResult = await this.readTimesFromAttr();
                 return calculateTimePercentage(this.times[0], this.times[1]);
                 break;
             }
             // 天
             case 1: {
+                await this.readTimesFromAttr(true);
+                let start = new Date();
+                start.setHours(0, 0, 0, 0);
+                let end = new Date();
+                end.setHours(23, 59, 59, 99);
+                this.dateString[0] = formatDateString(start, useUserTemplate("timeFormat"));
+                this.dateString[1] = formatDateString(end, useUserTemplate("timeFormat"));
+                this.times[0] = start;
+                this.times[1] = end;
+                this.todayMode = true;
+                if (!isValidStr(this.title)) {
+                    $("#title").text(formatDateString(start, useUserTemplate("dateFormat")));
+                    $("#title").prop("title", formatDateString(new Date(), useUserTemplate("timeFormat")));
+                }
+                return calculateTimePercentage(this.times[0], this.times[1]);
                 break;
             }
             // 周
             case 2: {
+                await this.readTimesFromAttr(true);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayOfWeek = today.getDay(); // 今天是星期几（0表示星期日）
+                this.times[0] = new Date(today.getFullYear(), today.getMonth(), today.getDate() - todayOfWeek + (setting.weekStartDay));
+                this.times[1] = new Date(today.getFullYear(), today.getMonth(), today.getDate() - todayOfWeek + 6 + (setting.weekStartDay));
+                // 提示词
+                this.todayMode = false;
+                this.dateString[0] = language["weekOfDay"][setting.weekStartDay];
+                this.dateString[1] = language["weekOfDay"][(setting.weekStartDay + 6) % 7];
+                if (!isValidStr(this.title)) {
+                    const start = new Date(today.getFullYear(), 0, 4);  // 获取当年的1月4日
+                    const offsetMillis = start.getDay() * 86400000;  // 计算1月4日距离所在周的偏移毫秒数
+                    const firstMonday = new Date(start.getTime() - offsetMillis + 86400000);  // 找到所在周的第一个周一
+                    const diffMillis = today.getTime() - firstMonday.getTime();  // 计算当前时间距离所在周第一个周一的毫秒数
+                    const diffDays = Math.floor(diffMillis / 86400000);  // 将毫秒数转为天数
+                    let numOfWeek = Math.floor((diffDays + 0) / 7) + 1;  // 计算当前是第几周
+                    if (numOfWeek <= 0) {
+                        numOfWeek = 0;
+                    }
+                    $("#title").text(useUserTemplate("weekFormat", numOfWeek, language["weekOfDay"][today.getDay()]));
+                    $("#title").prop("title", `${formatDateString(today, useUserTemplate("dateFormat_simp"))} ${language["weekOfDay"][today.getDay()]}`);
+                }
+                return calculateTimePercentage(this.times[0], this.times[1]);
                 break;
             }
             // 月
             case 3: {
+                await this.readTimesFromAttr(true);
+                // 获取当前日期
+                const today = new Date();
+                // 获取当前月份的第一天
+                this.times[0] = new Date(today.getFullYear(), today.getMonth(), 1);
+                this.times[1] = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                this.dateString[0] = formatDateString(this.times[0], useUserTemplate("dateFormat_simp"));
+                this.dateString[1] = formatDateString(this.times[1], useUserTemplate("dateFormat_simp"));
+                this.todayMode = false;
+                if (!isValidStr(this.title)) {
+                    $("#title").text(useUserTemplate("monthFormat", language["months"][today.getMonth()], formatDateString(today, useUserTemplate("dateFormat_simp"))));
+                    $("#title").prop("title", formatDateString(today, useUserTemplate("dateFormat_simp")));
+                }
+                return calculateTimePercentage(this.times[0], this.times[1]);
                 break;
             }
             // 年
             case 4: {
+                await this.readTimesFromAttr(true);
+                // 获取当前日期
+                const today = new Date();
+                // 获取当前年份的第一天
+                this.times[0] = new Date(today.getFullYear(), 0, 1);
+                // 获取当前年份的最后一天
+                this.times[1] = new Date(today.getFullYear(), 11, 31);
+                this.dateString[0] = formatDateString(this.times[0], useUserTemplate("dateFormat_simp"));
+                this.dateString[1] = formatDateString(this.times[1], useUserTemplate("dateFormat_simp"));
+                this.todayMode = false;
+                if (!isValidStr(this.title)) {
+                    $("#title").text(formatDateString(this.times[0], useUserTemplate("yearFormat")));
+                    $("#title").prop("title", formatDateString(today, useUserTemplate("dateFormat_simp")));
+                }
+                return calculateTimePercentage(this.times[0], this.times[1]); 
                 break;
             }
             default: {
@@ -627,7 +699,7 @@ class TimeMode extends Mode {
      * 如果为20xx年，允许yy mm dd
      * @return true读取成功 false 读取失败
      */
-    async readTimesFromAttr(){
+    async readTimesFromAttr(titleOnly = false){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
         let response = await getblockAttrAPI(g_thisWidgetId);
         // 读取标题
@@ -641,6 +713,7 @@ class TimeMode extends Mode {
                 this.title = "";
             }
         }
+        if (titleOnly) return;
         if (attrName.startTime in response.data && attrName.endTime in response.data){
             //属性原始字符串
             let startimeStr = response.data[attrName.startTime]
