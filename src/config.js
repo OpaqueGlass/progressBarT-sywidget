@@ -44,7 +44,7 @@ let attrName = {
     barTitle: "71title", // 进度条标题（时间模式）
 }
 let attrSetting = {
-    
+    timeModeMode: 0
 }
 let setting = {
     widgetWidth: "50em",//挂件的宽
@@ -147,7 +147,7 @@ let zh_CN = {
     "dateFormat_simp": "MM月dd日",
     "timeFormat": "HH:mm",
     "timeModeSelectText": "时间模式选择：",
-    "timeModeArray": ["自定义", "当天", "当月", "当年"],//通过数组下标区分模式
+    "timeModeArray": ["自定义", "当天进度", "周进度", "月进度", "年进度"],//通过数组下标区分模式
     "color_cards": "█剩余时间少于%0%%（或%1%天）",
     "color_cards_error": "倒数日颜色设定错误",
     "calendar_lang": "cn"
@@ -209,7 +209,7 @@ let en_UK = {
     "dateFormat_simp": "MM-dd",
     "timeFormat": "HH:mm",
     "timeModeSelectText": "Time mode selection:",
-    "timeModeArray": ["自定义", "当天", "当月", "当年"],//通过数组下标区分模式
+    "timeModeArray": ["Custom", "By day", "By week", "当月", "当年"],//通过数组下标区分模式
     "color_cards": "█Less than %0%% time left (or %1% days) ",
     "color_cards_error": "Wrong colour setting for the countdown day",
     "calendar_lang": "en"

@@ -7,7 +7,7 @@ import {
     addblockAttrAPI,
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
-import {language, setting, defaultAttr, attrName/*, attrSetting*/} from './config.js';
+import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage} from "./uncommon.js"
 /**模式类 */
 class Mode {
@@ -557,14 +557,14 @@ class TimeMode extends Mode {
                     this.calculateApply();
                 }, setting.timeModeRefreshInterval);
             }
-            changeBar(this.calculateTimePercentage());
+            changeBar(this.getTimePercentage());
             try {
                 if (this.todayMode) {
                     $("#start-time-display").text(this.dateString[0]);
                     $("#end-time-display").text(this.dateString[1]);
                     $("#time-day-left").html("");
                 }else{
-                    let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": this.calculateTimePercentage()});
+                    let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": this.getTimePercentage()});
                     $("#start-time-display").text(this.dateString[0]);
                     $("#end-time-display").text(this.dateString[1]);
                     $("#time-day-left").html(dateGapString);
@@ -591,8 +591,35 @@ class TimeMode extends Mode {
         $("#header-left-info, #end-time-display").dblclick(null);
     }
     //计算时间差
-    calculateTimePercentage(){
-        return calculateTimePercentage(this.times[0], this.times[1]);
+    getTimePercentage(){
+        // 根据模式切换
+        switch (attrSetting["timeModeMode"]) {
+            // 自定义
+            case 0: {
+                return calculateTimePercentage(this.times[0], this.times[1]);
+                break;
+            }
+            // 天
+            case 1: {
+                break;
+            }
+            // 周
+            case 2: {
+                break;
+            }
+            // 月
+            case 3: {
+                break;
+            }
+            // 年
+            case 4: {
+                break;
+            }
+            default: {
+                console.warn("错误：时间模式的重复选择有误");
+            }
+        }
+        
     }
     /**
      * 读取属性中时间，并设定时间
@@ -703,6 +730,10 @@ async function getSettingAtStartUp(){
     }
     if (response.data == null) return null;
     applyProgressColor(response);//应用属性
+    // 解析整合属性
+    if (isValidStr(response.data[attrName.basicSetting])) {
+        Object.assign(attrSetting, JSON.parse(response.data[attrName.basicSetting].replaceAll("&quot;", "\"")));
+    }
     // 获取外观属性
     g_apperance.frontColor = isValidStr(response.data[attrName.frontColor])? 
         response.data[attrName.frontColor] : $("#progress").css("background-color");
@@ -917,6 +948,7 @@ async function __init(){
     for (let i = 0; i<language["timeModeArray"].length; i++) {
         $("#timeModeSelect").append(`<option value="${i}">${language["timeModeArray"][i]}</option>`);
     }
+    $("#timeModeSelect").val(attrSetting["timeModeMode"]);
 
     // 初始化日期选择控件
     laydate.render({
@@ -1148,7 +1180,8 @@ async function saveSettings(){
     data[attrName.endTime] = $("#endTime").val();
     data[attrName.taskCalculateMode] = document.getElementById("allTask").checked.toString();
     data[attrName.barTitle] = $("#barTitleSet").val();
-    // data[attrName.basicSetting] = JSON.stringify();
+    loadUI2AttrSetting();
+    data[attrName.basicSetting] = JSON.stringify(attrSetting);
     for (let attr in data){
         if (data[attr] == "") data[attr] = "null";
     }
@@ -1162,6 +1195,9 @@ async function saveSettings(){
     //保存属性后触发刷新，可能需要延时？
     infoPush("请等待刷新完成");
     setTimeout(__refresh, 1000);
+    function loadUI2AttrSetting() {
+        attrSetting.timeModeMode = parseInt($("#timeModeSelect").val());
+    }
 }
 /******************     非函数部分       ************************ */
 
