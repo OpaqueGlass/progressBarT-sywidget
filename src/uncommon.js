@@ -51,7 +51,6 @@ export function parseTimeString(timeStr, format = "") {
             break;
         }
         default: {
-            errorPush(Error(language["timeSetIllegal"]));
             console.warn("时间设定非法", this.times[i]);
             return [0, null, ""];
         }
@@ -310,16 +309,15 @@ function generateColorBlocksPlus(colors, numbers, percentages) {
 export function calculateTimePercentage(startTime, endTime){
     let totalGap = endTime - startTime;
     if (totalGap <= 0){
-        errorPush(language["timeModeSetError"]);
         console.warn(language["timeModeSetError"]);
-        return;
+        throw new Error(language["timeModeSetError"]);
     }
     let nowDate = new Date();
     let passed = nowDate - startTime;
     let result = passed / totalGap * 100.0;
     if (result < 0){
-        errorPush(language["earlyThanStart"], 7000);
         console.warn(language["earlyThanStart"]);
+        throw new Error(language["earlyThanStart"]);
     }
     return result;
 }

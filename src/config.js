@@ -50,7 +50,8 @@ let setting = {
     widgetWidth: "50em",//挂件的宽
     widgetHeight: "4.3em",//挂件的高
     widgetBarOnlyHeight: "3em",//只显示进度条和刷新按钮时，挂件的高
-    widgetBarWithTitleHeight: "",
+    widgetAutoModeWithTimeRemainHeight: "4.3em", // 自动模式显示时间时挂件高度
+    widgetTimeModeHeight: "5em", // 时间模式挂件高度
     refreshInterval: 0,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
     saveAttrTimeout: 1000 * 0.5, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
@@ -109,6 +110,7 @@ let zh_CN = {
     "timeModeSetError": "时间设定错误，开始时间晚于或等于结束时间",
     "timeSetIllegal": "时间设定错误，时间格式请参考说明文档README.md",
     "timeNotSet": `未设定开始时间或结束时间`,
+    "timeRepeatSetError": "时间模式重复方式设定错误，请重新设定",
     "earlyThanStart": "当前时间早于开始时间",
     "startTime": "",
     "endTime": "",
@@ -149,7 +151,7 @@ let zh_CN = {
     "dateFormat": "yyyy年MM月dd日",
     "dateFormat_simp": "MM月dd日",
     "timeFormat": "HH:mm",
-    "timeModeSelectText": "时间模式预设重复：",
+    "timeModeSelectText": "时间模式重复方式（预设）：",
     "timeModeArray": ["无重复", "当天", "本周", "本月", "今年"],//通过数组下标区分模式
     "color_cards": "█剩余时间少于%0%%（或%1%天）",
     "color_cards_error": "倒数日颜色设定错误",
@@ -177,6 +179,7 @@ let en_UK = {
     "timeSetIllegal": "Time setting error, please refer to the documentation README.md for the time format",
     "timeNotSet": `Start time or end time not set`,
     "earlyThanStart": "The current time is earlier than the start time",
+    "timeRepeatSetError": "(Time mode) Repetiton preset type illeagal, please reset it.",
     "startTime": "",
     "endTime": "",
     "noTimeAttr": `Error occurred while reading pendant attributes`,
@@ -216,7 +219,7 @@ let en_UK = {
     "dateFormat": "yyyy-MM-dd",
     "dateFormat_simp": "MM-dd",
     "timeFormat": "HH:mm",
-    "timeModeSelectText": "Time mode selection:",
+    "timeModeSelectText": "Time repetition preset: ",
     "timeModeArray": ["Custom", "By day", "By week", "当月", "当年"],//通过数组下标区分模式
     "color_cards": "█Less than %0%% time left (or %1% days) ",
     "color_cards_error": "Wrong colour setting for the countdown day",

@@ -15,7 +15,7 @@ class Mode {
     // 模式id
     modeId = 0;
     // 挂件高度
-    widgetHeight=4.3;
+    widgetHeight=setting.widgetAutoModeWithTimeRemainHeight;
     // 是否携带标题
     titleEnable = false;
     // get modeCode(){
@@ -39,7 +39,7 @@ class Mode {
 class ManualMode extends Mode {
     savePercentTimeout;
     modeCode = 0;
-    widgetHeight = 3;
+    widgetHeight = setting.widgetBarOnlyHeight;
     //初始化
     async init(){
         // super.init();
@@ -75,7 +75,7 @@ class ManualMode extends Mode {
         $("#progress").css("transition-duration", "0s");
         //隐藏提示信息
         if (!g_displaySetting){
-            window.frameElement.style.height = this.widgetHeight + "em";
+            window.frameElement.style.height = this.widgetHeight;
         }
     }
     
@@ -169,7 +169,7 @@ class AutoMode extends Mode {
     calculateAllTasks = false;//模式：统计所有任务（含子任务）进度
     observerTimeout;//内保存延迟
     clickFnBtnTimeout;
-    widgetHeight=3;
+    widgetHeight = setting.widgetBarOnlyHeight;
     endTimeStr = undefined;
     startTimeStr = undefined;
     async init(){
@@ -194,7 +194,7 @@ class AutoMode extends Mode {
         }
         //自动模式下隐藏提示信息
         if (!g_displaySetting){
-            window.frameElement.style.height = this.widgetHeight + "em";
+            window.frameElement.style.height = this.widgetHeight;
         }
         //设定自动模式功能键
         $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
@@ -272,15 +272,19 @@ class AutoMode extends Mode {
             if (endParseResult == 1 && startParseResult != 1) {
                 $("#outerInfos").css("display", "");
                 modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true}), endTimeStr), 0);
-                this.widgetHeight = 4.3;
+                this.widgetHeight = setting.widgetAutoModeWithTimeRemainHeight;
             }else if (endParseResult == 1 && startParseResult == 1) {
                 $("#outerInfos").css("display", "");
-                let percentage = calculateTimePercentage(startTime, endTime);
-                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage}), endTimeStr), 0);
-                this.widgetHeight = 4.3;
+                try {
+                    let percentage = calculateTimePercentage(startTime, endTime);
+                    modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage}), endTimeStr), 0);
+                    this.widgetHeight = setting.widgetAutoModeWithTimeRemainHeight;
+                }catch(err) {
+                    console.error(err);
+                }
             }else{
                 $("#outerInfos").css("display", "none");
-                this.widgetHeight = 3;
+                this.widgetHeight = setting.widgetBarOnlyHeight;
                 if (isValidStr(this.endTimeStr) && this.endTimeStr != "null") {
                     errorPush(language["timeSetIllegal"]);
                 }
@@ -521,7 +525,7 @@ class TimeMode extends Mode {
     times = [null, null];//0开始时间，1结束时间
     todayMode = false;
     dateString = ["", ""];// 开始时间，结束时间字符串
-    widgetHeight=5;
+    widgetHeight = setting.widgetTimeModeHeight;
     title = "";
     async init(){
         super.init();
@@ -559,7 +563,14 @@ class TimeMode extends Mode {
             clearInterval(this.timeRefreshInterval);
         }
         // 获取时间
-        const percentage = await this.getTimePercentage();
+        let percentage = -1;
+        try {
+           percentage = await this.getTimePercentage();
+        }catch(err) {
+            console.warn(err);
+            errorPush(err);
+            return ;
+        }
         
         try {
             changeBar(percentage);
@@ -688,7 +699,8 @@ class TimeMode extends Mode {
                 break;
             }
             default: {
-                console.warn("错误：时间模式的重复选择有误");
+                console.warn(language["timeRepeatSetError"]);
+                throw new Error(language["timeRepeatSetError"]);
             }
         }
         
@@ -719,9 +731,8 @@ class TimeMode extends Mode {
             let startimeStr = response.data[attrName.startTime]
             let endtimeStr = response.data[attrName.endTime];
             if (startimeStr == "null" || endtimeStr == "null") {
-                errorPush(language["timeNotSet"]);
                 console.warn("时间未设定", response.data);
-                return false;
+                throw new Error(language["timeNotSet"]);
             }
             //将获取到的时间字符串写入挂件设置部分
             $("#startTime").val(startimeStr);
@@ -729,16 +740,16 @@ class TimeMode extends Mode {
             let startParseResult;
             [startParseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat_simp"));
             if (startParseResult <= 0) {
-                errorPush(Error(language["timeSetIllegal"]));
+                // errorPush(Error(language["timeSetIllegal"]));
                 console.warn("时间设定非法", this.times[0]);
-                return false;
+                throw new Error(language["timeSetIllegal"]);
             }
             let endParseResult;
             [endParseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat_simp"));
             if (endParseResult <= 0) {
-                errorPush(Error(language["timeSetIllegal"]));
+                // errorPush(Error(language["timeSetIllegal"]));
                 console.warn("时间设定非法", this.times[1]);
-                return false;
+                throw new Error(language["timeSetIllegal"]);
             }
             if (startParseResult == 2 && endParseResult == 2) {
                 this.todayMode = true;
@@ -754,10 +765,12 @@ class TimeMode extends Mode {
         }
         if ("id" in response.data){
             console.warn("时间未设定", response.data);
-            errorPush(language["timeNotSet"]);
+            // errorPush(language["timeNotSet"]);
+            throw new Error(language["timeSetIllegal"]);
         }else{
             console.warn("获取时间属性失败", response);
-            errorPush(language["noTimeAttr"]);
+            // errorPush(language["noTimeAttr"]);
+            throw new Error(language["timeSetIllegal"]);
         }
         return false;
     }
@@ -1178,7 +1191,7 @@ function displaySetting(){
     }else{
         g_displaySetting = false;
         $("#settings").css("display", "none");
-        window.frameElement.style.height = g_mode.widgetHeight + "em";
+        window.frameElement.style.height = g_mode.widgetHeight;
     }
 }
 
