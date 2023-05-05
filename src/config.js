@@ -92,7 +92,9 @@ let setting = {
     // dateFormat: "MM月dd日",
 
     // 周开始日（周日为0，周一为1）
-    weekStartDay: 1
+    weekStartDay: 1,
+    // 时间模式开始、结束时间文字占用空间最小化（多个进度条连续显示时可能无法对齐）
+    timeTextMinimize: false,
 };
 let zh_CN = {
     "notTaskList": "不是任务列表块，或块id填写错误。（若为无序、任务混合列表，请勾选统计子任务后再试）",
@@ -151,8 +153,8 @@ let zh_CN = {
     "dateFormat": "yyyy年MM月dd日",
     "dateFormat_simp": "MM月dd日",
     "timeFormat": "HH:mm",
-    "timeModeSelectText": "时间模式重复方式（预设）：",
-    "timeModeArray": ["无重复", "当天", "本周", "本月", "今年"],//通过数组下标区分模式
+    "timeModeSelectText": "时间模式预设：",
+    "timeModeArray": ["自定义", "天进度", "周进度", "月进度", "年进度"],//通过数组下标区分模式
     "color_cards": "█剩余时间少于%0%%（或%1%天）",
     "color_cards_error": "倒数日颜色设定错误",
     "calendar_lang": "cn",
@@ -219,8 +221,8 @@ let en_UK = {
     "dateFormat": "yyyy-MM-dd",
     "dateFormat_simp": "MM-dd",
     "timeFormat": "HH:mm",
-    "timeModeSelectText": "Time repetition preset: ",
-    "timeModeArray": ["Custom", "By day", "By week", "当月", "当年"],//通过数组下标区分模式
+    "timeModeSelectText": "Time Mode Preset: ",
+    "timeModeArray": ["Custom", "Current day", "Current week", "Current month", "Current year"],//通过数组下标区分模式
     "color_cards": "█Less than %0%% time left (or %1% days) ",
     "color_cards_error": "Wrong colour setting for the countdown day",
     "calendar_lang": "en",

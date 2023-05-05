@@ -317,4 +317,26 @@ td{
 
 #container {
     z-index: -255;
+    margin: 0px 3px;
+}
+
+/* 时间模式左右两侧的时间文本 */
+#start-time-display, #end-time-display {
+    /* 
+    这里使用flex布局以使得开始/结束时间元素宽度相同，min-width决定他们实际所占的宽度；
+    进度条则占据所有剩余位置
+    英文用户或使用其他日期格式的用户需要另外调整
+     */
+    min-width: 4.7em;
+    flex: 1;
+}
+
+#start-time-display {
+    text-align: center;
+    margin-right: 3px;
+}
+
+#end-time-display {
+    text-align: center;
+    margin-left: 3px;
 }

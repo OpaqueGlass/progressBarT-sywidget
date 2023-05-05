@@ -574,6 +574,13 @@ class TimeMode extends Mode {
         
         try {
             changeBar(percentage);
+            // 时间模式左右时间占比动态化：
+            if (setting.timeTextMinimize) {
+                let textLength = this.dateString[0].length > this.dateString[1].length ? 
+                        this.dateString[0].length : this.dateString[1].length;
+                if (textLength >= 6) textLength = 4.7;
+                $("#start-time-display, #end-time-display").css("min-width", `${textLength}em`);
+            }
             if (this.todayMode) {
                 $("#start-time-display").text(this.dateString[0]);
                 $("#end-time-display").text(this.dateString[1]);
