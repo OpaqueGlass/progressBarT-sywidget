@@ -1,0 +1,19 @@
+name: Create Package
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  package:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Archive Files
+        uses: actions/upload-artifact@v2
+        with:
+          name: package.zip
+          path: |
+            $(ls -p)
