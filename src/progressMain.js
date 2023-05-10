@@ -8,7 +8,7 @@ import {
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
-import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage} from "./uncommon.js"
+import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js"
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -276,6 +276,7 @@ class AutoMode extends Mode {
             }else if (endParseResult == 1 && startParseResult == 1) {
                 $("#outerInfos").css("display", "");
                 try {
+                    // 这里的百分比用于控制颜色，如果日程过短，颜色变化明显或许会更好，因此不要SCALE.DAY
                     let percentage = calculateTimePercentage(startTime, endTime);
                     modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage}), endTimeStr), 0);
                     this.widgetHeight = setting.widgetAutoModeWithTimeRemainHeight;
@@ -523,7 +524,8 @@ class TimeMode extends Mode {
     modeCode = -2;
     timeRefreshInterval;
     times = [null, null];//0开始时间，1结束时间
-    todayMode = false;
+    todayMode = false; //自定义开始/结束时间均为时间，需要按天重复
+    dateMode = false;//自定义开始/结束时间均为日期，需要按天进行处理
     dateString = ["", ""];// 开始时间，结束时间字符串
     widgetHeight = setting.widgetTimeModeHeight;
     title = "";
@@ -586,7 +588,8 @@ class TimeMode extends Mode {
                 $("#end-time-display").text(this.dateString[1]);
                 $("#time-day-left").html("");
             }else{
-                let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": percentage});
+                // 颜色变换都使用精确的时间百分比（不以天为单位）
+                let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": calculateTimePercentage(this.times[0], this.times[1])});
                 $("#start-time-display").text(this.dateString[0]);
                 $("#end-time-display").text(this.dateString[1]);
                 $("#time-day-left").html(dateGapString);
@@ -618,7 +621,8 @@ class TimeMode extends Mode {
             // 自定义
             case 0: {
                 let timeAttrResult = await this.readTimesFromAttr();
-                return calculateTimePercentage(this.times[0], this.times[1]);
+                let tempScale = this.dateMode ? SCALE.DAY : SCALE.MS;
+                return calculateTimePercentage(this.times[0], this.times[1], tempScale);
                 break;
             }
             // 天
@@ -645,7 +649,8 @@ class TimeMode extends Mode {
                 await this.readTimesFromAttr(true);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                const todayOfWeek = today.getDay(); // 今天是星期几（0表示星期日）
+                let todayOfWeek = today.getDay(); // 今天是星期几（0表示星期日）
+                if (todayOfWeek == 0) todayOfWeek = 7;
                 this.times[0] = new Date(today.getFullYear(), today.getMonth(), today.getDate() - todayOfWeek + (setting.weekStartDay));
                 this.times[1] = new Date(today.getFullYear(), today.getMonth(), today.getDate() - todayOfWeek + 6 + (setting.weekStartDay));
                 // 提示词
@@ -665,7 +670,7 @@ class TimeMode extends Mode {
                     $("#title").text(useUserTemplate("weekFormat", numOfWeek, language["weekOfDay"][today.getDay()]));
                     $("#title").prop("title", `${formatDateString(today, useUserTemplate("dateFormat_simp"))} ${language["weekOfDay"][today.getDay()]}`);
                 }
-                return calculateTimePercentage(this.times[0], this.times[1]);
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY);
                 break;
             }
             // 月
@@ -683,7 +688,7 @@ class TimeMode extends Mode {
                     $("#title").text(useUserTemplate("monthFormat", language["months"][today.getMonth()], formatDateString(today, useUserTemplate("dateFormat_simp"))));
                     $("#title").prop("title", formatDateString(today, useUserTemplate("dateFormat_simp")));
                 }
-                return calculateTimePercentage(this.times[0], this.times[1]);
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY);
                 break;
             }
             // 年
@@ -702,7 +707,7 @@ class TimeMode extends Mode {
                     $("#title").text(formatDateString(this.times[0], useUserTemplate("yearFormat")));
                     $("#title").prop("title", formatDateString(today, useUserTemplate("dateFormat_simp")));
                 }
-                return calculateTimePercentage(this.times[0], this.times[1]); 
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY); 
                 break;
             }
             default: {
@@ -762,6 +767,12 @@ class TimeMode extends Mode {
                 this.todayMode = true;
             }else{
                 this.todayMode = false;
+            }
+            // 均为日期，按日期计算
+            if (startParseResult == 1 && endParseResult == 1) {
+                this.dateMode = true;
+            }else{
+                this.dateMode = false;
             }
             console.info(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
             // 

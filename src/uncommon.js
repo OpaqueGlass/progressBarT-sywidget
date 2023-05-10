@@ -304,20 +304,30 @@ function generateColorBlocksPlus(colors, numbers, percentages) {
  * 计算经过百分比（已经*100）
  * @param {*} startTime 
  * @param {*} endTime 
+ * @param {*} scale 单位（例：1单位毫秒）
  * @returns 
  */
-export function calculateTimePercentage(startTime, endTime){
+export function calculateTimePercentage(startTime, endTime, scale = 1, floor = true){
     let totalGap = endTime - startTime;
     if (totalGap <= 0){
         console.warn(language["timeModeSetError"]);
         throw new Error(language["timeModeSetError"]);
     }
     let nowDate = new Date();
-    let passed = nowDate - startTime;
+    let passed = Math.floor((nowDate- startTime) / scale) * scale;
     let result = passed / totalGap * 100.0;
     if (result < 0){
         console.warn(language["earlyThanStart"]);
         throw new Error(language["earlyThanStart"]);
     }
     return result;
+}
+
+export const SCALE = {
+    MS: 1,
+    SECOND: 1000,
+    MIN: 1000 * 60,
+    HOUR: 1000 * 60 * 60,
+    DAY: 1000 * 60 * 60 * 24,
+    WEEK: 1000 * 60 * 60 * 24 * 7,
 }
