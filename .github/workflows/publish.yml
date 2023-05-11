@@ -1,19 +1,46 @@
-name: Create Package
+name: Create Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-  package:
-    runs-on: ubuntu-18.04
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Archive Files
-        uses: actions/upload-artifact@v2
+      - name: Generate Package.zip
+        run: find . -not -path '*/\.*' -print | xargs zip package.zip
+
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          name: package.zip
-          path: |
-            $(ls -p)
+          python-version: '3.8'
+
+      - name: Get CHANGELOGS
+        run: python release.py
+
+      - name: Pre Release
+        uses: softprops/action-gh-release@v1
+        if: contains(github.ref, 'beta') || contains(github.ref, 'alpha') 
+        with:
+          body_path: ./result.txt
+          files: package.zip
+          prerelease: true
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: ${{ ! contains(github.ref, 'beta') && ! contains(github.ref, 'alpha') }}
+        with:
+          body_path: ./result.txt
+          files: package.zip
+          prerelease: false
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
