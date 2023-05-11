@@ -34,7 +34,7 @@ jobs:
           body_path: ./result.txt
           files: package.zip
           prerelease: true
-          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -43,4 +43,4 @@ jobs:
           body_path: ./result.txt
           files: package.zip
           prerelease: false
-          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
