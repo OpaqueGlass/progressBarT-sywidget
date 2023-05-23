@@ -1,7 +1,7 @@
 ## progress Bar T 进度条
 
-> 当前版本： v0.2.0 **改进**：修改时间模式布局，支持时间模式标题；
-> **新增**：重设挂件高度选项；
+> 当前版本： v0.1.3 **改进**：修改时间模式布局，支持时间模式标题；
+> **改进**：重设挂件高度选项；（第二次加载时保存默认高度）
 > **新增**：时间模式预设（显示当天、本周、本月、本年进度）；
 > **改进**：设置时间时，自动模式支持显示截止日；
 > **改进**：有限的界面英文支持；
@@ -26,13 +26,14 @@
 - 操作成功提示：
   - 成功刷新时，进度百分比将显示上划线；
   - 成功保存时，进度百分比将显示下划线；
-- 模式：
-  - 点击日历图标可使用日历视图选择日期；
+- 时间模式：
+  - 点击日历图标可使用日历选择器选择日期；
   - 手动输入时间模式日期时，需要满足`年月日时分之间用非数字的字符隔开`的条件，例：`2023年4月14日`、`23:23`；
-- 其他：
-  - 文档打开时挂件由长再变短，影响体验？点击“重设挂件高度”按钮或手动拖拽保存一下高度；
+- 其他常见问题：
+  - 文档打开时挂件高度有长变短，影响体验？
+    点击“重设挂件高度”按钮或手动拖拽保存一下高度；
 
-> 强烈建议完整阅读此文档；
+> 强烈建议完整阅读此文档；遇到问题？见下方反馈bug部分向开发者反馈或提出建议。
 
 ## 设置&使用方式
 
@@ -161,9 +162,9 @@ export const progressBarT = {
 
 ## 反馈bug
 
-请到github仓库[新建issue](https://github.com/OpaqueGlass/progressBarT-sywidget/issues/new)；
+（推荐）请到github仓库[新建issue](https://github.com/OpaqueGlass/progressBarT-sywidget/issues/new)；
 
-如您无法访问github仓库，请直接在ld246社区发帖，并@Undii。
+如您无法访问github仓库，请[点击这里填写问卷](https://wj.qq.com/s2/12395364/b69f/)。
 
 ## 参考&感谢
 
@@ -183,7 +184,7 @@ export const progressBarT = {
 
 ### 依赖
 
-1. jQuery （本项目中通过jQuery选择页面元素）；
+1. [jQuery](https://jquery.com/) （本项目中通过jQuery选择页面元素）；
 
 ```
 jQuery JavaScript Library v3.6.0  https://jquery.com/
@@ -196,6 +197,16 @@ Released under the MIT license  https://jquery.org/license
 开源协议：[GNU GPL v3](http://www.gnu.org/licenses/gpl-3.0.txt)
 
 官方网站：[https://jscolor.com/download/](https://jscolor.com/download/)
+
+3. [layDate](http://www.layui.com/laydate/)
+
+```
+http://www.layui.com/laydate/
+https://github.com/layui/laydate
+MIT license 
+```
+
+
 
 ### 图标
 

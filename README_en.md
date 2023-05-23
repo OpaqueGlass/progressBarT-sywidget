@@ -1,11 +1,13 @@
 ## progress Bar T
 
-> This document was translated by Google Translate without manual checking. The author cannot guarantee the accuracy of the translation results. And this document does not express the author's attitude or position.
+> This document was translated by Google Translate without manual checking. The author cannot guarantee the accuracy of the translation results.
+>
+> Note that some text (such as date) is not internationalized.
 
-> Current Version: v0.2.0 **Improved**: Improve time mode layout;
+> Current Version: v0.1.3 **Improved**: Improve time mode layout;
 > **NEW**: Reset widget height option;
 > **Improved**: When setting the time, the automatic mode supports displaying the deadline;
-> **Improved**: Add English support;
+> **Improved**: Add limited English support;
 
 > Siyuan note widget showing the progress bar.
 
@@ -161,7 +163,7 @@ export const progressBarT = {
 
 ## Feedback bugs
 
-Please go to the github repository [create a new issue](https://github.com/OpaqueGlass/progressBarT-sywidget/issues/new);
+Please go to the github repository and [create a new issue](https://github.com/OpaqueGlass/progressBarT-sywidget/issues/new);
 
 ## References & Thanks
 
@@ -194,6 +196,14 @@ Released under the MIT license https://jquery.org/license
 Open source license: [GNU GPL v3](http://www.gnu.org/licenses/gpl-3.0.txt)
 
 Official website: [https://jscolor.com/download/](https://jscolor.com/download/)
+
+3. [layDate](http://www.layui.com/laydate/)
+
+```
+http://www.layui.com/laydate/
+https://github.com/layui/laydate
+MIT license 
+```
 
 ### icon
 

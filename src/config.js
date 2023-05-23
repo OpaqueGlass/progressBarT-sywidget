@@ -60,7 +60,7 @@ let setting = {
     updateForSubNode: true,//在子任务增删时更新进度(beta)，此选项开启后，可能出现性能问题，建议关闭
     showGapDay: true, // 时间模式显示日期间隔天数
     showButtons: false, // 在进度条右侧展示刷新和设置按钮
-    saveDefaultHeight: false, // 挂件默认高度记忆（加载时将默认宽高写入文档，以减少载入文档时挂件高度变化）
+    saveDefaultHeight: true, // 挂件默认高度记忆（插入后第二次加载将默认宽高写入文档，以减少载入文档时挂件高度变化）
 
     // 自动、时间模式时间提示词覆盖，请参考zh_CN中同名属性
     countDay_dayLeft: undefined, // 时间段：剩余天数显示模板，其中%%将替换为天数
