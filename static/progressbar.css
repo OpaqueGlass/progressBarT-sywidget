@@ -302,7 +302,7 @@ td{
     cursor: pointer;
 }
 
-#progress2 {
+/* #progress2 {
     width: 0%;
     position: relative;
     left: 0px;
@@ -313,10 +313,10 @@ td{
 
 #progress {
     z-index: 0;
-}
+} */
 
 #container {
-    z-index: -255;
+    /* z-index: -255; 存在手动模式无法触发的问题*/
     margin: 0px 3px;
 }
 
