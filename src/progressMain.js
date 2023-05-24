@@ -1234,7 +1234,7 @@ function changeBarAppearance(){
  * @param {*} showButtons 
  */
 function showButtonsController(showButtons) {
-    $(".btn").css("display", showButtons ? "" : "none");
+    $("#settingBtn, #refresh").css("display", showButtons ? "" : "none");
     setting.showButtons = showButtons;
     document.getElementById("percentage").onclick = showButtons ? null : clickManualRefresh;
     document.getElementById("percentage").ondblclick = showButtons ? null : dblClickShowSetting;
@@ -1340,9 +1340,9 @@ try{
     $("#resetHeight").click(resetWidgetHeight);
     $("#saveAppearBtn").on("click", saveAppearance);
     $("#saveSettingBtn").on("click", async function(){await saveSettings();});
-    if (setting.showButtons == false) {
-        showButtonsController(setting.showButtons);
-    }
+    
+    showButtonsController(setting.showButtons);
+    
     await __init();
 }catch (err){
     errorPush(err);
