@@ -4,10 +4,7 @@
 >
 > Note that some text (such as date) is not internationalized.
 
-> Current Version: v0.1.3 **Improved**: Improve time mode layout;
-> **NEW**: Reset widget height option;
-> **Improved**: When setting the time, the automatic mode supports displaying the deadline;
-> **Improved**: Add limited English support;
+> Current Version: v0.1.5 **Fixed** Manual Mode error;
 
 > Siyuan note widget showing the progress bar.
 
