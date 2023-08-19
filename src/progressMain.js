@@ -8,7 +8,8 @@ import {
     updateBlockAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
-import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js"
+import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js";
+import { debugPush, logPush, warnPush } from './common.js';
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -26,7 +27,7 @@ class Mode {
     //初始化模式(子类实现时请先调用，手动模式除外)
     async init() {
         g_manualPercentage = this.modeCode;
-        errorPush("");
+        showError("");
     }
     //退出模式
     async destory() {}
@@ -48,7 +49,7 @@ class ManualMode extends Mode {
         $("#refresh").attr("title", language["manualMode"] + language["ui_refresh_btn_hint"]);
         $("#innerCurrentMode").text(language["manualMode"]);
         $("#container").addClass("canClick");
-        errorPush("");
+        showError("");
         g_progressContainerElem = document.getElementById("container");
         //获取点击/拖拽/触摸拖拽进度条事件
         //实现单击进度条任意位置
@@ -130,8 +131,10 @@ class ManualMode extends Mode {
     eventClickBar(event){
         //offset点击事件位置在点击元素的偏移量，clientWidth进度条显示宽度
         let percentage = (event.clientX - g_progressContainerElem.offsetLeft) / g_progressContainerElem.clientWidth * 100.0;
-        console.assert((event.clientX - g_progressContainerElem.offsetLeft) >= 0, `点击定位进度实现逻辑有缺陷 ${percentage}`+
-          `点击位置clientX${event.clientX}， 进度条左定位offsetLeft${g_progressContainerElem.offsetLeft}`);
+        if ((event.clientX - g_progressContainerElem.offsetLeft) < 0) {
+            logPush(`点击定位进度实现逻辑有缺陷 ${percentage}`+
+            `点击位置clientX${event.clientX}， 进度条左定位offsetLeft${g_progressContainerElem.offsetLeft}`);
+        }
         if (percentage >= 99.4) percentage = 100.0;
         if (percentage <= 0.5) percentage = 0.0;
         changeBar(percentage);
@@ -215,14 +218,14 @@ class AutoMode extends Mode {
         $("#percentage").css("display", "");
     }
     async refresh(){
-        errorPush("");//清空提示词
+        showError("");//清空提示词
         infoPush("");
         //从挂件中读取id
         await this.readAndApplyAttr();
-        console.log("手动点击刷新，读取到属性中id", g_targetBlockId);
+        logPush("手动点击刷新，读取到属性中id", g_targetBlockId);
         //没有块则创建块
         if (!isValidStr(g_targetBlockId) && setting.createBlock){
-            console.info("无效id，将创建新块");
+            logPush("无效id，将创建新块");
             let tempId = await insertBlockAPI("- [ ] ", g_thisWidgetId);
             if (isValidStr(tempId)){
                 g_targetBlockId = tempId;
@@ -281,13 +284,13 @@ class AutoMode extends Mode {
                     modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage}), endTimeStr), 0);
                     this.widgetHeight = setting.widgetAutoModeWithTimeRemainHeight;
                 }catch(err) {
-                    console.error(err);
+                    errorPush(err);
                 }
             }else{
                 $("#outerInfos").css("display", "none");
                 this.widgetHeight = setting.widgetBarOnlyHeight;
                 if (isValidStr(this.endTimeStr) && this.endTimeStr != "null") {
-                    errorPush(language["timeSetIllegal"]);
+                    showError(language["timeSetIllegal"]);
                 }
             }
             // 判断目标块
@@ -299,13 +302,13 @@ class AutoMode extends Mode {
             percentage = this.calculatePercentageByDom(g_targetBlockId);
             //使用API重试
             if (percentage < 0 && !noAPI){
-                errorPush(language["unknownIdAtDom"], 2000);
+                showError(language["unknownIdAtDom"], 2000);
                 $("#refresh").attr("title", language["autoModeAPI"]);
                 percentage = this.modeCode;
                 percentage = await this.calculatePercentageByAPI(g_targetBlockId);
                 if (percentage >= 0) {
                     infoPush(language["usingAPI"]);
-                    errorPush("");
+                    showError("");
                 }
             }else{
                 $("#refresh").attr("title", language["autoMode"]);
@@ -316,8 +319,8 @@ class AutoMode extends Mode {
             //更新进度条
             changeBar(percentage);
             }catch(err){
-                console.error(err);
                 errorPush(err);
+                showError(err.name + err.message);
             }
     }
     /**
@@ -366,8 +369,8 @@ class AutoMode extends Mode {
             g_mode.__setObserver(g_targetBlockId);
         }
         }catch(error){
-            console.error(err);
-            errorPush("错误：无法获取任务列表变化" + err);
+            errorPush(err);
+            showError(language["cannot_observe"] + err);
         }
     }
     /**
@@ -376,17 +379,19 @@ class AutoMode extends Mode {
      * @returns 
      */
     __setObserver(blockid){
-        console.log("设定/重设observer");
+        logPush("设定/重设observer");
         try{
             this.observeClass.disconnect();
             this.observeNode.disconnect();
             let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
             if (target.length <= 0) {
-                errorPush(language["cantObserve"] + blockid, 2000);
-                console.warn("无法在DOM中找到对应块id，未设定observer", blockid);
+                showError(language["cantObserve"] + blockid, 2000);
+                warnPush("无法在DOM中找到对应块id，未设定observer", blockid);
                 return;
             }
-            console.assert(target.length == 1, "错误：多个匹配的观察节点");
+            if (target.length != 1) {
+                warnPush("错误：多个匹配的观察节点");
+            }
             //监听任务项class变换，主要是勾选和悬停高亮会影响//副作用：悬停高亮也会触发
             this.observeClass.observe(target[0], {"attributes": true, "attributeFilter": ["class"], "subtree": true, "attributeOldValue": true});
             //监听任务项新增和删除
@@ -400,9 +405,9 @@ class AutoMode extends Mode {
             }
             
         }catch(err){
-            errorPush(language["setObserveErr"] + err, 2000);
-            console.error(err);
-            console.error("observer设置失败，无法获取任务列表变化");
+            showError(language["setObserveErr"] + err, 2000);
+            errorPush(err);
+            errorPush("observer设置失败，无法获取任务列表变化");
         }
     }
     /**
@@ -419,7 +424,7 @@ class AutoMode extends Mode {
         let allTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}[data-marker="*"][data-subtype="t"]`);
         let checkedTasks = $(window.parent.document).find(`div[data-node-id=${blockid}]${directSymbol}.protyle-task--done[data-marker="*"]`);
         if (allTasks.length == 0){
-            console.warn("DOM计算进度失败：找不到对应块，或块类型错误。", blockid);
+            warnPush("DOM计算进度失败：找不到对应块，或块类型错误。", blockid);
             return -100;
             // throw new Error(language["notTaskList"]);
         }
@@ -435,8 +440,8 @@ class AutoMode extends Mode {
     async calculatePercentageByAPI(blockid){
         let kramdown = await getKramdown(blockid);
         if (!isValidStr(kramdown)){
-            console.warn("获取kramdown失败", kramdown);
-            // errorPush(language["getKramdownFailed"] + blockid);
+            warnPush("获取kramdown失败", kramdown);
+            // showError(language["getKramdownFailed"] + blockid);
             throw new Error(language["getKramdownFailed"] + blockid);
             return 0;//不是块id错误，避免触发autoModeCalculate的错误提示
         }
@@ -515,7 +520,7 @@ class AutoMode extends Mode {
             }
         }
         }catch(err){
-            console.error("获取邻近块时出错", err);
+            errorPush("获取邻近块时出错", err);
         }
     }
 }
@@ -569,8 +574,8 @@ class TimeMode extends Mode {
         try {
            percentage = await this.getTimePercentage();
         }catch(err) {
-            console.warn(err);
-            errorPush(err);
+            warnPush(err);
+            showError(err.name + err.message);
             return ;
         }
         
@@ -595,8 +600,8 @@ class TimeMode extends Mode {
                 $("#time-day-left").html(dateGapString);
             }
         }catch(err) {
-            console.error(err);
-            console.warn("输出日期时出现错误");
+            errorPush(err);
+            warnPush("输出日期时出现错误");
             if (this.todayMode) {
                 modePush(`${this.times[0].toLocaleTimeString()} ~ ${this.times[1].toLocaleTimeString()}`, 0);
             }else{
@@ -711,7 +716,7 @@ class TimeMode extends Mode {
                 break;
             }
             default: {
-                console.warn(language["timeRepeatSetError"]);
+                warnPush(language["timeRepeatSetError"]);
                 throw new Error(language["timeRepeatSetError"]);
             }
         }
@@ -743,7 +748,7 @@ class TimeMode extends Mode {
             let startimeStr = response.data[attrName.startTime]
             let endtimeStr = response.data[attrName.endTime];
             if (startimeStr == "null" || endtimeStr == "null") {
-                console.warn("时间未设定", response.data);
+                warnPush("时间未设定", response.data);
                 throw new Error(language["timeNotSet"]);
             }
             //将获取到的时间字符串写入挂件设置部分
@@ -752,15 +757,15 @@ class TimeMode extends Mode {
             let startParseResult;
             [startParseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat_simp"));
             if (startParseResult <= 0) {
-                // errorPush(Error(language["timeSetIllegal"]));
-                console.warn("时间设定非法", this.times[0]);
+                // showError(Error(language["timeSetIllegal"]));
+                warnPush("时间设定非法", this.times[0]);
                 throw new Error(language["timeSetIllegal"]);
             }
             let endParseResult;
             [endParseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat_simp"));
             if (endParseResult <= 0) {
-                // errorPush(Error(language["timeSetIllegal"]));
-                console.warn("时间设定非法", this.times[1]);
+                // showError(Error(language["timeSetIllegal"]));
+                warnPush("时间设定非法", this.times[1]);
                 throw new Error(language["timeSetIllegal"]);
             }
             if (startParseResult == 2 && endParseResult == 2) {
@@ -774,7 +779,7 @@ class TimeMode extends Mode {
             }else{
                 this.dateMode = false;
             }
-            console.info(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
+            debugPush(`parseGetTime起${this.times[0].toLocaleString()}止${this.times[1].toLocaleString()}`);
             // 
             if (!isValidStr(this.title)) {
                 $("#title").text(`${formatDateString(this.times[0])}~${formatDateString(this.times[1])}`);
@@ -782,18 +787,18 @@ class TimeMode extends Mode {
             return true;
         }
         if ("id" in response.data){
-            console.warn("时间未设定", response.data);
-            // errorPush(language["timeNotSet"]);
+            warnPush("时间未设定", response.data);
+            // showError(language["timeNotSet"]);
             throw new Error(language["timeSetIllegal"]);
         }else{
-            console.warn("获取时间属性失败", response);
-            // errorPush(language["noTimeAttr"]);
+            warnPush("获取时间属性失败", response);
+            // showError(language["noTimeAttr"]);
             throw new Error(language["timeSetIllegal"]);
         }
         return false;
     }
     async refresh(){
-        errorPush("");
+        showError("");
         await this.calculateApply();
     }
 }
@@ -815,7 +820,7 @@ function changeBar(percentage){
     document.getElementById("progress").style.width = accuratePercentage + "%";
     // document.getElementById("percentage").innerHTML = ;
     $(".apply-percentage").html(intPercentage + "%");
-    g_barRefreshLogTimeout = setTimeout(()=>{console.log("进度条进度已刷新", g_thisWidgetId)}, 500);
+    g_barRefreshLogTimeout = setTimeout(()=>{logPush("进度条进度已刷新", g_thisWidgetId)}, 500);
 }
 
 
@@ -847,7 +852,7 @@ async function getSettingAtStartUp(){
         g_apperance.barWidth = isValidStr(response.data[attrName.barWidth]) ? 
             response.data[attrName.barWidth] : parseInt($("#progress").css("height").replace("px", ""));
     }catch(err){
-        console.warn("获取barheight失败", err);
+        warnPush("获取barheight失败", err);
         g_apperance.barWidth = defaultAttr.barWidth;
     }
     //UI载入设置-统计子项
@@ -888,11 +893,11 @@ async function resetWidgetHeight() {
         }else{
             newWidgetKramdown = widgetKramdown.replace(new RegExp("><\/iframe>", ""), ` style="height: ${setting.widgetBarOnlyHeight}; width: ${setting.widgetWidth};"><\/iframe>`);
         }
-        console.log("【挂件记忆宽高信息】!", newWidgetKramdown);
+        logPush("【挂件记忆宽高信息】!", newWidgetKramdown);
         await updateBlockAPI(newWidgetKramdown, g_thisWidgetId);
     }else{
-        console.log(widgetKramdown);
-        console.warn("当前id不对应progressBarT挂件，不设定挂件高度");
+        logPush(widgetKramdown);
+        warnPush("当前id不对应progressBarT挂件，不设定挂件高度");
     }
     throw new Error(language["writeHeightInfoFailed"]);
 }
@@ -932,11 +937,11 @@ async function setManualSetting2Attr(){
     data[attrName.manual] = g_manualPercentage.toString();
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
-        console.log("已写入百分比属性", data[attrName.manual]);
+        logPush("已写入百分比属性", data[attrName.manual]);
         infoPush(language["saved"], 1500);
     }else{
-        errorPush(language["writeAttrFailed"]);
-        console.error("属性获取失败", response);
+        showError(language["writeAttrFailed"]);
+        errorPush("属性获取失败", response);
     }
 }
 
@@ -956,15 +961,19 @@ async function setDefaultSetting2Attr(){
     // data[attrName["basicSetting"]] = JSON.stringify(g_attrSetting);
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
-        console.log("初始化时写入属性", data);
+        logPush("初始化时写入属性", data);
         infoPush(language["saved"], 1500);
     }else{
-        errorPush(language["writeAttrFailed"]);
-        console.error("属性获取失败", response);
+        showError(language["writeAttrFailed"]);
+        errorPush("属性获取失败", response);
     }
 }
 
-function errorPush(msg, timeout = 7000){
+function showError(msg, timeout = 7000){
+    if (msg.includes("fetch")) {
+        warnPush("fetch error ingored");
+        return;
+    }
     // $(`<p>${msg}</p>`).appendTo("#errorInfo");
     clearTimeout(g_errorPushTimeout);
     $("#errorInfo").text(msg);
@@ -1009,10 +1018,10 @@ function modePush(msg = "", timeout = 2000){
 async function __init(){
     //读取模式
     g_manualPercentage = await getSettingAtStartUp();
-    // console.log("启动时模式", g_manualPercentage);
+    // logPush("启动时模式", g_manualPercentage);
     //没有响应属性
     if (g_manualPercentage == null || g_manualPercentage == NaN){
-        console.log("重设挂件宽高")
+        logPush("重设挂件宽高")
         //设置挂件宽高
         window.frameElement.style.width = setting.widgetWidth;
         window.frameElement.style.height = setting.widgetHeight;
@@ -1114,7 +1123,7 @@ async function __init(){
         g_mode = new AutoMode();
     }else{
         g_mode = new ManualMode();
-        console.warn("初始化时模式设定不正确，将被重设", g_manualPercentage);
+        warnPush("初始化时模式设定不正确，将被重设", g_manualPercentage);
         g_manualPercentage = 0;
     }
     //初始化模式
@@ -1153,8 +1162,8 @@ async function __refresh(){
         applyProgressColor(await getblockAttrAPI(g_thisWidgetId));//进度条颜色重设
         infoPush(language["refreshed"], 1500);
     }catch(err){
-        console.error(err);
         errorPush(err);
+        showError(err.name + err.message);
     }
 }
 
@@ -1263,11 +1272,11 @@ async function saveAppearance(){
     // data[attrName.basicSetting] = JSON.stringify(g_attrSetting);
     let response = await addblockAttrAPI(data, g_thisWidgetId);
     if (response == 0){
-        console.log("已写入外观属性");
+        logPush("已写入外观属性");
         infoPush(language["saved"], 1500);
     }else{
-        errorPush(language["writeAttrFailed"]);
-        console.error("属性获取失败", response);
+        showError(language["writeAttrFailed"]);
+        errorPush("属性获取失败", response);
     }
 }
 
@@ -1289,11 +1298,11 @@ async function saveSettings(){
     for (let attr in data){
         if (data[attr] == "") data[attr] = "null";
     }
-    console.log("属性项", data);
+    logPush("属性项", data);
     //保存属性
     if (await addblockAttrAPI(data, g_thisWidgetId)){
-        console.error(language["writeAttrFailed"]);
-        errorPush("保存失败");
+        errorPush(language["writeAttrFailed"]);
+        showError(language["writeAttrFailed"]);
         return;
     }
     //保存属性后触发刷新，可能需要延时？
@@ -1345,6 +1354,6 @@ try{
     
     await __init();
 }catch (err){
+    showError(err.name + err.message);
     errorPush(err);
-    console.error(err);
 }

@@ -163,6 +163,7 @@ let zh_CN = {
     "yearFormat": "yyyy年",
     "weekFormat": "第%0%周",
     "monthFormat": "%0%",
+    "cannot_observe": "错误：无法获取任务列表变化",
 }
 let en_UK = {
     "notTaskList": "Not a task list block, or the block id was filled in incorrectly. (If it is an unordered, mixed list of tasks, please tick the statistics subtask and try again)",
@@ -231,6 +232,7 @@ let en_UK = {
     "yearFormat": "yyyy",
     "weekFormat": "%0%",
     "monthFormat": "%0% (%1%)",
+    "cannot_observe": "ERROR: Unable to observe changes in the task list.",
 }
 
 let language = zh_CN;
