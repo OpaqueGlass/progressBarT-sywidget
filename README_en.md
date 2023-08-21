@@ -4,7 +4,7 @@
 >
 > Note that some text (such as date) is not internationalized.
 
-> Current Version: v0.1.5 **Fixed** Manual Mode error;
+> Current Version: v0.1.6 **Enhancement** Ignore the fetch error caused by computer hibernate; 
 
 > Siyuan note widget showing the progress bar.
 
@@ -12,7 +12,7 @@
 - Manual mode: drag/click to set the progress;
 - Time mode: display the progress of the time period;
 
-## Quick start
+## Quick start (At least read this section)
 
 - operation:
    - Double-click the text on the right side of the progress bar: show or hide settings;

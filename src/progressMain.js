@@ -9,7 +9,7 @@ import {
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js";
-import { debugPush, logPush, warnPush } from './common.js';
+import { debugPush, logPush, warnPush, errorPush } from './common.js';
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -748,7 +748,7 @@ class TimeMode extends Mode {
             let startimeStr = response.data[attrName.startTime]
             let endtimeStr = response.data[attrName.endTime];
             if (startimeStr == "null" || endtimeStr == "null") {
-                warnPush("时间未设定", response.data);
+                logPush("时间未设定", response.data);
                 throw new Error(language["timeNotSet"]);
             }
             //将获取到的时间字符串写入挂件设置部分
@@ -758,14 +758,14 @@ class TimeMode extends Mode {
             [startParseResult, this.times[0], this.dateString[0]] = parseTimeString(startimeStr, useUserTemplate("dateFormat_simp"));
             if (startParseResult <= 0) {
                 // showError(Error(language["timeSetIllegal"]));
-                warnPush("时间设定非法", this.times[0]);
+                logPush("时间设定非法", this.times[0]);
                 throw new Error(language["timeSetIllegal"]);
             }
             let endParseResult;
             [endParseResult, this.times[1], this.dateString[1]] = parseTimeString(endtimeStr, useUserTemplate("dateFormat_simp"));
             if (endParseResult <= 0) {
                 // showError(Error(language["timeSetIllegal"]));
-                warnPush("时间设定非法", this.times[1]);
+                logPush("时间设定非法", this.times[1]);
                 throw new Error(language["timeSetIllegal"]);
             }
             if (startParseResult == 2 && endParseResult == 2) {
@@ -787,7 +787,7 @@ class TimeMode extends Mode {
             return true;
         }
         if ("id" in response.data){
-            warnPush("时间未设定", response.data);
+            logPush("时间未设定", response.data);
             // showError(language["timeNotSet"]);
             throw new Error(language["timeSetIllegal"]);
         }else{
