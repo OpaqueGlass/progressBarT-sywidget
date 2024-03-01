@@ -1,10 +1,8 @@
 ## progress Bar T
 
-> This document was translated by Google Translate without manual checking. The author cannot guarantee the accuracy of the translation results.
+> This document was translated by Google Translate. 
 >
 > Note that some text (such as date) is not internationalized.
-
-> Current Version: v0.1.6 **Enhancement** Ignore the fetch error caused by computer hibernate; 
 
 > Siyuan note widget showing the progress bar.
 
@@ -20,8 +18,7 @@
    - (When hiding the text on the right side of the progress bar, please click the text showing the progress percentage);
 
    ![click help](./README.assets/clickhelp_en.png)
-
-   ![click help](/widgets/progressBarT/README.assets/clickhelp_en.png)
+   
 - Tips for successful operation:
    - When successfully refreshed, the progress percentage will be overlined;
    - When saving successfully, the progress percentage will be underlined;

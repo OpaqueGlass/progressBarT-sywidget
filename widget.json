@@ -14,9 +14,9 @@
     "en_US": "Show a progress bar in widget. [English is not fully supported]"
   },
   "readme": {
-    "default": "README_en.md",
+    "default": "README_en_US.md",
     "zh_CN": "README.md",
-    "en_US": "README_en.md"
+    "en_US": "README_en_US.md"
   },
   "i18n": [
     "zh_CN",

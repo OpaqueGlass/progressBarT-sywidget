@@ -157,6 +157,15 @@ export async function pushMsgAPI(msgText, timeout){
     return 0;
 }
 
+export async function getJSONFile(path) {
+    const url = "/api/file/getFile";
+    let response = await postRequest({"path": path}, url);
+    if (response.code == 404) {
+        return null;
+    }
+    return response;
+}
+
 /**
  * 获取当前文档id（伪api）
  * 优先使用jquery查询

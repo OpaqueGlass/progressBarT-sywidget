@@ -193,7 +193,9 @@ class AutoMode extends Mode {
         }
         //设定间隔定时刷新
         if (setting.refreshInterval > 0){
-            this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval);
+            // 同一页面中如果有较多的挂件，相同的刷新间隔可能导致大量并发，这里加入随机数
+            let randomNum = Math.floor(Math.random() * 10001);
+            this.autoRefreshInterval = setInterval(async function(){await g_mode.calculateApply()}, setting.refreshInterval + randomNum);
         }
         //自动模式下隐藏提示信息
         if (!g_displaySetting){
@@ -302,16 +304,18 @@ class AutoMode extends Mode {
             percentage = this.calculatePercentageByDom(g_targetBlockId);
             //使用API重试
             if (percentage < 0 && !noAPI){
-                showError(language["unknownIdAtDom"], 2000);
+                infoPush(language["unknownIdAtDom"], 0);
                 $("#refresh").attr("title", language["autoModeAPI"]);
                 percentage = this.modeCode;
                 percentage = await this.calculatePercentageByAPI(g_targetBlockId);
                 if (percentage >= 0) {
-                    infoPush(language["usingAPI"]);
-                    showError("");
+                    infoPush(language["usingAPI"], 0);
+                } else {
+                    infoPush(language["autoModeFailed"], 0);
                 }
-            }else{
+            }else if (percentage < 0 && noAPI){
                 $("#refresh").attr("title", language["autoMode"]);
+                infoPush(language["autoModeFailed"], 0);
             }
             if (percentage < 0){
                 throw new Error(language["notTaskList"]);
@@ -385,7 +389,7 @@ class AutoMode extends Mode {
             this.observeNode.disconnect();
             let target = $(window.parent.document).find(`div[data-node-id=${blockid}]`);
             if (target.length <= 0) {
-                showError(language["cantObserve"] + blockid, 2000);
+                infoPush(language["cantObserve"] + blockid, 2000);
                 warnPush("无法在DOM中找到对应块id，未设定observer", blockid);
                 return;
             }
@@ -403,9 +407,8 @@ class AutoMode extends Mode {
                     this.observeNode.observe(subTaskLists[i], {"childList": true});
                 }
             }
-            
         }catch(err){
-            showError(language["setObserveErr"] + err, 2000);
+            infoPush(language["setObserveErr"] + err, 2000);
             errorPush(err);
             errorPush("observer设置失败，无法获取任务列表变化");
         }
@@ -983,6 +986,11 @@ function showError(msg, timeout = 7000){
             displaySetting();
         }
         return;
+    } else {
+        // 推送空白，如果同时展开，需要折叠
+        if (g_displaySetting){
+            displaySetting();
+        }
     }
     g_errorPushTimeout = setTimeout(()=>{
         $("#errorInfo").text("");

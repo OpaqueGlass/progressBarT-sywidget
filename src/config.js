@@ -52,7 +52,7 @@ let setting = {
     widgetBarOnlyHeight: "3em",//只显示进度条和刷新按钮时，挂件的高
     widgetAutoModeWithTimeRemainHeight: "4.3em", // 自动模式显示时间时挂件高度
     widgetTimeModeHeight: "5em", // 时间模式挂件高度
-    refreshInterval: 0,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
+    refreshInterval: 90000,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
     saveAttrTimeout: 1000 * 0.5, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存
     timeModeRefreshInterval: 1000 * 60 * 10,//时间模式定时刷新间隔，单位毫秒，请勿设定的时间过短；为0则禁用
@@ -102,6 +102,7 @@ let zh_CN = {
     "unknownIdAtDom": "页面内未找到对应块，正尝试API获取。",
     "cantObserve": "页面内未找到对应块，无法自动触发进度计算",
     "setObserveErr": "内部错误，无法自动触发进度计算",
+    "autoModeFailed": "由于API或DOM处理错误，未能展示进度。",
     "autoMode": "当前：自动模式",
     "manualMode": "当前：手动模式",
     "needSetAttr": `未设置目标块id且未在紧邻块发现列表，请创建任务列表或设定id。`,
@@ -171,6 +172,7 @@ let en_UK = {
     "unknownIdAtDom": "The corresponding block was not found within the page, trying to get it via the API." ,
     "cantObserve": "The corresponding block was not found within the page and the progress calculation could not be triggered automatically.",
     "setObserveErr": "Internal error, unable to automatically trigger progress calculation",
+    "autoModeFailed": "Failure to show progress due to API or DOM handling errors.",
     "autoMode": "Current: auto mode",
     "manualMode": "Current: manual mode",
     "needSetAttr": `No target block id set and no list found in immediate block, create task list or set id. `,
@@ -252,6 +254,11 @@ for (let attr in attrName){
 
 // 导入外部config.js 测试功能
 try {
+    do {
+    // 先通过思源API判断文件是否存在，否则就别找了
+    if (await getJSONFile("/data/widgets/custom.js") == null) {
+        break;
+    }
     let allCustomConfig = await import('/widgets/custom.js');
     let customConfig = null;
     let customConfigName = "progressBarT";
@@ -286,7 +293,7 @@ try {
         }
         
     }
-    
+    } while (false);
 }catch (err) {
     console.warn("导入用户自定义设置时出现错误", err);
 }
@@ -294,6 +301,30 @@ try {
 async function getLanguageFile(url) {
     let result;
     await fetch(url).then((response) => {
+        result = response.json();
+    });
+    return result;
+}
+
+async function getJSONFile(path) {
+    const url = "/api/file/getFile";
+    let response = await postRequest({"path": path}, url);
+    if (response.code == 404) {
+        return null;
+    }
+    return response;
+}
+
+async function postRequest(data, url){
+    let result;
+    await fetch(url, {
+        body: JSON.stringify(data),
+        method: 'POST',
+        headers: {
+            "Authorization": "Token "+token,
+            "Content-Type": "application/json"
+        }
+    }).then((response) => {
         result = response.json();
     });
     return result;
