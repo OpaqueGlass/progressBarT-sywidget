@@ -309,7 +309,12 @@ class AutoMode extends Mode {
                 percentage = this.modeCode;
                 percentage = await this.calculatePercentageByAPI(g_targetBlockId);
                 if (percentage >= 0) {
-                    infoPush(language["usingAPI"], 0);
+                    if (setting.refreshInterval > 0) {
+                        infoPush(language["usingAPI"].replace("%%", setting.refreshInterval / 1000), 0);
+                    } else {
+                        infoPush(language["usingAPINotRefresh"], 0);
+                    }
+                    
                 } else {
                     infoPush(language["autoModeFailed"], 0);
                 }
