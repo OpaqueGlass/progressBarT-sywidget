@@ -127,6 +127,7 @@ let zh_CN = {
     "barWidthText": "进度条高度：",
     "saveBtnText": "保存外观",
     "saveSettingText": "保存设置",
+    "deleteAndGoodByeText": "删除其他挂件",
     "startTimeText": "开始时间：",
     "endTimeText": "结束时间：",
     "allTaskText": "统计子任务：",
@@ -165,6 +166,9 @@ let zh_CN = {
     "weekFormat": "第%0%周",
     "monthFormat": "%0%",
     "cannot_observe": "错误：无法获取任务列表变化",
+    "deleteAndGoodByeConfirm": "此功能用于删除其他任务进度条挂件，通常用于不再使用并想批量清理挂件内容。此功能测试有限，可能错误匹配其他挂件或不应删除的内容，继续即代表您已经了解了相关风险并已经做好了笔记历史备份。感谢陪伴，期待下次相遇。",
+    "removeOtherSuccess": "成功删除%1%个挂件",
+    "removeOtherFailed": "成功删除%1%个挂件，失败%2%个。失败的挂件id分别是：%3%",
 }
 let en_UK = {
     "notTaskList": "Not a task list block, or the block id was filled in incorrectly. (If it is an unordered, mixed list of tasks, please tick the statistics subtask and try again)",
@@ -197,6 +201,7 @@ let en_UK = {
     "barWidthText": "Progress bar height:",
     "saveBtnText": "Save appearance",
     "saveSettingText": "Save settings",
+    "deleteAndGoodByeText": "Delete Other Widgets",
     "startTimeText": "Start time:",
     "endTimeText": "End time:",
     "allTaskText": "Count subtasks in:",
@@ -235,6 +240,10 @@ let en_UK = {
     "weekFormat": "%0%",
     "monthFormat": "%0% (%1%)",
     "cannot_observe": "ERROR: Unable to observe changes in the task list.",
+    "deleteAndGoodByeConfirm": "This feature is used to delete other progreeBarT widgets, typically for no longer in use and want to clean up the widget content in bulk. This feature has limited testing and may incorrectly match other widgets or content that should not be deleted. Proceeding means you have understood the relevant risks and have made a backup of all note in Siyuan. (Click Yes/Continue/Ok/确认 to proceed, Click Close/No/取消 to decline) Thank you for your company, looking forward to meeting you next time.",
+    "removeOtherFailed": "Successfully deleted %1% widgets, failed %2%. Failed widget ids are: %3%",
+    "removeOtherSuccess": "Successfully deleted %1% widgets",
+
 }
 
 let language = zh_CN;

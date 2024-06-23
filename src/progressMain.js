@@ -6,7 +6,9 @@ import {
     insertBlockAPI,
     addblockAttrAPI,
     updateBlockAPI,
-    renderSprig
+    renderSprig,
+    removeBlockAPI,
+    queryAPI
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js";
@@ -1073,6 +1075,7 @@ async function __init(){
     //呃，写入提示文字
     $("#saveAppearBtn").text(language["saveBtnText"]);
     $("#saveSettingBtn").text(language["saveSettingText"]);
+    $("#deleteAndGoodBye").text(language["deleteAndGoodByeText"]);
     $("#frontText").text(language["frontColorText"]);
     $("#backText").text(language["backColorText"]);
     $("#barWidthText").text(language["barWidthText"]);
@@ -1093,6 +1096,7 @@ async function __init(){
     }
     $("#timeModeSelect").val(attrSetting["timeModeMode"]);
     document.getElementById("fillBlockId").addEventListener("click", getAndSetAdjcentBlockId);
+    document.getElementById("deleteAndGoodBye").addEventListener("click", deleteWidgetHelper);
     // 初始化日期选择控件
     laydate.render({
         elem: "#startTimePicker"
@@ -1341,6 +1345,36 @@ async function saveSettings(){
     function loadUI2AttrSetting() {
         attrSetting.timeModeMode = parseInt($("#timeModeSelect").val());
     }
+}
+
+async function deleteWidgetHelper() {
+    const check = window.confirm(language["deleteAndGoodByeConfirm"]);
+    logPush("删除确认?", check);
+    if (!check) {
+        return
+    }
+    const queryResult = await queryAPI(`SELECT * FROM blocks WHERE type='widget' AND markdown like '%progressBarT%' AND id != '${getCurrentWidgetId()}' LIMIT 10000`);
+    logPush("其他挂件查询结果", queryResult);
+    return;
+    let successCount = 0;
+    let failIds = [];
+    for (let result of queryResult) {
+        if (await removeBlockAPI(result.id)) {
+            successCount++;
+        } else {
+            failIds.push(result.id);
+        }
+    }
+    let text;
+    if (failIds.length > 0) {
+        text = language["removeOtherFailed"].replace("%1%", successCount).replace("%2%", failIds.length)
+            .replace("%3%", failIds.join(","));
+        
+    } else {
+        text = language["removeOtherSuccess"].replace("%1%", successCount).replace("%2%", failIds.length)
+            .replace("%3%", failIds.join(","));
+    }
+    window.alert(text);
 }
 /******************     非函数部分       ************************ */
 
