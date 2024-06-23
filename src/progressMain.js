@@ -5,7 +5,8 @@ import {
     isValidStr,
     insertBlockAPI,
     addblockAttrAPI,
-    updateBlockAPI
+    updateBlockAPI,
+    renderSprig
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js";
@@ -504,10 +505,15 @@ class AutoMode extends Mode {
         if (attrName.startTime in response.data) {
             this.startTimeStr = response.data[attrName.startTime];
         }
-        //向挂件设置项写入id
+        //向挂件设置项写入id01
         $("#blockId").val(isValidStr(g_targetBlockId) ? g_targetBlockId : "");
         //如果没有设定，则自动获取上下文id
-        try{
+        getAdjcentBlockId();
+    }
+}
+
+function getAdjcentBlockId() {
+    try{
         if (!isValidStr(g_targetBlockId)){
             let thisWidgetBlockElem = window.frameElement.parentElement.parentElement;
             if ($(thisWidgetBlockElem.nextElementSibling).attr("data-subtype") === "t"){
@@ -527,9 +533,15 @@ class AutoMode extends Mode {
                 infoPush(language["autoDetectId"] + "↑", 2500);
             }
         }
-        }catch(err){
-            errorPush("获取邻近块时出错", err);
-        }
+    }catch(err){
+        errorPush("获取邻近块时出错", err);
+    }
+}
+
+function getAndSetAdjcentBlockId() {
+    getAdjcentBlockId();
+    if (isValidStr(g_targetBlockId)) {
+        $("#blockId").val(g_targetBlockId);
     }
 }
 
@@ -679,6 +691,11 @@ class TimeMode extends Mode {
                     let numOfWeek = Math.floor((diffDays + 0) / 7) + 1;  // 计算当前是第几周
                     if (numOfWeek <= 0) {
                         numOfWeek = 0;
+                    }
+                    try {
+                        numOfWeek = await renderSprig("{{now | ISOWeek}}");
+                    } catch(err) {
+                        warnPush("周数计算失败");
                     }
                     $("#title").text(useUserTemplate("weekFormat", numOfWeek, language["weekOfDay"][today.getDay()]));
                     $("#title").prop("title", `${formatDateString(today, useUserTemplate("dateFormat_simp"))} ${language["weekOfDay"][today.getDay()]}`);
@@ -1075,7 +1092,7 @@ async function __init(){
         $("#timeModeSelect").append(`<option value="${i}">${language["timeModeArray"][i]}</option>`);
     }
     $("#timeModeSelect").val(attrSetting["timeModeMode"]);
-
+    document.getElementById("fillBlockId").addEventListener("click", getAndSetAdjcentBlockId);
     // 初始化日期选择控件
     laydate.render({
         elem: "#startTimePicker"

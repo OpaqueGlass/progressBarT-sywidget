@@ -1,3 +1,4 @@
+import { warnPush } from "./common.js";
 import {token, includeOs} from "./config.js";
 //向思源api发送请求
 export async function postRequest(data, url){
@@ -140,6 +141,20 @@ export function isValidStr(s){
 		return false;
 	}
 	return true;
+}
+
+/**
+ * 渲染sprig
+ */
+export async function renderSprig(template){
+    let url = "/api/template/renderSprig";
+    let data = {template: template};
+    let response = await postRequest(data, url);
+    if (response == null || response.code != 0 || response.data == null){
+        warnPush("API响应错误", response?.msg);
+        return null;
+    }
+    return response.data;
 }
 
 /**
