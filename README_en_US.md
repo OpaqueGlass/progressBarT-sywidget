@@ -38,6 +38,8 @@
 
 By default (when the task list block id is empty), the widget will automatically get the **task list block immediately below and calculate its progress. (If there is no task list block below, get the task list block immediately above the widget)
 
+> (Optional, only necessary in the case of pop-up windows, etc.) Using the padding icon on the left, you can quickly fill in the adjacent task list block IDs.
+
 You can also copy an existing task list block id (<u>not a list item block</u>) to Settings->Task List block id, click the "Save Settings" button to apply the changes in the widget.
 
 ![Copy task list container block id](README.assets/taskListId.png)
@@ -67,13 +69,6 @@ Set the start time, end time, and click the "Save Settings" button.
 > If it is 20xx, only the last two digits of the year number can be written.
 
 Please note: In the time mode, the progress refresh frequency is set by `config.js` (please refer to the custom settings), and the default is to refresh once every 10 minutes;
-
-#### v0.0.1 compatibility instructions
-
-- Setting items can be configured in the widget, or directly modify the attribute configuration, but only one method can be used at the same time, please avoid mixing them;
-- If you use the unique method of css background to set the appearance of the progress bar, please save it in the property, and avoid saving the appearance setting in the widget. The appearance setting saved in the widget only accepts the color;
-- The progress bar color previously set in css will be invalid, please set it in `config.js`;
-- If something goes wrong, try removing the widget in the document and adding it again.
 
 
 ### Custom settings
@@ -139,7 +134,18 @@ export const progressBarT = {
 }
 ```
 
+#### Holiday Information (Only Workdays )
 
+In version v0.2.0, we are happy to introduce the "Only Workday" feature to automatically ignore weekends while calculating remaining days.
+
+If you need to use holiday information in your region, please create `${Work space}/data/storage/progressBarT/holiday.json` and refer to the format in `./static/holiday.json`.
+
+Briefly:
+
+- `holidays`: These days will not count in 'Remaining days';
+- `workdays`: These days will count in 'Remaining days' even if they are weekends;
+
+Values should be an array of strings with the date format `yyyy-MM-dd`.
 
 ## ⚠️ Note
 

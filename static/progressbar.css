@@ -35,7 +35,7 @@ button.calendar_btn {
 }
 
 /* 除alltask\showButtonCheckBox外的用户输入 */
-.settings input:not(#allTask, #showButtonCheckBox) {
+.settings input:not(#allTask, #showButtonCheckBox, #onlyWorkDay) {
     border: 1px solid rgb(45, 164, 255);
     font-weight: 300;
     background-size: auto 1.5em;

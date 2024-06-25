@@ -134,6 +134,14 @@
                 </td>
             </tr>
             <tr>
+                <td class="linel">
+                    <span id="onlyWorkDayText"></span>
+                </td>
+                <td class="liner">
+                    <input type="checkbox" id="onlyWorkDay">
+                </td>
+            </tr>
+            <tr>
                 <td class="linel btnline" colspan="2">
                     <button class="text_btn" id="saveSettingBtn"></button>
                 </td>
@@ -148,8 +156,21 @@
                 </td>
             </tr>
         </table>
+        <dialog id="goodbyeDialog">
+            <div id="goodbye_info">
+                
+            </div>
+            <div>
+                <button id="goodbye_confirmBtn" value="default">Confirm</button>
+                <button id="goodbye_cancelBtn" value="cancel">No</button>
+            </div>
+            <div id="last_goodbye_result">
+
+            </div>
+        </dialog>
         <div id="color-test"></div>
     </div>
+    
     <script type="module" src="./src/progressMain.js"></script>
 </body>
 

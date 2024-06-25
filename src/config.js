@@ -1,5 +1,5 @@
 export {
-    token, includeOs, setting, language, defaultAttr, attrName, attrSetting
+    token, includeOs, setting, language, defaultAttr, attrName, attrSetting, holidayInfo
 };
 let token = "";//api鉴权token
 let includeOs = [];//目前没用
@@ -44,8 +44,10 @@ let attrName = {
     barTitle: "71title", // 进度条标题（时间模式）
 }
 let attrSetting = {
-    timeModeMode: 0
+    timeModeMode: 0,
+    onlyWorkDay: false,
 }
+let holidayInfo = null;
 let setting = {
     widgetWidth: "50em",//挂件的宽
     widgetHeight: "4.3em",//挂件的高
@@ -166,9 +168,13 @@ let zh_CN = {
     "weekFormat": "第%0%周",
     "monthFormat": "%0%",
     "cannot_observe": "错误：无法获取任务列表变化",
-    "deleteAndGoodByeConfirm": "此功能用于删除其他任务进度条挂件，通常用于不再使用并想批量清理挂件内容。此功能测试有限，可能错误匹配其他挂件或不应删除的内容，继续即代表您已经了解了相关风险并已经做好了笔记历史备份。感谢陪伴，期待下次相遇。",
+    "deleteAndGoodByeConfirm": "“删除其他挂件”用于删除当前工作空间下存在的其他任务进度条挂件。<br/>但功能测试有限，可能错误删除其他挂件或不应删除的内容。<br/>继续即代表您已经了解了相关风险并已经做好了笔记历史备份。<br/>感谢陪伴，期待下次相遇。",
     "removeOtherSuccess": "成功删除%1%个挂件",
     "removeOtherFailed": "成功删除%1%个挂件，失败%2%个。失败的挂件id分别是：%3%",
+    "onlyWorkDayText": "仅工作日：",
+    "onlyWorkDayHoverInfo": "并不智能的计算剩余天数（不计法定节假日），默认实现不支持中国大陆以外的地区以及2022~2024以外的节假日，请参考README.md",
+    "goodbye_confirmBtn": "确认删除",
+    "goodbye_cancelBtn": "取消",
 }
 let en_UK = {
     "notTaskList": "Not a task list block, or the block id was filled in incorrectly. (If it is an unordered, mixed list of tasks, please tick the statistics subtask and try again)",
@@ -240,10 +246,13 @@ let en_UK = {
     "weekFormat": "%0%",
     "monthFormat": "%0% (%1%)",
     "cannot_observe": "ERROR: Unable to observe changes in the task list.",
-    "deleteAndGoodByeConfirm": "This feature is used to delete other progreeBarT widgets, typically for no longer in use and want to clean up the widget content in bulk. This feature has limited testing and may incorrectly match other widgets or content that should not be deleted. Proceeding means you have understood the relevant risks and have made a backup of all note in Siyuan. (Click Yes/Continue/Ok/确认 to proceed, Click Close/No/取消 to decline) Thank you for your company, looking forward to meeting you next time.",
+    "deleteAndGoodByeConfirm": "This feature is used to delete other progreeBarT widgets, typically for no longer in use and want to clean up the widget content in bulk. This feature has limited testing and may incorrectly match other widgets or content that should not be deleted. Proceeding means you have understood the relevant risks and have made a backup of all note in Siyuan. Thank you for your company. Maybe it's time to say goodbye.",
     "removeOtherFailed": "Successfully deleted %1% widgets, failed %2%. Failed widget ids are: %3%",
     "removeOtherSuccess": "Successfully deleted %1% widgets",
-
+    "onlyWorkDayText": "Only Workdays: ",
+    "onlyWorkDayHoverInfo": "Due to regional differences, the default implementation only skips Saturdays and Sundays. If you want to customize holiday information, please refer to the README.",
+    "goodbye_confirmBtn": "Confirm",
+    "goodbye_cancelBtn": "Cancel",
 }
 
 let language = zh_CN;
@@ -305,6 +314,29 @@ try {
     } while (false);
 }catch (err) {
     console.warn("导入用户自定义设置时出现错误", err);
+}
+
+try {
+    do {
+        let holidayInfoFile = await getJSONFile("/data/storage/progressBarT/holiday.json");
+        if (holidayInfoFile != null) {
+            holidayInfo = holidayInfoFile;
+            break;
+        }
+        if (lang != "zh_CN") {
+            break;
+        }
+        holidayInfoFile = await getJSONFile("/data/widgets/progressBarT/static/holiday.json");
+        if (holidayInfoFile == null) {
+            break;
+        } else {
+            holidayInfo = holidayInfoFile;
+            break;
+        }
+        
+    } while(false);
+} catch(err) {
+    console.warn("解析节假日信息时出错", err);
 }
 
 async function getLanguageFile(url) {

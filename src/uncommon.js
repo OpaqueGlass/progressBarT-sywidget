@@ -2,7 +2,8 @@
  * common.js 可能可以应用到其他项目的操作函数
  */
 import { isValidStr, isDarkMode } from "./API.js";
-import { language, setting } from "./config.js";
+import { logPush } from "./common.js";
+import { language, setting, holidayInfo } from "./config.js";
 
 /**
  * 解析符合以下条件的字符串为日期：
@@ -20,17 +21,17 @@ export function parseTimeString(timeStr, format = "") {
     // 拆分连续的数字（string）
     let timeNums = timeStr.match(/[0-9]+/gm);
     // 无数字的情况
-    if (!timeNums ||timeNums.length <= 1) {
+    if (!timeNums || timeNums.length <= 1) {
         return [0, null, ""];
     }
     // 处理yy MM dd的情况
-    if (timeNums.length != 2){
-        if (timeNums[0].length == 2){
+    if (timeNums.length != 2) {
+        if (timeNums[0].length == 2) {
             timeNums[0] = "20" + timeNums[0];
         }
     }
     resultCode = 1;
-    switch (timeNums.length){
+    switch (timeNums.length) {
         case 3: {//输入格式yyyy MM dd
             resultDate = new Date(timeNums[0], timeNums[1] - 1, timeNums[2]);
             resultDateStr = formatDateString(resultDate, format);
@@ -63,12 +64,12 @@ export function formatDateString(date, format) {
     if (!isValidStr(format)) {
         return date.toLocaleDateString();
     }
-    result = result.replace(new RegExp("yyyy","g"), date.getFullYear());
-    result = result.replace(new RegExp("yy","g"), date.getFullYear() % 100);
-    result = result.replace(new RegExp("MM","g"), date.getMonth() + 1);
-    result = result.replace(new RegExp("dd","g"), date.getDate());
-    result = result.replace(new RegExp("HH","g"), date.getHours() > 9 ? date.getHours() : "0" + date.getHours());
-    result = result.replace(new RegExp("mm","g"), date.getMinutes() > 9 ? date.getMinutes() : "0" + date.getMinutes());
+    result = result.replace(new RegExp("yyyy", "g"), date.getFullYear());
+    result = result.replace(new RegExp("yy", "g"), date.getFullYear() % 100);
+    result = result.replace(new RegExp("MM", "g"), date.getMonth() + 1);
+    result = result.replace(new RegExp("dd", "g"), date.getDate());
+    result = result.replace(new RegExp("HH", "g"), date.getHours() > 9 ? date.getHours() : "0" + date.getHours());
+    result = result.replace(new RegExp("mm", "g"), date.getMinutes() > 9 ? date.getMinutes() : "0" + date.getMinutes());
     return result;
 }
 
@@ -77,11 +78,15 @@ export function formatDateString(date, format) {
  * end - start
  * @param {Date} start
  * @param {Date} end
+ * @param {boolean} onlyWorkDay 是否只计算工作日（跳过法定节假日）
  * @return {int} 正数：start距离end还有x天
  */
-export function calculateDateGapByDay(start, end) {
+export function calculateDateGapByDay(start, end, onlyWorkDay) {
     let from = Date.parse(start.toDateString());
     let to = Date.parse(end.toDateString());
+    if (onlyWorkDay) {
+        return calculateDateGapByWorkDay(start, end);
+    }
     return Math.ceil((to - from) / (1 * 24 * 60 * 60 * 1000));
 }
 
@@ -95,6 +100,117 @@ export function calculateDateGapByHour(start, end) {
 }
 
 /**
+ * 计算时间间隔内的法定工作日
+ * 周一至周五（除法定节假日）+调休
+ * @param {Date} start 
+ * @param {Date} end 
+ */
+export function calculateDateGapByWorkDay(start, end) {
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    const holidayCount = getRangeHolidayCount(start, end);
+    const weekdaysCount = getRangeWeekDayCount(start, end);
+    const workdaysCount = getRangeWorkDayCount(start, end);
+    return weekdaysCount - holidayCount + workdaysCount;
+}
+
+
+/**
+ * 获取区间假日天数
+ * @param {Date} start 时间段开始
+ * @param {Date} end 时间段结束
+ * @returns 区间范围内法定节假日天数（以发布为准，不含正常周末，不含节日周末）
+ */
+function getRangeHolidayCount(start, end) {
+    // dateArray为休息日Array
+    const dateArray = holidayInfo?.holidays ?? [];
+    const filteredDates = dateArray.filter(dateStr => {
+        const date = new Date(dateStr);
+        return date >= start && date < end && date.getDay() !== 0 && date.getDay() !== 6;
+    });
+
+    return filteredDates.length;
+}
+/**
+ * 获取区间调休上班天数
+ * @param {Date} start 
+ * @param {Date} end 
+ * @returns 区间内调休上班日，仅含周末
+ */
+function getRangeWorkDayCount(start, end) {
+    // dateArray为工作日Array
+    const dateArray = holidayInfo?.workdays ?? [];
+    const filteredDates = dateArray.filter(dateStr => {
+        const date = new Date(dateStr);
+        return date >= start && date < end && date.getDay() == 0 && date.getDay() == 6;
+    });
+
+    return filteredDates.length;
+}
+
+function getRangeWeekDayCount(start, end) {
+    // 计算两个日期之间的总天数差（不包括结束日期）
+    const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+
+    // 计算完整的周数
+    const fullWeeks = Math.floor(totalDays / 7);
+    let weekdaysCount = fullWeeks * 5; // 每周有 5 个工作日
+
+    // 计算剩余的天数
+    let remainingDays = totalDays % 7;
+
+    // 获取开始日期的星期几（0 是星期天，1 是星期一，依此类推）
+    let startDay = start.getDay();
+
+    // 计算剩余天数中的工作日
+    for (let i = 0; i <= remainingDays; i++) {
+        let currentDay = (startDay + i) % 7;
+        if (currentDay !== 0 && currentDay !== 6) { // 排除周六和周日
+            weekdaysCount++;
+        }
+    }
+
+    return weekdaysCount;
+}
+
+async function parseHolidayInfo() {
+    const response = await fetch('https://raw.githubusercontent.com/lanceliao/china-holiday-calender/master/holidayAPI.json');
+    const data = await response.json();
+    const parseDates = (data) => {
+        const holidays = [];
+        const workdays = [];
+    
+        const addDates = (start, end) => {
+            let currentDate = new Date(start);
+            const endDate = new Date(end);
+            while (currentDate <= endDate) {
+                holidays.push(currentDate.toISOString().split('T')[0]);
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        };
+    
+        for (const year in data.Years) {
+            data.Years[year].forEach(holiday => {
+                addDates(holiday.StartDate, holiday.EndDate);
+                holiday.CompDays.forEach(compDay => {
+                    workdays.push(compDay);
+                });
+            });
+        }
+    
+        holidays.sort();
+        workdays.sort();
+    
+        return { holidays, workdays };
+    };
+    
+    const { holidays, workdays } = parseDates(data);
+    logPush("holiday", JSON.stringify(holidays));
+    logPush("workdays", JSON.stringify(workdays));
+    return { holidays, workdays };
+}
+
+/**
  * 载入用户设定的输出模板
  * @param {*} attrName 
  * @param  {...any} args 
@@ -104,14 +220,14 @@ export function useUserTemplate(attrName, ...args) {
     let result;
     if (isValidStr(setting[attrName])) {
         result = setting[attrName];
-    }else{
+    } else {
         result = language[attrName];
     }
     if (args.length == 0) {
         return result;
-    }else if (args.length == 1) {
+    } else if (args.length == 1) {
         return result.replace(new RegExp("%%", "g"), args[0]);
-    }else{
+    } else {
         for (let i = 0; i < args.length; i++) {
             result = result.replace(new RegExp(`%${i}%`, "g"), args[i]);
         }
@@ -130,9 +246,9 @@ export function formatLanguageTemplate(attrName, ...args) {
     result = language[attrName];
     if (args.length == 0) {
         return result;
-    }else if (args.length == 1) {
+    } else if (args.length == 1) {
         return result.replace(new RegExp("%%", "g"), args[0]);
-    }else{
+    } else {
         for (let i = 0; i < args.length; i++) {
             result = result.replace(new RegExp(`%${i}%`, "g"), args[i]);
         }
@@ -146,16 +262,16 @@ export function formatLanguageTemplate(attrName, ...args) {
  * @param {boolean} simplify 简化输出（用于自动模式）
  * @returns 
  */
-export function getDayGapString({endTime, simplify=false, percentage=null}) {
+export function getDayGapString({ endTime, simplify = false, percentage = null, onlyWorkDay = false }) {
     // 计算还有多少天
-    let gapDay = calculateDateGapByDay(new Date(), endTime);
+    let gapDay = calculateDateGapByDay(new Date(), endTime, onlyWorkDay);
     let dateGapString = "";
     if (gapDay > 0) {
-        dateGapString = useUserTemplate(simplify ? "countDay_dayLeft_sim":"countDay_dayLeft", gapDay);
+        dateGapString = useUserTemplate(simplify ? "countDay_dayLeft_sim" : "countDay_dayLeft", gapDay);
     } else if (gapDay == 0) {
-        dateGapString = useUserTemplate(simplify ? "countDay_today_sim":"countDay_today");
+        dateGapString = useUserTemplate(simplify ? "countDay_today_sim" : "countDay_today");
     } else {
-        dateGapString = useUserTemplate(simplify ? "countDay_exceed_sim":"countDay_exceed", -gapDay);
+        dateGapString = useUserTemplate(simplify ? "countDay_exceed_sim" : "countDay_exceed", -gapDay);
     }
     // 旧代码：时间段折合
     // let gradientColors = generateGradientColor("#FF0000", "#00FF00", 30);
@@ -168,7 +284,7 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
     let colorStr = getCorrespondingColor(gapDay, percentage);
     if (isValidStr(colorStr)) {
         dateGapString = `<span style="color: ${colorStr}">${dateGapString}</span>`;
-    }else{
+    } else {
         dateGapString = `${dateGapString}`;
     }
     return dateGapString;
@@ -182,30 +298,30 @@ export function getDayGapString({endTime, simplify=false, percentage=null}) {
  */
 function generateGradientColor(startColor, endColor, steps) {
     const start = {
-      red: parseInt(startColor.slice(1, 3), 16),
-      green: parseInt(startColor.slice(3, 5), 16),
-      blue: parseInt(startColor.slice(5, 7), 16),
+        red: parseInt(startColor.slice(1, 3), 16),
+        green: parseInt(startColor.slice(3, 5), 16),
+        blue: parseInt(startColor.slice(5, 7), 16),
     };
     const end = {
-      red: parseInt(endColor.slice(1, 3), 16),
-      green: parseInt(endColor.slice(3, 5), 16),
-      blue: parseInt(endColor.slice(5, 7), 16),
+        red: parseInt(endColor.slice(1, 3), 16),
+        green: parseInt(endColor.slice(3, 5), 16),
+        blue: parseInt(endColor.slice(5, 7), 16),
     };
     const diff = {
-      red: end.red - start.red,
-      green: end.green - start.green,
-      blue: end.blue - start.blue,
+        red: end.red - start.red,
+        green: end.green - start.green,
+        blue: end.blue - start.blue,
     };
     const gradientColors = [];
     for (let i = 0; i < steps; i++) {
-      const ratio = i / (steps - 1);
-      const color = {
-        red: Math.round(start.red + diff.red * ratio),
-        green: Math.round(start.green + diff.green * ratio),
-        blue: Math.round(start.blue + diff.blue * ratio),
-      };
-      const hex = `#${color.red.toString(16).padStart(2, '0')}${color.green.toString(16).padStart(2, '0')}${color.blue.toString(16).padStart(2, '0')}`;
-      gradientColors.push(hex);
+        const ratio = i / (steps - 1);
+        const color = {
+            red: Math.round(start.red + diff.red * ratio),
+            green: Math.round(start.green + diff.green * ratio),
+            blue: Math.round(start.blue + diff.blue * ratio),
+        };
+        const hex = `#${color.red.toString(16).padStart(2, '0')}${color.green.toString(16).padStart(2, '0')}${color.blue.toString(16).padStart(2, '0')}`;
+        gradientColors.push(hex);
     }
     return gradientColors;
 }
@@ -220,22 +336,22 @@ function generateGradientColors(colors, n) {
     const colorCount = colors.length - 1;
     const colorStep = 1 / (n - 1);
     for (let i = 0; i < n; i++) {
-      const colorIndex1 = Math.floor(i * colorStep * colorCount);
-      const colorIndex2 = Math.ceil(i * colorStep * colorCount);
-      const color1 = colors[colorIndex1];
-      const color2 = colors[colorIndex2];
-      const ratio = i * colorStep * colorCount - colorIndex1;
-      const r1 = parseInt(color1.substring(1, 3), 16);
-      const g1 = parseInt(color1.substring(3, 5), 16);
-      const b1 = parseInt(color1.substring(5, 7), 16);
-      const r2 = parseInt(color2.substring(1, 3), 16);
-      const g2 = parseInt(color2.substring(3, 5), 16);
-      const b2 = parseInt(color2.substring(5, 7), 16);
-      const r = Math.floor(r1 * (1 - ratio) + r2 * ratio);
-      const g = Math.floor(g1 * (1 - ratio) + g2 * ratio);
-      const b = Math.floor(b1 * (1 - ratio) + b2 * ratio);
-      const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-      gradientColors.push(color);
+        const colorIndex1 = Math.floor(i * colorStep * colorCount);
+        const colorIndex2 = Math.ceil(i * colorStep * colorCount);
+        const color1 = colors[colorIndex1];
+        const color2 = colors[colorIndex2];
+        const ratio = i * colorStep * colorCount - colorIndex1;
+        const r1 = parseInt(color1.substring(1, 3), 16);
+        const g1 = parseInt(color1.substring(3, 5), 16);
+        const b1 = parseInt(color1.substring(5, 7), 16);
+        const r2 = parseInt(color2.substring(1, 3), 16);
+        const g2 = parseInt(color2.substring(3, 5), 16);
+        const b2 = parseInt(color2.substring(5, 7), 16);
+        const r = Math.floor(r1 * (1 - ratio) + r2 * ratio);
+        const g = Math.floor(g1 * (1 - ratio) + g2 * ratio);
+        const b = Math.floor(b1 * (1 - ratio) + b2 * ratio);
+        const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        gradientColors.push(color);
     }
     return gradientColors;
 }
@@ -255,9 +371,9 @@ function getCorrespondingColor(remainDay, gapPercentage = null) {
     }
     // debug 颜色设定方格
     $("#color-test").html(generateColorBlocksPlus(
-        isDarkMode()?setting.colorGradient_baseColor_night : setting.colorGradient_baseColor, 
+        isDarkMode() ? setting.colorGradient_baseColor_night : setting.colorGradient_baseColor,
         setting.colorGradient_triggerDay, setting.colorGradient_triggerPercentage));
-    
+
     if (!isValidStr(gapPercentage)) {
         for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
             if (remainDay <= setting.colorGradient_triggerDay[i]) {
@@ -267,7 +383,7 @@ function getCorrespondingColor(remainDay, gapPercentage = null) {
                 return setting.colorGradient_baseColor[i];
             }
         }
-    }else{
+    } else {
         for (let i = 0; i < setting.colorGradient_baseColor.length; i++) {
             if (gapPercentage >= setting.colorGradient_triggerPercentage[i]) {
                 if (isDarkMode()) {
@@ -277,7 +393,7 @@ function getCorrespondingColor(remainDay, gapPercentage = null) {
             }
         }
     }
-    
+
     return undefined;
 }
 
@@ -307,19 +423,25 @@ function generateColorBlocksPlus(colors, numbers, percentages) {
  * @param {*} scale 单位（例：1单位毫秒）
  * @returns 
  */
-export function calculateTimePercentage(startTime, endTime, scale = 1, floor = true){
+export function calculateTimePercentage(startTime, endTime, scale = 1, onlyWorkDay = false) {
     let totalGap = endTime - startTime;
-    if (totalGap <= 0){
+    if (totalGap <= 0) {
         console.warn(language["timeModeSetError"]);
         throw new Error(language["timeModeSetError"]);
     }
     let nowDate = new Date();
-    let passed = Math.floor((nowDate- startTime) / scale) * scale;
+    let passed = Math.floor((nowDate - startTime) / scale) * scale;
     let result = passed / totalGap * 100.0;
-    if (result < 0){
+    if (result < 0) {
         console.warn(language["earlyThanStart"]);
         throw new Error(language["earlyThanStart"]);
     }
+    if (onlyWorkDay) {
+        let workDayCount = calculateDateGapByWorkDay(startTime, endTime);
+        let passwdCount = calculateDateGapByWorkDay(startTime, nowDate);
+        return 100.0 * passwdCount / workDayCount;
+    }
+
     return result;
 }
 

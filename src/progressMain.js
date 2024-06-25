@@ -279,14 +279,14 @@ class AutoMode extends Mode {
             }
             if (endParseResult == 1 && startParseResult != 1) {
                 $("#outerInfos").css("display", "");
-                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true}), endTimeStr), 0);
+                modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "onlyWorkDay": attrSetting["onlyWorkDay"]}), endTimeStr), 0);
                 this.widgetHeight = setting.widgetAutoModeWithTimeRemainHeight;
             }else if (endParseResult == 1 && startParseResult == 1) {
                 $("#outerInfos").css("display", "");
                 try {
                     // 这里的百分比用于控制颜色，如果日程过短，颜色变化明显或许会更好，因此不要SCALE.DAY
-                    let percentage = calculateTimePercentage(startTime, endTime);
-                    modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage}), endTimeStr), 0);
+                    let percentage = calculateTimePercentage(startTime, endTime, SCALE.MS, attrSetting["onlyWorkDay"]);
+                    modePush(useUserTemplate("countDay_auto_modeinfo", `<span class="apply-percentage"></span>`, getDayGapString({"endTime":endTime, "simplify":true, "percentage": percentage, "onlyWorkDay": attrSetting["onlyWorkDay"]}), endTimeStr), 0);
                     this.widgetHeight = setting.widgetAutoModeWithTimeRemainHeight;
                 }catch(err) {
                     errorPush(err);
@@ -616,7 +616,7 @@ class TimeMode extends Mode {
                 $("#time-day-left").html("");
             }else{
                 // 颜色变换都使用精确的时间百分比（不以天为单位）
-                let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": calculateTimePercentage(this.times[0], this.times[1])});
+                let dateGapString = getDayGapString({"endTime":this.times[1], "percentage": calculateTimePercentage(this.times[0], this.times[1], SCALE.MS, attrSetting["onlyWorkDay"]), "onlyWorkDay": attrSetting["onlyWorkDay"]});
                 $("#start-time-display").text(this.dateString[0]);
                 $("#end-time-display").text(this.dateString[1]);
                 $("#time-day-left").html(dateGapString);
@@ -649,7 +649,7 @@ class TimeMode extends Mode {
             case 0: {
                 let timeAttrResult = await this.readTimesFromAttr();
                 let tempScale = this.dateMode ? SCALE.DAY : SCALE.MS;
-                return calculateTimePercentage(this.times[0], this.times[1], tempScale);
+                return calculateTimePercentage(this.times[0], this.times[1], tempScale, attrSetting["onlyWorkDay"]);
                 break;
             }
             // 天
@@ -668,7 +668,7 @@ class TimeMode extends Mode {
                     $("#title").text(formatDateString(start, useUserTemplate("dateFormat")));
                     $("#title").prop("title", formatDateString(new Date(), useUserTemplate("timeFormat")));
                 }
-                return calculateTimePercentage(this.times[0], this.times[1]);
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.MS, attrSetting["onlyWorkDay"]);
                 break;
             }
             // 周
@@ -702,7 +702,7 @@ class TimeMode extends Mode {
                     $("#title").text(useUserTemplate("weekFormat", numOfWeek, language["weekOfDay"][today.getDay()]));
                     $("#title").prop("title", `${formatDateString(today, useUserTemplate("dateFormat_simp"))} ${language["weekOfDay"][today.getDay()]}`);
                 }
-                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY);
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY, attrSetting["onlyWorkDay"]);
                 break;
             }
             // 月
@@ -720,7 +720,7 @@ class TimeMode extends Mode {
                     $("#title").text(useUserTemplate("monthFormat", language["months"][today.getMonth()], formatDateString(today, useUserTemplate("dateFormat_simp"))));
                     $("#title").prop("title", formatDateString(today, useUserTemplate("dateFormat_simp")));
                 }
-                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY);
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY, attrSetting["onlyWorkDay"]);
                 break;
             }
             // 年
@@ -739,7 +739,7 @@ class TimeMode extends Mode {
                     $("#title").text(formatDateString(this.times[0], useUserTemplate("yearFormat")));
                     $("#title").prop("title", formatDateString(today, useUserTemplate("dateFormat_simp")));
                 }
-                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY); 
+                return calculateTimePercentage(this.times[0], this.times[1], SCALE.DAY, attrSetting["onlyWorkDay"]); 
                 break;
             }
             default: {
@@ -885,6 +885,9 @@ async function getSettingAtStartUp(){
     //UI载入设置-统计子项
     if (response.data[attrName.taskCalculateMode] == "true"){
         $("#allTask").prop("checked", true);
+    }
+    if (attrSetting["onlyWorkDay"] == true){
+        $("#onlyWorkDay").prop("checked", true);
     }
 
     // UI载入设置-开始、结束时间
@@ -1090,13 +1093,20 @@ async function __init(){
     $("#timeModeSelectText").text(language["timeModeSelectText"]);
     $("#resetHeight").text(language["resetHeightText"]);
     $("#resetHeight").prop("title", language["resetHeightHint"]);
+    $("#onlyWorkDayText").text(language["onlyWorkDayText"]);
+    $("#onlyWorkDayText").attr("title", language["onlyWorkDayHoverInfo"]);
+    $("#goodbye_info").html(language["deleteAndGoodByeConfirm"]);
+    $("#goodbye_confirmBtn").text(language["goodbye_confirmBtn"]);
+    $("#goodbye_cancelBtn").text(language["goodbye_cancelBtn"]);
     
     for (let i = 0; i<language["timeModeArray"].length; i++) {
         $("#timeModeSelect").append(`<option value="${i}">${language["timeModeArray"][i]}</option>`);
     }
     $("#timeModeSelect").val(attrSetting["timeModeMode"]);
     document.getElementById("fillBlockId").addEventListener("click", getAndSetAdjcentBlockId);
-    document.getElementById("deleteAndGoodBye").addEventListener("click", deleteWidgetHelper);
+    document.getElementById("goodbye_confirmBtn").addEventListener("click", deleteWidgetHelper);
+    document.getElementById("deleteAndGoodBye").addEventListener("click", ()=>{$("#goodbyeDialog").show()});
+    document.getElementById("goodbye_cancelBtn").addEventListener("click", ()=>{$("#goodbyeDialog").hide()});
     // 初始化日期选择控件
     laydate.render({
         elem: "#startTimePicker"
@@ -1344,18 +1354,18 @@ async function saveSettings(){
     setTimeout(__refresh, 1000);
     function loadUI2AttrSetting() {
         attrSetting.timeModeMode = parseInt($("#timeModeSelect").val());
+        attrSetting.onlyWorkDay = $("#onlyWorkDay").prop("checked");
     }
 }
 
 async function deleteWidgetHelper() {
-    const check = window.confirm(language["deleteAndGoodByeConfirm"]);
-    logPush("删除确认?", check);
-    if (!check) {
-        return
-    }
+    // const check = window.confirm(language["deleteAndGoodByeConfirm"]);
+    // logPush("删除确认?", check);
+    // if (!check) {
+    //     return
+    // }
     const queryResult = await queryAPI(`SELECT * FROM blocks WHERE type='widget' AND markdown like '%progressBarT%' AND id != '${getCurrentWidgetId()}' LIMIT 10000`);
     logPush("其他挂件查询结果", queryResult);
-    return;
     let successCount = 0;
     let failIds = [];
     for (let result of queryResult) {
@@ -1374,7 +1384,7 @@ async function deleteWidgetHelper() {
         text = language["removeOtherSuccess"].replace("%1%", successCount).replace("%2%", failIds.length)
             .replace("%3%", failIds.join(","));
     }
-    window.alert(text);
+    $("#last_goodbye_result").text(text);
 }
 /******************     非函数部分       ************************ */
 
