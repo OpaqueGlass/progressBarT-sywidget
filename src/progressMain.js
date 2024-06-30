@@ -1107,6 +1107,18 @@ async function __init(){
     document.getElementById("goodbye_confirmBtn").addEventListener("click", deleteWidgetHelper);
     document.getElementById("deleteAndGoodBye").addEventListener("click", ()=>{$("#goodbyeDialog").show()});
     document.getElementById("goodbye_cancelBtn").addEventListener("click", ()=>{$("#goodbyeDialog").hide()});
+    document.addEventListener("keyup", (event)=>{
+        if (event.key === "F5") {
+            event.preventDefault();
+            __refresh();
+        }
+    });
+    document.addEventListener("keydown", (event)=>{
+        if (event.key === "s" && event.ctrlKey) {
+            event.preventDefault();
+            displaySetting();
+        }
+    })
     // 初始化日期选择控件
     laydate.render({
         elem: "#startTimePicker"
