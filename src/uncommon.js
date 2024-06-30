@@ -2,7 +2,7 @@
  * common.js 可能可以应用到其他项目的操作函数
  */
 import { isValidStr, isDarkMode } from "./API.js";
-import { logPush } from "./common.js";
+import { debugPush, logPush } from "./common.js";
 import { language, setting, holidayInfo } from "./config.js";
 
 /**
@@ -111,6 +111,7 @@ export function calculateDateGapByWorkDay(start, end) {
     const holidayCount = getRangeHolidayCount(start, end);
     const weekdaysCount = getRangeWeekDayCount(start, end);
     const workdaysCount = getRangeWorkDayCount(start, end);
+    debugPush("总计", weekdaysCount, "减去假日", holidayCount, "调休日", workdaysCount)
     return weekdaysCount - holidayCount + workdaysCount;
 }
 
@@ -142,7 +143,7 @@ function getRangeWorkDayCount(start, end) {
     const dateArray = holidayInfo?.workdays ?? [];
     const filteredDates = dateArray.filter(dateStr => {
         const date = new Date(dateStr);
-        return date >= start && date < end && date.getDay() == 0 && date.getDay() == 6;
+        return date >= start && date < end && (date.getDay() == 0 || date.getDay() == 6);
     });
 
     return filteredDates.length;
@@ -161,9 +162,8 @@ function getRangeWeekDayCount(start, end) {
 
     // 获取开始日期的星期几（0 是星期天，1 是星期一，依此类推）
     let startDay = start.getDay();
-
     // 计算剩余天数中的工作日
-    for (let i = 0; i <= remainingDays; i++) {
+    for (let i = 0; i < remainingDays; i++) {
         let currentDay = (startDay + i) % 7;
         if (currentDay !== 0 && currentDay !== 6) { // 排除周六和周日
             weekdaysCount++;

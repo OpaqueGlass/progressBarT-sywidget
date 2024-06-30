@@ -168,7 +168,7 @@ let zh_CN = {
     "weekFormat": "第%0%周",
     "monthFormat": "%0%",
     "cannot_observe": "错误：无法获取任务列表变化",
-    "deleteAndGoodByeConfirm": "“删除其他挂件”用于删除当前工作空间下存在的其他任务进度条挂件。<br/>但功能测试有限，可能错误删除其他挂件或不应删除的内容。<br/>继续即代表您已经了解了相关风险并已经做好了笔记历史备份。<br/>感谢陪伴，期待下次相遇。",
+    "deleteAndGoodByeConfirm": "“删除其他挂件”用于删除当前工作空间下存在的其他任务进度条挂件。<br/>但功能测试有限，可能错误删除其他挂件或不应删除的内容。（具体实现可查看开源代码）<br/>继续即代表您已经了解了相关风险并已经做好了笔记历史备份。<br/>感谢陪伴，期待下次相遇。",
     "removeOtherSuccess": "成功删除%1%个挂件",
     "removeOtherFailed": "成功删除%1%个挂件，失败%2%个。失败的挂件id分别是：%3%",
     "onlyWorkDayText": "仅工作日：",
@@ -246,7 +246,7 @@ let en_UK = {
     "weekFormat": "%0%",
     "monthFormat": "%0% (%1%)",
     "cannot_observe": "ERROR: Unable to observe changes in the task list.",
-    "deleteAndGoodByeConfirm": "This feature is used to delete other progreeBarT widgets, typically for no longer in use and want to clean up the widget content in bulk. This feature has limited testing and may incorrectly match other widgets or content that should not be deleted. Proceeding means you have understood the relevant risks and have made a backup of all note in Siyuan. Thank you for your company. Maybe it's time to say goodbye.",
+    "deleteAndGoodByeConfirm": "This feature is used to delete other progreeBarT widgets, typically for no longer in use and want to clean up the widget content in bulk.<br/>This feature has limited testing and may incorrectly match other widgets or content that should not be deleted. (Please refer our open-source code) <br/>Proceeding means you have understood the relevant risks and have made a backup of all note in Siyuan. <br/>Thank you for your company. Maybe it's time to say goodbye.",
     "removeOtherFailed": "Successfully deleted %1% widgets, failed %2%. Failed widget ids are: %3%",
     "removeOtherSuccess": "Successfully deleted %1% widgets",
     "onlyWorkDayText": "Only Workdays: ",
@@ -333,10 +333,11 @@ try {
             holidayInfo = holidayInfoFile;
             break;
         }
-        
     } while(false);
 } catch(err) {
     console.warn("解析节假日信息时出错", err);
+} finally {
+    console.log("holida", holidayInfo)
 }
 
 async function getLanguageFile(url) {

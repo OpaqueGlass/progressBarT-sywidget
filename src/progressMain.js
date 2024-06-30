@@ -1114,7 +1114,7 @@ async function __init(){
         }
     });
     document.addEventListener("keydown", (event)=>{
-        if (event.key === "s" && event.ctrlKey) {
+        if (event.key === "i" && event.ctrlKey) {
             event.preventDefault();
             displaySetting();
         }
