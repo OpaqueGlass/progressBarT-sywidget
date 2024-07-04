@@ -84,8 +84,15 @@ export function formatDateString(date, format) {
 export function calculateDateGapByDay(start, end, onlyWorkDay) {
     let from = Date.parse(start.toDateString());
     let to = Date.parse(end.toDateString());
+    let result;
     if (onlyWorkDay) {
-        return calculateDateGapByWorkDay(start, end);
+        result = calculateDateGapByWorkDay(start, end);
+        // 工作日计算法在时段超出时需要返回原计算
+        if (result instanceof Date) {
+            to = result;
+        } else {
+            return result;
+        }
     }
     return Math.ceil((to - from) / (1 * 24 * 60 * 60 * 1000));
 }
@@ -108,11 +115,24 @@ export function calculateDateGapByHour(start, end) {
 export function calculateDateGapByWorkDay(start, end) {
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
+    // 时段判定应当返回最后一个工作日，即end应该是工作日
+    debugPush("输入结束时间", end);
+    // 总时间段才需要走这个逻辑
+    let lastWorkdayEnd = getLastWorkingDay(holidayInfo?.workdays ?? [], holidayInfo?.holidays ?? [], start, end);
+    debugPush("过滤后结束时间", lastWorkdayEnd);
+    // 对于全时段，结束时间如果是非假日，那么最后一个工作日应该计算为日期的
+    debugPush("统计时段", start, end, lastWorkdayEnd);
+    let overFlag = start > lastWorkdayEnd && lastWorkdayEnd != null;
+    if (overFlag) {
+        debugPush("时段已过，fallback到默认实现");
+        return lastWorkdayEnd;
+    }
     const holidayCount = getRangeHolidayCount(start, end);
     const weekdaysCount = getRangeWeekDayCount(start, end);
     const workdaysCount = getRangeWorkDayCount(start, end);
-    debugPush("总计", weekdaysCount, "减去假日", holidayCount, "调休日", workdaysCount)
-    return weekdaysCount - holidayCount + workdaysCount;
+    let result = weekdaysCount - holidayCount + workdaysCount;
+    debugPush("周一至周五总计", weekdaysCount, "减去假日", holidayCount, "调休日", workdaysCount, "Res", result);
+    return result;
 }
 
 
@@ -125,6 +145,7 @@ export function calculateDateGapByWorkDay(start, end) {
 function getRangeHolidayCount(start, end) {
     // dateArray为休息日Array
     const dateArray = holidayInfo?.holidays ?? [];
+    debugPush("休息日数组", dateArray.length);
     const filteredDates = dateArray.filter(dateStr => {
         const date = new Date(dateStr);
         return date >= start && date < end && date.getDay() !== 0 && date.getDay() !== 6;
@@ -141,8 +162,10 @@ function getRangeHolidayCount(start, end) {
 function getRangeWorkDayCount(start, end) {
     // dateArray为工作日Array
     const dateArray = holidayInfo?.workdays ?? [];
+    debugPush("工作日数组", dateArray.length);
     const filteredDates = dateArray.filter(dateStr => {
         const date = new Date(dateStr);
+        // debugPush("调休工作日", "输入日期", dateStr, "转换日期", date, date.getDay(), date >= start && date < end && (date.getDay() == 0 || date.getDay() == 6));
         return date >= start && date < end && (date.getDay() == 0 || date.getDay() == 6);
     });
 
@@ -171,6 +194,35 @@ function getRangeWeekDayCount(start, end) {
     }
 
     return weekdaysCount;
+}
+
+function getLastWorkingDay(workDays, holidays, startDate, endDate) {
+    // 将上班日和节假日数组转换为 Set 对象，便于查找
+    const workDaySet = new Set(workDays);
+    const holidaySet = new Set(holidays);
+
+    let lastWorkingDay = null;
+    let currentDate = new Date(startDate);
+
+    // 遍历时间段内的每一天
+    while (currentDate <= endDate) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需要加 1
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+
+        // 检查是否为工作日且不在节假日列表中
+        if ((currentDate.getDay() !== 0 && currentDate.getDay() !== 6) || workDaySet.has(dateString)) {
+            if (!holidaySet.has(dateString)) {
+                lastWorkingDay = new Date(currentDate);
+            }
+        }
+
+        // 移动到下一天
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return lastWorkingDay;
 }
 
 async function parseHolidayInfo() {
@@ -439,9 +491,12 @@ export function calculateTimePercentage(startTime, endTime, scale = 1, onlyWorkD
     if (onlyWorkDay) {
         let workDayCount = calculateDateGapByWorkDay(startTime, endTime);
         let passwdCount = calculateDateGapByWorkDay(startTime, nowDate);
-        return 100.0 * passwdCount / workDayCount;
+        result = 100.0 * passwdCount / workDayCount;
     }
-
+    if (result === NaN) {
+        logPush("进度计算出现NaN，总时段为0，转换为100%");
+        result = 100.0;
+    }
     return result;
 }
 
