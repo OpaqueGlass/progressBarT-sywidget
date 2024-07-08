@@ -86,13 +86,10 @@ export function calculateDateGapByDay(start, end, onlyWorkDay) {
     let to = Date.parse(end.toDateString());
     let result;
     if (onlyWorkDay) {
-        result = calculateDateGapByWorkDay(start, end);
-        // 工作日计算法在时段超出时需要返回原计算
-        if (result instanceof Date) {
-            to = result;
-        } else {
-            return result;
-        }
+        debugPush(">>>> 还剩天数")
+        result = calculateDateGapByWorkDay({start, end, remain: true});
+        debugPush("剩余天数计算", result);
+        return result;
     }
     return Math.ceil((to - from) / (1 * 24 * 60 * 60 * 1000));
 }
@@ -111,27 +108,45 @@ export function calculateDateGapByHour(start, end) {
  * 周一至周五（除法定节假日）+调休
  * @param {Date} start 
  * @param {Date} end 
+ * @param {boolean} remain 是否是在计算剩余时间（这将考虑已经结束等情况，否则将默认start < end）
  */
-export function calculateDateGapByWorkDay(start, end) {
+export function calculateDateGapByWorkDay({start, end, remain=false, gapEnd=null}) {
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
     // 时段判定应当返回最后一个工作日，即end应该是工作日
-    debugPush("输入结束时间", end);
+    debugPush("输入开始结束时间", start, end);
     // 总时间段才需要走这个逻辑
     let lastWorkdayEnd = getLastWorkingDay(holidayInfo?.workdays ?? [], holidayInfo?.holidays ?? [], start, end);
-    debugPush("过滤后结束时间", lastWorkdayEnd);
-    // 对于全时段，结束时间如果是非假日，那么最后一个工作日应该计算为日期的
     debugPush("统计时段", start, end, lastWorkdayEnd);
-    let overFlag = start > lastWorkdayEnd && lastWorkdayEnd != null;
-    if (overFlag) {
-        debugPush("时段已过，fallback到默认实现");
-        return lastWorkdayEnd;
+    // 总时间段指示的区间中，必须包含工作日，否则无效
+    if (remain == false && lastWorkdayEnd == null) {
+        throw new Error("区间内无工作日");
     }
-    const holidayCount = getRangeHolidayCount(start, end);
-    const weekdaysCount = getRangeWeekDayCount(start, end);
-    const workdaysCount = getRangeWorkDayCount(start, end);
+    if (lastWorkdayEnd == null) {
+        lastWorkdayEnd = getLastWorkingDay(holidayInfo?.workdays ?? [], holidayInfo?.holidays ?? [], new Date(0), end);;
+    }
+    debugPush("过滤后结束时间v2", lastWorkdayEnd);
+    let overFlag = lastWorkdayEnd != null && start >= lastWorkdayEnd;
+    debugPush("时段已过判定", overFlag, remain);
+    if (overFlag && remain) {
+        debugPush("时段已过，fallback到默认实现", start, lastWorkdayEnd);
+        return Math.floor((lastWorkdayEnd - start) / (1 * 24 * 60 * 60 * 1000));
+    }
+    const holidayCount = getRangeHolidayCount(start, lastWorkdayEnd);
+    const weekdaysCount = getRangeWeekDayCount(start, lastWorkdayEnd);
+    const workdaysCount = getRangeWorkDayCount(start, lastWorkdayEnd);
     let result = weekdaysCount - holidayCount + workdaysCount;
     debugPush("周一至周五总计", weekdaysCount, "减去假日", holidayCount, "调休日", workdaysCount, "Res", result);
+    // 在计算时段时，出现工作日时段结果为0，但是设置的结束时间还未到达的情况，例如：
+    // 班 休 休 班
+    //     Now  ^结束
+    // 回退一天，计算正确的结束工作日
+    // if (result <= 0 && (lastWorkdayEnd - start) > 0 && remain) {
+    //     end.setDate(end.getDate() - 1);
+    //     lastWorkdayEnd = getLastWorkingDay(holidayInfo?.workdays ?? [], holidayInfo?.holidays ?? [], new Date(0), end);
+    //     debugPush("工作日计算出现0，调整后日期", lastWorkdayEnd);
+    //     return Math.floor((lastWorkdayEnd - start) / (1 * 24 * 60 * 60 * 1000));
+    // }
     return result;
 }
 
@@ -202,10 +217,9 @@ function getLastWorkingDay(workDays, holidays, startDate, endDate) {
     const holidaySet = new Set(holidays);
 
     let lastWorkingDay = null;
-    let currentDate = new Date(startDate);
-
-    // 遍历时间段内的每一天
-    while (currentDate <= endDate) {
+    let currentDate = new Date(endDate);
+    // 遍历时间段内的每一天，从结束日期向前
+    while (currentDate >= startDate) {
         const year = currentDate.getFullYear();
         const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需要加 1
         const day = String(currentDate.getDate()).padStart(2, '0');
@@ -215,13 +229,12 @@ function getLastWorkingDay(workDays, holidays, startDate, endDate) {
         if ((currentDate.getDay() !== 0 && currentDate.getDay() !== 6) || workDaySet.has(dateString)) {
             if (!holidaySet.has(dateString)) {
                 lastWorkingDay = new Date(currentDate);
+                break; // 找到最近的工作日后跳出循环
             }
         }
-
-        // 移动到下一天
-        currentDate.setDate(currentDate.getDate() + 1);
+        // 移动到前一天
+        currentDate.setDate(currentDate.getDate() - 1);
     }
-
     return lastWorkingDay;
 }
 
@@ -489,9 +502,13 @@ export function calculateTimePercentage(startTime, endTime, scale = 1, onlyWorkD
         throw new Error(language["earlyThanStart"]);
     }
     if (onlyWorkDay) {
-        let workDayCount = calculateDateGapByWorkDay(startTime, endTime);
-        let passwdCount = calculateDateGapByWorkDay(startTime, nowDate);
-        result = 100.0 * passwdCount / workDayCount;
+        // 无论如何，我们会将结束时间调整到合适的最后一个工作日（没有的报错）
+        debugPush(">>>> 全组时段")
+        let workDayCount = calculateDateGapByWorkDay({start: startTime, end: endTime});
+        debugPush(">>>> 还剩时段时段")
+        let remainCount = calculateDateGapByWorkDay({start: nowDate, end: endTime, remain: true});
+        debugPush("时间段进度百分比", workDayCount, remainCount);
+        result = 100.0 * (workDayCount - remainCount) / workDayCount;
     }
     if (result === NaN) {
         logPush("进度计算出现NaN，总时段为0，转换为100%");

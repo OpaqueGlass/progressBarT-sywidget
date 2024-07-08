@@ -1377,7 +1377,7 @@ async function deleteWidgetHelper() {
     //     return
     // }
     const queryResult = await queryAPI(`SELECT * FROM blocks WHERE type='widget' AND markdown like '%progressBarT%' AND id != '${getCurrentWidgetId()}' LIMIT 10000`);
-    logPush("其他挂件查询结果", queryResult);
+    warnPush("将删除的其他挂件（查询结果）", queryResult);
     let successCount = 0;
     let failIds = [];
     for (let result of queryResult) {
