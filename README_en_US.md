@@ -147,6 +147,13 @@ Briefly:
 
 Values should be an array of strings with the date format `yyyy-MM-dd`.
 
+
+#### Hide Progress Percentage
+
+Developers do not recommend hiding the progress percentage as this has not been tested and, once hidden, it cannot provide feedback to the user about the saving status.
+
+If you wish to hide it, you can achieve this using CSS. After hiding, you can use Ctrl+I to open and close the settings interface, and use F5 to refresh/save progress.
+
 ## ⚠️ Note
 
 > Due to the limited ability of developers, there are still some problems in the widget.
