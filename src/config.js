@@ -50,10 +50,10 @@ let attrSetting = {
 let holidayInfo = null;
 let setting = {
     widgetWidth: "50em",//挂件的宽
-    widgetHeight: "4.3em",//挂件的高
-    widgetBarOnlyHeight: "3em",//只显示进度条和刷新按钮时，挂件的高
-    widgetAutoModeWithTimeRemainHeight: "4.3em", // 自动模式显示时间时挂件高度
-    widgetTimeModeHeight: "5em", // 时间模式挂件高度
+    widgetHeight: "68.8px",//挂件的高4.3em
+    widgetBarOnlyHeight: "48px",//只显示进度条和刷新按钮时，挂件的高3em
+    widgetAutoModeWithTimeRemainHeight: "68.8px", // 自动模式显示时间时挂件高度4.3em
+    widgetTimeModeHeight: "80px", // 时间模式挂件高度5em
     refreshInterval: 90000,//自动模式自动刷新间隔（单位：毫秒），由于请求api，请勿设定的时间过短；为0禁用
     onstart: true, //在挂件被加载时同步一次进度
     saveAttrTimeout: 1000 * 0.5, //手动模式：在操作进度条后自动保存百分比的延迟时间，单位毫秒，为0则禁用自动保存

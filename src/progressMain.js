@@ -1074,7 +1074,7 @@ async function __init(){
     jscolor.install();//注入jscolor
     $("#barWidth").val(g_apperance.barWidth);
     // showButtonsController(setting.showButtons);
-
+    // $("body").css("font-size", window.top.siyuan.config.editor.fontSize);
     //呃，写入提示文字
     $("#saveAppearBtn").text(language["saveBtnText"]);
     $("#saveSettingBtn").text(language["saveSettingText"]);
