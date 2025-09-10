@@ -228,10 +228,27 @@ export async function getCurrentDocIdF(){
  */
 export function getCurrentWidgetId(){
     try{
+        // 预览模式
+        if (window.frameElement.parentElement.getAttribute("id")) {
+            return window.frameElement.parentElement.getAttribute("id");
+        }
         return window.frameElement.parentElement.parentElement.dataset.nodeId;
     }catch(err){
         console.warn("getCurrentWidgetId window...nodeId方法失效");
         return null;
+    }
+}
+
+export function isPreviewMode() {
+    try {
+        if (window.frameElement.parentElement.getAttribute("id") && window.frameElement.parentElement.classList.contains("iframe")) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (e) {
+        console.warn("checkPreviewMode Error", e);
+        return false;
     }
 }
 

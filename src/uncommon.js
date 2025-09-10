@@ -237,7 +237,7 @@ function getLastWorkingDay(workDays, holidays, startDate, endDate) {
     }
     return lastWorkingDay;
 }
-
+window.top["OPAQUEGLASS_PGB_DEV_HOLIDAY"] = parseHolidayInfo;
 async function parseHolidayInfo() {
     const response = await fetch('https://raw.githubusercontent.com/lanceliao/china-holiday-calender/master/holidayAPI.json');
     const data = await response.json();

@@ -8,7 +8,8 @@ import {
     updateBlockAPI,
     renderSprig,
     removeBlockAPI,
-    queryAPI
+    queryAPI,
+    isPreviewMode
 } from './API.js';//啊啊啊，务必注意：ios要求大小写一致，别写错
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js";
@@ -517,23 +518,38 @@ class AutoMode extends Mode {
 function getAdjcentBlockId() {
     try{
         if (!isValidStr(g_targetBlockId)){
-            let thisWidgetBlockElem = window.frameElement.parentElement.parentElement;
-            if ($(thisWidgetBlockElem.nextElementSibling).attr("data-subtype") === "t"){
-                g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"] + "↓", 2500);
-            }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-subtype") === "t"){
-                //下一个目标块不存在，获取上一个目标块
-                g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"] + "↑", 2500);
-            }else if ($(thisWidgetBlockElem.nextElementSibling).attr("data-type") === "NodeList") {
-                // 挂件下方是列表，但不是任务列表（若要统计无序列表/有序列表下的任务项，需要勾选统计子任务）
-                g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"] + "↓", 2500);
-            }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-type") === "NodeList") {
-                // 挂件上方是列表，但不是任务列表（若要统计无序列表/有序列表下的任务项，需要勾选统计子任务）
-                g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
-                infoPush(language["autoDetectId"] + "↑", 2500);
+            if (isPreviewMode()) {
+                let thisWidgetBlockElem = window.frameElement.parentElement;
+                if (thisWidgetBlockElem.nextElementSibling.firstElementChild && thisWidgetBlockElem.nextElementSibling.firstElementChild.nodeName === "LI"){
+                    g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("id");
+                    debugPush("id", g_targetBlockId);
+                    infoPush(language["autoDetectId"] + "↓", 2500);
+                }else if (thisWidgetBlockElem.previousElementSibling.firstChild && thisWidgetBlockElem.previousElementSibling.firstElementChild.nodeName === "LI"){
+                    //下一个目标块不存在，获取上一个目标块
+                    g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("id");
+                    infoPush(language["autoDetectId"] + "↑", 2500);
+                }
+                debugPush("previewMode", g_targetBlockId);
+            } else {
+                let thisWidgetBlockElem = window.frameElement.parentElement.parentElement;
+                if ($(thisWidgetBlockElem.nextElementSibling).attr("data-subtype") === "t"){
+                    g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
+                    infoPush(language["autoDetectId"] + "↓", 2500);
+                }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-subtype") === "t"){
+                    //下一个目标块不存在，获取上一个目标块
+                    g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
+                    infoPush(language["autoDetectId"] + "↑", 2500);
+                }else if ($(thisWidgetBlockElem.nextElementSibling).attr("data-type") === "NodeList") {
+                    // 挂件下方是列表，但不是任务列表（若要统计无序列表/有序列表下的任务项，需要勾选统计子任务）
+                    g_targetBlockId = $(thisWidgetBlockElem.nextElementSibling).attr("data-node-id");
+                    infoPush(language["autoDetectId"] + "↓", 2500);
+                }else if ($(thisWidgetBlockElem.previousElementSibling).attr("data-type") === "NodeList") {
+                    // 挂件上方是列表，但不是任务列表（若要统计无序列表/有序列表下的任务项，需要勾选统计子任务）
+                    g_targetBlockId = $(thisWidgetBlockElem.previousElementSibling).attr("data-node-id");
+                    infoPush(language["autoDetectId"] + "↑", 2500);
+                }
             }
+            
         }
     }catch(err){
         errorPush("获取邻近块时出错", err);
@@ -569,7 +585,7 @@ class TimeMode extends Mode {
         }
         //进入时间模式恢复提示信息
         if (!g_displaySetting){
-            window.frameElement.style.height = setting.widgetHeight;
+            window.frameElement.style.height = this.widgetHeight;
         }
         // 外观更改
         $(".time-mode-a").css("display", "");
