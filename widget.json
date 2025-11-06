@@ -2,16 +2,16 @@
   "name": "progressBarT",
   "author": "OpaqueGlass",
   "url": "https://github.com/OpaqueGlass/progressBarT-sywidget",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "displayName": {
     "default": "progressBarT",
     "zh_CN": "任务进度条",
     "en_US": "progressBarT"
   },
   "description": {
-    "default": "Show a progress bar in widget. [English is not fully supported]",
+    "default": "Show a progress bar in widget. ",
     "zh_CN": "显示进度条的挂件，另有时间模式和手动模式",
-    "en_US": "Show a progress bar in widget. [English is not fully supported]"
+    "en_US": "Show a progress bar in widget. "
   },
   "readme": {
     "default": "README_en_US.md",
