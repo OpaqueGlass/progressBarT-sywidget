@@ -81,6 +81,7 @@ class ManualMode extends Mode {
         //隐藏提示信息
         if (!g_displaySetting){
             window.frameElement.style.height = this.widgetHeight;
+            window.frameElement.parentElement.parentElement.style.height = this.widgetHeight;
         }
     }
     
@@ -204,6 +205,7 @@ class AutoMode extends Mode {
         //自动模式下隐藏提示信息
         if (!g_displaySetting){
             window.frameElement.style.height = this.widgetHeight;
+            window.frameElement.parentElement.parentElement.style.height = this.widgetHeight;
         }
         //设定自动模式功能键
         $(`<button id="cancelAll">Fn</button>`).prependTo("#infos");
@@ -586,6 +588,7 @@ class TimeMode extends Mode {
         //进入时间模式恢复提示信息
         if (!g_displaySetting){
             window.frameElement.style.height = this.widgetHeight;
+            window.frameElement.parentElement.parentElement.style.height = window.frameElement.style.height;
         }
         // 外观更改
         $(".time-mode-a").css("display", "");
@@ -1076,6 +1079,10 @@ async function __init(){
         //设置挂件宽高
         window.frameElement.style.width = setting.widgetWidth;
         window.frameElement.style.height = setting.widgetHeight;
+
+        window.frameElement.parentElement.parentElement.style.width = setting.widgetWidth;
+        window.frameElement.parentElement.parentElement.style.height = setting.widgetHeight;
+
         //创建属性（延时创建，防止无法写入）
         setTimeout(async function(){await setDefaultSetting2Attr();}, 3000);
         g_manualPercentage = defaultAttr["percentage"];
@@ -1144,6 +1151,7 @@ async function __init(){
         ,value: g_startTimes.code > 0 ? g_startTimes.time : new Date()
         ,ready: function(date) {
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
+            window.frameElement.parentElement.parentElement.style.height = window.frameElement.style.height;
             if (date.month < 10) {
                 date.month = "0" + date.month;
             }
@@ -1176,6 +1184,7 @@ async function __init(){
         ,trigger: "click"
         ,ready: function(){
             window.frameElement.style.height = $("body").outerHeight() + 355 + "px";
+            window.frameElement.parentElement.parentElement.style.height = window.frameElement.style.height;
         }
         // ,change: function(value) {
         //     $("#endTime").val(value);
@@ -1287,10 +1296,12 @@ function displaySetting(){
         g_displaySetting = true;
         $("#settings").css("display", "");
         window.frameElement.style.height = $("body").outerHeight() + 55 + "px";
+        window.frameElement.parentElement.parentElement.style.height = window.frameElement.style.height;
     }else{
         g_displaySetting = false;
         $("#settings").css("display", "none");
         window.frameElement.style.height = g_mode.widgetHeight;
+        window.frameElement.parentElement.parentElement.style.height = window.frameElement.style.height;
     }
 }
 

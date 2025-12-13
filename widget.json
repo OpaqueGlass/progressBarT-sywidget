@@ -2,7 +2,7 @@
   "name": "progressBarT",
   "author": "OpaqueGlass",
   "url": "https://github.com/OpaqueGlass/progressBarT-sywidget",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "displayName": {
     "default": "progressBarT",
     "zh_CN": "任务进度条",
