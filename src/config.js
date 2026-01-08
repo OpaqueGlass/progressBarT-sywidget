@@ -30,18 +30,18 @@ let defaultAttr = {//挂件创建时默认属性设定
         paletteCols: 11, hideOnPaletteClick: true
     }
 }
-//在此自定义属性名称（只接受英文（最好是小写）、数字，后面会补充custom-这里不用写）
+//在此自定义属性名称（只接受英文（最好是小写）、数字，并且不能使用数字开头，后面会补充custom-这里不用写）
 let attrName = {
-    manual: "1progress",//百分比/模式对应的属性名称
-    autoTarget: "2targetid", //任务列表块id对应的属性名称
-    startTime: "3start",//开始时间对应的属性名称
-    endTime: "4end",//结束时间对应的属性名称
-    frontColor: "5frontcolor",//进度条前景色对应的属性名称
-    backColor: "6backcolor",//进度条背景色对应的属性名称
-    taskCalculateMode: "7alltask",//自动模式统计任务范围对应的属性名称
-    barWidth: "6width", //进度条高度
-    basicSetting: "pgbtconfig", //进度条基础设定
-    barTitle: "71title", // 进度条标题（时间模式）
+    manual: "opg-1progress",//百分比/模式对应的属性名称
+    autoTarget: "opg-2targetid", //任务列表块id对应的属性名称
+    startTime: "opg-3start",//开始时间对应的属性名称
+    endTime: "opg-4end",//结束时间对应的属性名称
+    frontColor: "opg-5frontcolor",//进度条前景色对应的属性名称
+    backColor: "opg-6backcolor",//进度条背景色对应的属性名称
+    taskCalculateMode: "opg-7alltask",//自动模式统计任务范围对应的属性名称
+    barWidth: "opg-6width", //进度条高度
+    basicSetting: "opg-pgbtconfig", //进度条基础设定
+    barTitle: "opg-71title", // 进度条标题（时间模式）
 }
 let attrSetting = {
     timeModeMode: 0,

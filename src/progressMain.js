@@ -14,6 +14,37 @@ import {
 import {language, setting, defaultAttr, attrName, attrSetting} from './config.js';
 import {getDayGapString, parseTimeString, useUserTemplate, formatDateString, calculateTimePercentage, SCALE} from "./uncommon.js";
 import { debugPush, logPush, warnPush, errorPush } from './common.js';
+
+let oldAttrName = {
+    manual: "custom-1progress",
+    autoTarget: "custom-2targetid",
+    startTime: "custom-3start",
+    endTime: "custom-4end",
+    frontColor: "custom-5frontcolor",
+    backColor: "custom-6backcolor",
+    taskCalculateMode: "custom-7alltask",
+    barWidth: "custom-6width", 
+    basicSetting: "custom-pgbtconfig",
+    barTitle: "custom-71title",
+}
+
+async function getblockAttrAPIWrap(blockid) {
+    let response = await getblockAttrAPI(blockid);
+    const targetObj = response.data;
+    const keysToCheck = Object.values(attrName);
+    const hasAnyKey = keysToCheck.some(key => Object.prototype.hasOwnProperty.call(targetObj, key));
+    if (!hasAnyKey) {
+        let keyNames = Object.keys(oldAttrName);
+        for (let keyName of keyNames) {
+            if (targetObj[oldAttrName[keyName]] != undefined) {
+                let newKey = attrName[keyName];
+                response.data[newKey] = response.data[oldAttrName[keyName]];
+            }
+        }
+    }
+    logPush("返回的属性内容", response.data);
+    return response;
+}
 /**模式类 */
 class Mode {
     modeCode = 0;//模式对应的默认百分比值
@@ -492,7 +523,7 @@ class AutoMode extends Mode {
      */
     async readAndApplyAttr(){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
-        let response = await getblockAttrAPI(g_thisWidgetId);
+        let response = await getblockAttrAPIWrap(g_thisWidgetId);
         if (attrName.autoTarget in response.data){
             g_targetBlockId = response.data[attrName.autoTarget];
         }else{
@@ -776,7 +807,7 @@ class TimeMode extends Mode {
      */
     async readTimesFromAttr(titleOnly = false){
         g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
-        let response = await getblockAttrAPI(g_thisWidgetId);
+        let response = await getblockAttrAPIWrap(g_thisWidgetId);
         // 读取标题
         if (attrName.barTitle in response.data) {
             let title = response.data[attrName.barTitle];
@@ -877,7 +908,7 @@ function changeBar(percentage){
 async function getSettingAtStartUp(){
     g_thisWidgetId = getCurrentWidgetId();//获取当前挂件id
     // 通过API获取进度条属性
-    let response = await getblockAttrAPI(g_thisWidgetId);
+    let response = await getblockAttrAPIWrap(g_thisWidgetId);
     // 将挂件的高度设定写入块
     if (!("custom-resize-flag" in response.data) && setting.saveDefaultHeight && ("id" in response.data)) {
         await resetWidgetHeight();
@@ -1240,7 +1271,7 @@ async function __refresh(){
     try{
         await g_mode.refresh();
         __refreshAppreance();//深色模式重设
-        applyProgressColor(await getblockAttrAPI(g_thisWidgetId));//进度条颜色重设
+        applyProgressColor(await getblockAttrAPIWrap(g_thisWidgetId));//进度条颜色重设
         infoPush(language["refreshed"], 1500);
     }catch(err){
         errorPush(err);
