@@ -35,11 +35,25 @@ async function getblockAttrAPIWrap(blockid) {
     const hasAnyKey = keysToCheck.some(key => Object.prototype.hasOwnProperty.call(targetObj, key));
     if (!hasAnyKey) {
         let keyNames = Object.keys(oldAttrName);
+        let data = {};
+        data[attrName["manual"]] = defaultAttr["percentage"].toString();
+        data[attrName["startTime"]] = defaultAttr["start"];
+        data[attrName["endTime"]] = defaultAttr["end"];
+        data[attrName["autoTarget"]] = defaultAttr["targetid"];
+        data[attrName["frontColor"]] = defaultAttr["frontColor"];
+        data[attrName["backColor"]] = defaultAttr["backColor"];
+        data[attrName["taskCalculateMode"]] = defaultAttr["alltask"].toString();
+        data[attrName["barWidth"]] = defaultAttr["barWidth"].toString();
         for (let keyName of keyNames) {
             if (targetObj[oldAttrName[keyName]] != undefined) {
                 let newKey = attrName[keyName];
                 response.data[newKey] = response.data[oldAttrName[keyName]];
+                data[newKey] = response.data[oldAttrName[keyName]];
             }
+        }
+        let updateResponse = await addblockAttrAPI(data, blockid);
+        if (updateResponse != 0) {
+            warnPush("旧属性迁移失败，部分属性可能未能正确迁移");
         }
     }
     logPush("返回的属性内容", response.data);
