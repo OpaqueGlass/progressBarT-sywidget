@@ -258,7 +258,7 @@ let en_UK = {
 let language = zh_CN;
 let lang = window.top.siyuan.config.lang;
 // 测试中的外部json语言配置文件读入，但再开个语言文件意义不大，废弃中
-if (lang != "zh_CN") {
+if (lang != "zh_CN" && lang != "zh-CN") {
     language = en_UK;
 }
 // language = await getLanguageFile(`/widgets/progress-dev/lang/${lang}.json`).catch(async(error)=>{
@@ -323,7 +323,7 @@ try {
             holidayInfo = holidayInfoFile;
             break;
         }
-        if (lang != "zh_CN") {
+        if (lang != "zh_CN" && lang != "zh-CN") {
             break;
         }
         holidayInfoFile = await getJSONFile("/data/widgets/progressBarT/static/holiday.json");
