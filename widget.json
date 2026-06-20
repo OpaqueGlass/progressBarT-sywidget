@@ -6,21 +6,23 @@
   "displayName": {
     "default": "progressBarT",
     "zh_CN": "任务进度条",
-    "en_US": "progressBarT"
+    "zh-CN": "任务进度条"
   },
   "description": {
     "default": "Show a progress bar in widget. ",
     "zh_CN": "显示进度条的挂件，另有时间模式和手动模式",
-    "en_US": "Show a progress bar in widget. "
+    "zh-CN": "显示进度条的挂件，另有时间模式和手动模式"
   },
   "readme": {
     "default": "README_en_US.md",
     "zh_CN": "README.md",
-    "en_US": "README_en_US.md"
+    "zh-CN": "README.md"
   },
   "i18n": [
     "zh_CN",
-    "en_US"
+    "en_US",
+    "zh-CN",
+    "en"
   ],
   "funding": {
     "openCollective": "",
