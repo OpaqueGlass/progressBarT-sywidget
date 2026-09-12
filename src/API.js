@@ -298,5 +298,10 @@ export async function getKramdown(blockid){
 }
 
 export function isDarkMode() {
-    return window.top.siyuan.config.appearance.mode == 1 ? true : false;
+    if (window.top.siyuan) {
+        return window.top.siyuan.config.appearance.mode == 1 ? true : false;
+    } else {
+        let isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return isDarkMode;
+    }
 }
