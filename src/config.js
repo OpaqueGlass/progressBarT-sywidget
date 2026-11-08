@@ -172,7 +172,7 @@ let zh_CN = {
     "removeOtherSuccess": "成功删除%1%个挂件",
     "removeOtherFailed": "成功删除%1%个挂件，失败%2%个。失败的挂件id分别是：%3%",
     "onlyWorkDayText": "仅工作日beta：",
-    "onlyWorkDayHoverInfo": "并不智能的计算剩余天数（不计法定节假日），默认实现不支持中国大陆以外的地区以及2022~2024以外的节假日，请参考README.md",
+    "onlyWorkDayHoverInfo": "并不智能的计算剩余天数（不计法定节假日），默认实现不支持中国大陆以外的地区以及2022~2027以外的节假日，请参考README.md",
     "goodbye_confirmBtn": "确认删除",
     "goodbye_cancelBtn": "取消",
 }
